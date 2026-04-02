@@ -4,6 +4,7 @@ import { CheckIcon } from './icons/CheckIcon';
 import { PlusIcon } from './icons/PlusIcon';
 
 type ButtonSize = 'large' | 'small' | 'tag' | 'roundedSmall';
+type ButtonVariant = 'active' | 'inactive';
 
 type Props = {
   title: string;
@@ -14,9 +15,19 @@ type Props = {
   textStyle?: TextStyle;
   selected?: boolean;
   showIcon?: boolean;
+  variant?: ButtonVariant;
 };
 
-const getColors = (size: ButtonSize, disabled: boolean, selected?: boolean) => {
+const getColors = (size: ButtonSize, disabled: boolean, selected?: boolean, variant?: ButtonVariant) => {
+  if (size === 'roundedSmall') {
+    if (variant === 'active') {
+      return { backgroundColor: '#F6623B', textColor: '#FDFCFC' };
+    }
+    if (variant === 'inactive') {
+      return { backgroundColor: '#A49289', textColor: '#E7E2DF' };
+    }
+  }
+
   if (size === 'tag') {
     if (selected) {
       return {
@@ -60,8 +71,9 @@ export default function KkButton({
   textStyle,
   selected = false,
   showIcon = false,
+  variant = 'inactive'
 }: Props) {
-  const { backgroundColor, textColor } = getColors(size, disabled, selected);
+  const { backgroundColor, textColor } = getColors(size, disabled, selected, variant);
   const isActive = backgroundColor === '#F6623B';
   const shouldShowIcon = size === 'tag' && showIcon;
 
