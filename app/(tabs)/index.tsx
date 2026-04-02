@@ -1,9 +1,11 @@
-import { View, Text, StyleSheet } from 'react-native';
+import { useState } from 'react';
+import { StyleSheet, View } from 'react-native';
+import Signup from '../(auth)/Signup';
 
 export default function HomeScreen() {
   return (
-    <View style={styles.container}>
-      <Text style={styles.title}>Home</Text>
+    <View>
+     <Signup />
     </View>
   );
 }
@@ -13,7 +15,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "white"
+    backgroundColor: "#1A1614"
   },
   title: {
     fontSize: 24,
