@@ -1,6 +1,5 @@
 import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
-import Login from '../(auth)/Login';
 import Signup from '../(auth)/Signup';
 
 export default function HomeScreen() {

@@ -87,20 +87,22 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   small: {
-    height: 40,
-    paddingHorizontal: 16,
+    height: 48,
+    minWidth: 104,
+    paddingHorizontal: 15.5,
   },
   tag: {
-    height: 32,
+    height: 42,
+    paddingVertical: 8,
     paddingHorizontal: 12,
-    borderRadius: 999, 
+    borderRadius: 16, 
   },
   text: {
     fontSize: 18,
     fontWeight: '600',
   },
   textSmall: {
-    fontSize: 14,
+    fontSize: 16,
   },
   textTag: {
     fontSize: 13,

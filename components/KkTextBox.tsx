@@ -69,8 +69,8 @@ export default function KkTextBox({
 
   return (
     <View style={style}>
-      {label && <Text style={styles.label}>{label}</Text>}
-
+    {label && <Text style={styles.label}>{label}</Text>}
+    <View style={styles.row}>
       <View
         style={[
           styles.container,
@@ -78,27 +78,22 @@ export default function KkTextBox({
           disabled && styles.disabled,
         ]}
       >
-        <View style={styles.row}>
-          {type === 'date' ? (
-            renderInput()
-          ) : (
-            <View style={styles.inputWrapper}>
-              {renderInput()}
-            </View>
-          )}
-
-          {rightButton && (
-            <View style={styles.buttonWrapper}>
-              {rightButton}
-            </View>
-          )}
-        </View>
+        {type === 'date' ? renderInput() : (
+          <View style={styles.inputWrapper}>
+            {renderInput()}
+          </View>
+        )}
       </View>
-
-      {isActive && hasError && (
-        <Text style={styles.errorText}>{error}</Text>
+      {rightButton && (  
+        <View style={styles.buttonWrapper}>
+          {rightButton}
+        </View>
       )}
     </View>
+    {isActive && hasError && (
+      <Text style={styles.errorText}>{error}</Text>
+    )}
+  </View>
   );
 };
 
@@ -109,21 +104,22 @@ const styles = StyleSheet.create({
     color: '#FDFCFC',
   },
   container: {
+    flex: 1,
     borderWidth: 1,
     borderRadius: 16,
-    marginTop: 8,
-    backgroundColor: '#FDFCFC1A',
     height: 48,
+    backgroundColor: '#FDFCFC1A',
     justifyContent: 'center',
   },
-  textInput: {   
-    fontSize: 16,
+  textInput: {
     flex: 1,
-    color: '#FDFCFC'
+    fontSize: 16,
+    color: '#FDFCFC',
   },
   row: {
     flexDirection: 'row',
     alignItems: 'center',
+    marginTop: 8,
   },
   inputWrapper: {
     flexDirection: 'row',
@@ -148,8 +144,8 @@ const styles = StyleSheet.create({
     borderColor: '#E0E0E0',
   },
   errorText: {
+    paddingTop: 8,
     fontSize: 12,
     color: '#FFEFEB',
   },
-  
 });
