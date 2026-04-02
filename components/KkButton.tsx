@@ -1,7 +1,9 @@
 import React from 'react';
-import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle } from 'react-native';
+import { TouchableOpacity, Text, StyleSheet, ViewStyle, TextStyle, View } from 'react-native';
+import { CheckIcon } from './icons/CheckIcon';
+import { PlusIcon } from './icons/PlusIcon';
 
-type ButtonSize = 'large' | 'small' | 'tag';
+type ButtonSize = 'large' | 'small' | 'tag' | 'roundedSmall';
 
 type Props = {
   title: string;
@@ -10,9 +12,25 @@ type Props = {
   onPress?: () => void;
   style?: ViewStyle;
   textStyle?: TextStyle;
+  selected?: boolean;
+  showIcon?: boolean;
 };
 
-const getColors = (size: ButtonSize, disabled: boolean) => {
+const getColors = (size: ButtonSize, disabled: boolean, selected?: boolean) => {
+  if (size === 'tag') {
+    if (selected) {
+      return {
+        backgroundColor: '#F6623B', 
+        textColor: '#FDFCFC',
+      };
+    } else {
+      return {
+        backgroundColor: '#372E2A', 
+        textColor: '#E7E2DF',
+      };
+    }
+  }
+
   if (!disabled) {
     return {
       backgroundColor: '#F6623B',
@@ -40,9 +58,12 @@ export default function KkButton({
   onPress,
   style,
   textStyle,
+  selected = false,
+  showIcon = false,
 }: Props) {
-  const { backgroundColor, textColor } = getColors(size, disabled);
+  const { backgroundColor, textColor } = getColors(size, disabled, selected);
   const isActive = backgroundColor === '#F6623B';
+  const shouldShowIcon = size === 'tag' && showIcon;
 
   return (
     <TouchableOpacity
@@ -55,23 +76,32 @@ export default function KkButton({
           ? styles.large
           : size === 'small'
             ? styles.small
-            : styles.tag,
+            : size === 'roundedSmall'
+              ? styles.roundedSmall
+              : styles.tag,
         { backgroundColor },
         isActive && styles.shadow,
         style,
       ]}
     >
-      <Text
-        style={[
-          styles.text,
-          size === 'small' && styles.textSmall,
-          size === 'tag' && styles.textTag,
-          { color: textColor },
-          textStyle,
-        ]}
-      >
-        {title}
-      </Text>
+      <View style={styles.inner}>
+        {shouldShowIcon && (
+          <View style={styles.icon}>
+            {selected ? <CheckIcon /> : <PlusIcon />}
+          </View>
+        )}
+        <Text
+          style={[
+            styles.text,
+            (size === 'small' || size === 'roundedSmall') && styles.textSmall,
+            size === 'tag' && styles.textTag,
+            { color: textColor },
+            textStyle,
+          ]}
+        >
+          {title}
+        </Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -94,8 +124,14 @@ const styles = StyleSheet.create({
   tag: {
     height: 42,
     paddingVertical: 8,
-    paddingHorizontal: 12,
-    borderRadius: 16, 
+    paddingHorizontal: 16,
+    borderRadius: 16,
+    alignSelf: 'flex-start',
+  },
+  roundedSmall: {
+    height: 48,
+    paddingHorizontal: 15.5,
+    borderRadius: 8,
   },
   text: {
     fontSize: 18,
@@ -103,9 +139,11 @@ const styles = StyleSheet.create({
   },
   textSmall: {
     fontSize: 16,
+    fontWeight: '400',
   },
   textTag: {
-    fontSize: 13,
+    fontSize: 16,
+    fontWeight: '400',
   },
   shadow: {
     shadowColor: '#FF8868',
@@ -114,5 +152,13 @@ const styles = StyleSheet.create({
     shadowRadius: 8,
 
     elevation: 5, // Android용
+  },
+  inner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  icon: {
+    marginRight: 5,
+    alignItems: 'center',
   },
 });
