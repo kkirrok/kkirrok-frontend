@@ -147,15 +147,15 @@ const styles = StyleSheet.create({
   },
   text: {
     fontSize: 18,
-    fontWeight: '600',
+    fontFamily: 'Pretendard-SemiBold',
   },
   textSmall: {
     fontSize: 16,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   textTag: {
     fontSize: 16,
-    fontWeight: '400',
+    fontFamily: 'Pretendard-Regular',
   },
   shadow: {
     shadowColor: '#FF8868',

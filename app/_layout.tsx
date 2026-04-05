@@ -1,7 +1,24 @@
+import { useFonts } from 'expo-font';
 import { Stack } from 'expo-router';
+import { useEffect } from 'react';
+import { Text } from 'react-native';
 
 export default function RootLayout() {
-  return (
-    <Stack screenOptions={{ headerShown: false }} />
-  );
+  const [fontsLoaded] = useFonts({
+    'Pretendard-Regular': require('../assets/fonts/Pretendard-Regular.otf'),
+    'Pretendard-SemiBold': require('../assets/fonts/Pretendard-SemiBold.otf'),
+  });
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      // @ts-ignore
+      Text.defaultProps = Text.defaultProps ?? {};
+      // @ts-ignore
+      Text.defaultProps.style = { fontFamily: 'Pretendard-Regular' };
+    }
+  }, [fontsLoaded]);
+
+  if (!fontsLoaded) return null;
+
+  return <Stack screenOptions={{ headerShown: false }} />;
 }

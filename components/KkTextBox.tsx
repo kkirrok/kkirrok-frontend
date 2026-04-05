@@ -103,7 +103,7 @@ export default function KkTextBox({
 const styles = StyleSheet.create({
   label: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: 'Pretendard-SemiBold',
     color: '#FDFCFC',
   },
   container: {
@@ -117,6 +117,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 16,
+    fontFamily: 'Pretendard-Regular',
     color: '#FDFCFC',
   },
   row: {
