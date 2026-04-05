@@ -1,7 +1,9 @@
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
+import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
+import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
 
@@ -15,12 +17,21 @@ const formatBirthDate = (text: string) => {
 };
 
 export default function FindId() {
+  const router = useRouter();
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [phone, setPhone] = useState("");
+  const [modalVisible, setModalVisible] = useState(false);
+  const [foundId, setFoundId] = useState("");
 
   const isBirthInvalid = birthDate.length > 0 && !BIRTH_REGEX.test(birthDate);
   const isSubmitEnabled = name && BIRTH_REGEX.test(birthDate) && phone;
+
+  const handleSubmit = () => {
+    // TODO: API 연동 후 실제 아이디로 교체
+    setFoundId("HJHJHJHJJF");
+    setModalVisible(true);
+  };
 
   return (
     <KkBackground>
@@ -50,10 +61,19 @@ export default function FindId() {
           <KkButton
             title="이메일 찾기"
             disabled={!isSubmitEnabled}
-            onPress={() => {}}
+            onPress={handleSubmit}
           />
         </View>
       </View>
+
+      <KkModal
+        visible={modalVisible}
+        onClose={() => setModalVisible(false)}
+        message={`${name}님의 아이디는`}
+        highlight={foundId}
+        buttonText="로그인하기"
+        onButtonPress={() => router.push("/(auth)/login")}
+      />
     </KkBackground>
   );
 }
