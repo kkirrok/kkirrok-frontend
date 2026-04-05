@@ -37,7 +37,7 @@ export default function Login() {
         </View>
 
         <View style={styles.container}>
-          <TouchableOpacity onPress={() => console.log("아이디 찾기")}>
+          <TouchableOpacity onPress={() => router.push("/(auth)/FindId")}>
             <Text style={styles.text}>아이디 찾기</Text>
           </TouchableOpacity>
 
