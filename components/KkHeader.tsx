@@ -6,9 +6,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface KkHeaderProps {
   title: string;
   variant?: "back" | "close";
+  onClose?: () => void;
 }
 
-export default function KkHeader({ title, variant = "back" }: KkHeaderProps) {
+export default function KkHeader({ title, variant = "back", onClose }: KkHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
 
@@ -26,7 +27,7 @@ export default function KkHeader({ title, variant = "back" }: KkHeaderProps) {
         <Text style={styles.title}>{title}</Text>
 
         {variant === "close" ? (
-          <TouchableOpacity onPress={() => router.back()} style={styles.button}>
+          <TouchableOpacity onPress={onClose ?? (() => router.back())} style={styles.button}>
             <Ionicons name="close" size={28} color="white" />
           </TouchableOpacity>
         ) : (
@@ -56,7 +57,7 @@ const styles = StyleSheet.create({
   title: {
     color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: "600",
+    fontFamily: "Pretendard-SemiBold",
     textAlign: "center",
   },
 });

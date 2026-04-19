@@ -10,6 +10,7 @@ type KkTextBoxProps = {
   error?: string; 
   type?: 'text' | 'date';
   rightButton?: React.ReactNode; 
+  secureTextEntry?: boolean;
   style?: ViewStyle;
   inputStyle?: TextStyle;
 };
@@ -23,6 +24,7 @@ export default function KkTextBox({
   error,
   type = 'text',
   rightButton,
+  secureTextEntry = false,
   style,
   inputStyle,
 }: KkTextBoxProps) {
@@ -60,6 +62,7 @@ export default function KkTextBox({
         placeholder={placeholder}
         editable={!disabled}
         placeholderTextColor="#C7C7C7"
+        secureTextEntry={secureTextEntry}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         style={[styles.textInput, inputStyle]}
@@ -100,7 +103,7 @@ export default function KkTextBox({
 const styles = StyleSheet.create({
   label: {
     fontSize: 18,
-    fontWeight: "600",
+    fontFamily: 'Pretendard-SemiBold',
     color: '#FDFCFC',
   },
   container: {
@@ -114,6 +117,7 @@ const styles = StyleSheet.create({
   textInput: {
     flex: 1,
     fontSize: 16,
+    fontFamily: 'Pretendard-Regular',
     color: '#FDFCFC',
   },
   row: {

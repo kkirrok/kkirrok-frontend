@@ -2,10 +2,12 @@ import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import KkTextBox from "@/components/KkTextBox";
+import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, View, TouchableOpacity, Text } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Login() {
+  const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
 
@@ -29,18 +31,19 @@ export default function Login() {
         <View style={styles.button}>
           <KkButton
             title="로그인 하기"
-            disabled={!email || !password} onPress={() => { }}
+            disabled={!email || !password}
+            onPress={() => {}}
           />
         </View>
 
         <View style={styles.container}>
-          <TouchableOpacity onPress={() => console.log('아이디 찾기')}>
+          <TouchableOpacity onPress={() => router.push("/(auth)/FindId")}>
             <Text style={styles.text}>아이디 찾기</Text>
           </TouchableOpacity>
 
           <Text style={styles.text}> | </Text>
 
-          <TouchableOpacity onPress={() => console.log('비밀번호 찾기')}>
+          <TouchableOpacity onPress={() => router.push("/(auth)/FindPassword")}>
             <Text style={styles.text}>비밀번호 찾기</Text>
           </TouchableOpacity>
         </View>
@@ -61,13 +64,13 @@ const styles = StyleSheet.create({
   },
   container: {
     flex: 1,
-    flexDirection: 'row',
-    justifyContent: 'center',
+    flexDirection: "row",
+    justifyContent: "center",
     paddingTop: 8,
     gap: 12,
   },
   text: {
     fontSize: 14,
-    color: '#8D786D', 
+    color: "#8D786D",
   },
 });
