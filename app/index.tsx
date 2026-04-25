@@ -1,5 +1,5 @@
-import { Redirect } from "expo-router";
+import Home from "./(tabs)";
 
 export default function Index() {
-  return <Redirect href="/camera/Loading" />;
+  return <Home />;
 }
