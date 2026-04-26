@@ -33,7 +33,7 @@ export default function MealRecord() {
   const [calories, setCalories] = useState("0");
   const [nutrients, setNutrients] =
     useState<Record<NutrientKey, string>>(defaultNutrients());
-  const [recordTime, setRecordTime] = useState("00:00AM");
+  const [recordTime, setRecordTime] = useState("00:00 AM");
 
   const analyzePhoto = async (_uri: string) => {
     // TODO: 실제 AI API 연동
@@ -75,6 +75,7 @@ export default function MealRecord() {
           mealName={mealName}
           onMealNameChange={setMealName}
           calories={calories}
+          onCaloriesChange={setCalories}
           recordTime={recordTime}
           nutrients={nutrients}
           onNutrientChange={(key, value) =>

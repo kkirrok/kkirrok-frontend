@@ -14,10 +14,14 @@ const NUTRIENT_UNITS: Record<NutrientKey, string> = {
 };
 const NUTRIENT_KEYS = Object.keys(NUTRIENT_UNITS) as NutrientKey[];
 
+const onlyNumber = (value: string) =>
+  value.replace(/[^0-9.]/g, "").replace(/(\..*)\./g, "$1");
+
 type Props = {
   mealName: string;
   onMealNameChange: (v: string) => void;
   calories: string;
+  onCaloriesChange?: (value: string) => void;
   recordTime: string;
   nutrients: Record<NutrientKey, string>;
   onNutrientChange: (key: NutrientKey, value: string) => void;
@@ -27,6 +31,7 @@ export default function MealCards({
   mealName,
   onMealNameChange,
   calories,
+  onCaloriesChange,
   recordTime,
   nutrients,
   onNutrientChange,
@@ -47,7 +52,15 @@ export default function MealCards({
       <View style={styles.infoRow}>
         <BlurView intensity={40} tint="dark" style={[styles.card, styles.flex]}>
           <Text style={styles.cardLabel}>칼로리</Text>
-          <Text style={styles.inputValue}>{calories} Kcal</Text>
+          <View style={styles.calorieValueRow}>
+            <TextInput
+              value={calories}
+              onChangeText={(v) => onCaloriesChange?.(onlyNumber(v))}
+              keyboardType="numeric"
+              style={[styles.inputValue, styles.calorieInput]}
+            />
+            <Text style={styles.calorieUnit}>Kcal</Text>
+          </View>
         </BlurView>
         <BlurView intensity={40} tint="dark" style={[styles.card, styles.flex]}>
           <Text style={styles.cardLabel}>끼록 시간</Text>
@@ -63,7 +76,7 @@ export default function MealCards({
             <View style={styles.nutrientValueRow}>
               <TextInput
                 value={nutrients[key]}
-                onChangeText={(v) => onNutrientChange(key, v)}
+                onChangeText={(v) => onNutrientChange(key, onlyNumber(v))}
                 keyboardType="numeric"
                 style={styles.nutrientValue}
               />
@@ -141,5 +154,23 @@ const styles = StyleSheet.create({
     ...Typography.title.xs,
     color: Colors.gray[200],
     paddingBottom: 2,
+  },
+  calorieValueRow: {
+    flexDirection: "row",
+    alignItems: "flex-end",
+    alignSelf: "flex-end",
+    gap: 4,
+  },
+
+  calorieInput: {
+    padding: 0,
+    minWidth: 12,
+    textAlign: "right",
+  },
+
+  calorieUnit: {
+    ...Typography.title.xs,
+    color: Colors.gray[200],
+    paddingBottom: 4,
   },
 });
