@@ -118,7 +118,7 @@ export default function MealDonutChart({
             key={seg.label}
             color={seg.color}
             label={seg.label}
-            value="0%"
+            value="%"
           />
         ))}
       </View>
