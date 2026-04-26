@@ -76,12 +76,14 @@ function LegendDot({
 
 type Props = {
   photo: string | null;
+  mealName?: string;
   recognitionFailed: boolean;
   onCameraPress: () => void;
 };
 
 export default function MealDonutChart({
   photo,
+  mealName,
   recognitionFailed,
   onCameraPress,
 }: Props) {
@@ -95,11 +97,19 @@ export default function MealDonutChart({
           activeOpacity={0.7}
         >
           {photo ? (
-            <Image
-              source={{ uri: photo }}
-              style={styles.chartPhoto}
-              resizeMode="cover"
-            />
+            <View>
+              <Image
+                source={{ uri: photo }}
+                style={styles.chartPhoto}
+                resizeMode="cover"
+              />
+
+              {!!mealName && (
+                <View style={styles.mealNameBadge}>
+                  <Text style={styles.mealNameText}>{mealName}</Text>
+                </View>
+              )}
+            </View>
           ) : (
             <View style={styles.cameraContent}>
               <Ionicons name="camera" size={48} color={Colors.gray[100]} />
@@ -182,5 +192,20 @@ const styles = StyleSheet.create({
     ...Typography.caption[1],
     color: Colors.gray[300],
     marginLeft: 2,
+  },
+  mealNameBadge: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 18,
+    alignItems: "center",
+  },
+  mealNameText: {
+    ...Typography.caption[1],
+    color: Colors.gray[100],
+    backgroundColor: Colors.main[500],
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 999,
   },
 });
