@@ -1,9 +1,10 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState, useEffect } from 'react';
 import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
-import { router } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import KkButton from '@/components/KkButton';
 import { Dimensions } from 'react-native';
+import { setMealPhoto } from '@/utils/mealPhotoStore';
 
 const { height } = Dimensions.get('window');
 
@@ -12,6 +13,7 @@ const CAMERA_HEIGHT = height * 0.45;
 const GAP = 24;
 
 export default function CameraScreen() {
+  const { source } = useLocalSearchParams<{ source?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [mode, setMode] = useState<'food' | 'nutrition'>('food');
@@ -42,11 +44,17 @@ export default function CameraScreen() {
     if (!cameraRef.current) return;
 
     const photo = await cameraRef.current.takePictureAsync();
+    if (!photo) return;
 
-    router.push({
-      pathname: '/camera/Preview',
-      params: { uri: photo.uri },
-    });
+    if (source === 'meal') {
+      setMealPhoto(photo.uri);
+      router.back();
+    } else {
+      router.push({
+        pathname: '/camera/Preview',
+        params: { uri: photo.uri },
+      });
+    }
   };
 
   return (
