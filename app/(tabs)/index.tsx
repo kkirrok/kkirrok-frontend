@@ -110,7 +110,7 @@ export default function Home() {
           </View>
 
           {/* 이전 기록 */}
-          <View style={styles.row}>
+          <View style={[styles.row, { marginBottom: 98 }]}>
             <Card>
               <Text style={styles.cardTitle}>이전 요일들 기록 기반 피드백</Text>
               <Text style={styles.cardDesc2}>
