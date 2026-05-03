@@ -74,7 +74,7 @@ export default function Home() {
           <Text style={styles.sectionTitle}>오늘의 피드백</Text>
           <Text style={styles.subTitle}>152kcal에 딱 맞는 운동</Text>
 
-          <View style={styles.row}>
+          <View style={[styles.row, { marginBottom: 8 }]}>
             <Card>
               <Text style={styles.cardTitle}>자전거</Text>
               <Text style={styles.cardDesc}>1시간 타면 200kcal가 소모되어요!</Text>
@@ -94,7 +94,7 @@ export default function Home() {
           </View>
 
           <Text style={styles.subTitle}>남은 1848kcal는 이렇게 채워봐요!</Text>
-          <View style={styles.row}>
+          <View style={[styles.row, { marginBottom: 16 }]}>
             <Card>
               <Text style={styles.cardTitle}>샐러드</Text>
               <Text style={styles.cardDesc}>
@@ -113,7 +113,7 @@ export default function Home() {
           <View style={styles.row}>
             <Card>
               <Text style={styles.cardTitle}>이전 요일들 기록 기반 피드백</Text>
-              <Text style={styles.cardDesc}>
+              <Text style={styles.cardDesc2}>
                 나트륨을 많이 먹으셨네요 줄이세요
               </Text>
             </Card>
@@ -138,13 +138,13 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: 20,
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-SemiBold",
     textAlign: "center",
     color: "#FDFCFC",
   },
   nickname: {
     fontSize: 18,
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-SemiBold",
     textAlign: "center",
     marginBottom: 8,
     color: "#FDFCFC",
@@ -166,20 +166,21 @@ const styles = StyleSheet.create({
   notice: {
     fontSize: 18,
     color: "#FDFCFC",
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-SemiBold",
   },
   subNotice: {
     fontSize: 14,
     color: "#E7E2DF",
+    fontFamily: "Pretendard-SemiBold",
   },
   sectionTitle: {
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-SemiBold",
     fontSize: 20,
     color: "#FDFCFC",
     marginTop: 16,
   },
   subTitle: {
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-SemiBold",
     fontSize: 18,
     color: "#E7E2DF",
   },
@@ -191,7 +192,7 @@ const styles = StyleSheet.create({
   nutrientLabel: {
     width: "20%",
     fontSize: 16,
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-SemiBold",
     color: "#E7E2DF",
   },
   barBg: {
@@ -209,7 +210,7 @@ const styles = StyleSheet.create({
   nutrientValue: {
     color: "#E7E2DF",
     fontSize: 14,
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-Regular",
   },
   row: {
     flexDirection: "row",
@@ -232,10 +233,16 @@ const styles = StyleSheet.create({
   cardTitle: {
     color: "#E7E2DF",
     fontSize: 16,
-    fontWeight: "semibold",
+    fontFamily: "Pretendard-SemiBold",
   },
   cardDesc: {
     color: "#E7E2DF",
     fontSize: 12,
+    fontFamily: "Pretendard-Regular",
+  },
+  cardDesc2: {
+    color: "#E7E2DF",
+    fontSize: 14,
+    fontFamily: "Pretendard-Regular",
   },
 });
