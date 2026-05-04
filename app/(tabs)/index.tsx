@@ -1,6 +1,6 @@
+import BellIcon from "@/assets/icons/bell.svg";
 import KkBackground from "@/components/KkBackground";
 import KkLogoHeader from "@/components/KkLogoHeader";
-import BellIcon from "@/assets/icons/bell.svg"; 
 import {
   Image,
   ScrollView,
@@ -43,7 +43,7 @@ export default function Home() {
         <KkLogoHeader />
         <View style={styles.container}>
           {/* 프로필 카드 */}
-          <Card style={{ borderWidth: 0.5, borderColor: "#FF8868", }}>
+          <Card style={{ borderWidth: 0.5, borderColor: "#FF8868" }}>
             <Text style={styles.title}>디저트 집착 유형</Text>
             <Text style={styles.nickname}>뀨뀨뀨님</Text>
             <Image
@@ -55,7 +55,14 @@ export default function Home() {
           </Card>
 
           {/* 기록 안내 */}
-          <Card style={{ alignItems: "center", marginTop: 16, borderWidth: 0.5, borderColor: "#FF8868", }}>
+          <Card
+            style={{
+              alignItems: "center",
+              marginTop: 16,
+              borderWidth: 0.5,
+              borderColor: "#FF8868",
+            }}
+          >
             <Text style={styles.notice}>끼록할 시간이에요!</Text>
             <Text style={styles.subNotice}>현재 먹고 있는 메뉴는?</Text>
           </Card>
@@ -77,7 +84,9 @@ export default function Home() {
           <View style={[styles.row, { marginBottom: 8 }]}>
             <Card>
               <Text style={styles.cardTitle}>자전거</Text>
-              <Text style={styles.cardDesc}>1시간 타면 200kcal가 소모되어요!</Text>
+              <Text style={styles.cardDesc}>
+                1시간 타면 200kcal가 소모되어요!
+              </Text>
               <View style={styles.tagRow}>
                 <Text style={styles.tag}>유산소</Text>
                 <BellIcon width={40} height={40} />
@@ -85,7 +94,9 @@ export default function Home() {
             </Card>
             <Card>
               <Text style={styles.cardTitle}>자전거</Text>
-              <Text style={styles.cardDesc}>1시간 타면 200kcal가 소모되어요!</Text>
+              <Text style={styles.cardDesc}>
+                1시간 타면 200kcal가 소모되어요!
+              </Text>
               <View style={styles.tagRow}>
                 <Text style={styles.tag}>유산소</Text>
                 <BellIcon width={40} height={40} />
@@ -218,13 +229,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tagRow: {
-     flexDirection: "row",
+    flexDirection: "row",
     justifyContent: "space-between",
     gap: 8,
     alignItems: "flex-end",
   },
   tag: {
-    borderRadius: 16, 
+    borderRadius: 16,
     paddingHorizontal: 8,
     paddingVertical: 4,
     backgroundColor: "#372E2A",
