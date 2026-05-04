@@ -6,18 +6,42 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 interface KkHeaderProps {
   title: string;
   variant?: "back" | "close";
+  onBackPress?: () => void;
   onClose?: () => void;
 }
 
-export default function KkHeader({ title, variant = "back", onClose }: KkHeaderProps) {
+export default function KkHeader({
+  title,
+  variant = "back",
+  onBackPress,
+  onClose,
+}: KkHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
+
+  const handleBackPress = () => {
+    if (onBackPress) {
+      onBackPress();
+      return;
+    }
+
+    router.back();
+  };
+
+  const handleClosePress = () => {
+    if (onClose) {
+      onClose();
+      return;
+    }
+
+    router.back();
+  };
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
       <View style={styles.inner}>
         {variant === "back" ? (
-          <TouchableOpacity onPress={() => router.back()} style={styles.button}>
+          <TouchableOpacity onPress={handleBackPress} style={styles.button}>
             <Ionicons name="chevron-back" size={28} color="white" />
           </TouchableOpacity>
         ) : (
@@ -27,7 +51,7 @@ export default function KkHeader({ title, variant = "back", onClose }: KkHeaderP
         <Text style={styles.title}>{title}</Text>
 
         {variant === "close" ? (
-          <TouchableOpacity onPress={onClose ?? (() => router.back())} style={styles.button}>
+          <TouchableOpacity onPress={handleClosePress} style={styles.button}>
             <Ionicons name="close" size={28} color="white" />
           </TouchableOpacity>
         ) : (
