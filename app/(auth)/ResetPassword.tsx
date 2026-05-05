@@ -54,7 +54,7 @@ export default function ResetPassword() {
         onClose={() => setModalVisible(false)}
         message={"비밀번호 변경 중이에요.\n지금 나가면 작성한 정보가 사라져요."}
         cancelText="홈으로 이동"
-        onCancelPress={() => router.replace("/(auth)/Login")}
+        onCancelPress={() => router.replace("/")}
         buttonText="계속 작성하기"
         onButtonPress={() => setModalVisible(false)}
       />

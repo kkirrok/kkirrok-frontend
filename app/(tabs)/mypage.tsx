@@ -10,6 +10,7 @@ import ProfileIcon from "@/assets/icons/profile.svg";
 export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
+  const router = useRouter();
   
   return (
     <KkBackground>
@@ -35,8 +36,14 @@ export default function MyPage() {
         <Text style={styles.sectionTitle}>내 정보</Text>
 
         <MenuItem title="프로필 변경" />
-        <MenuItem title="비밀번호 변경" />
-        <MenuItem title="권장 칼로리 변경" />
+        <MenuItem
+          title="비밀번호 변경"
+          onPress={() => {
+            router.push('/(auth)/ResetPassword');
+          }}
+        />
+        <MenuItem 
+        title="권장 칼로리 변경" />
 
         <View style={styles.divider} />
 
