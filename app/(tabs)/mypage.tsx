@@ -43,7 +43,11 @@ export default function MyPage() {
           }}
         />
         <MenuItem 
-        title="권장 칼로리 변경" />
+          title="권장 칼로리 변경"
+          onPress={() => {
+            router.push('/(auth)/ResetKcal');
+          }}
+        />
 
         <View style={styles.divider} />
 
