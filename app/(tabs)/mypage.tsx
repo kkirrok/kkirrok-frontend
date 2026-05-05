@@ -35,7 +35,12 @@ export default function MyPage() {
         
         <Text style={styles.sectionTitle}>내 정보</Text>
 
-        <MenuItem title="프로필 변경" />
+        <MenuItem
+          title="프로필 변경"
+          onPress={() => {
+            router.push('/(auth)/ProfileEdit');
+          }}
+        />
         <MenuItem
           title="비밀번호 변경"
           onPress={() => {
