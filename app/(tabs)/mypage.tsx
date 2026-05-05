@@ -7,7 +7,7 @@ import { useRouter } from 'expo-router';
 import BellIcon from "@/assets/icons/bell.svg";
 import ProfileIcon from "@/assets/icons/profile.svg";
 
-export default function Page() {
+export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
   
