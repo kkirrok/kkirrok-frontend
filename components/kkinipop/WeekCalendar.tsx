@@ -76,8 +76,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   dayCellActive: { backgroundColor: Colors.main[500] },
-  dayNum: { ...Typography.body.m, color: Colors.gray[300] },
+  dayNum: { ...Typography.body.m, color: Colors.gray[200] },
   dayNumActive: { color: Colors.gray[100] },
-  dayLabel: { ...Typography.caption[1], color: Colors.gray[500] },
+  dayLabel: { ...Typography.caption[1], color: Colors.gray[200] },
   dayLabelActive: { color: Colors.gray[100] },
 });

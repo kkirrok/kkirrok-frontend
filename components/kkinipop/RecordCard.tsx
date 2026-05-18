@@ -224,8 +224,8 @@ export default function RecordCard({
 const styles = StyleSheet.create({
   card: {
     flex: 1,
-    aspectRatio: 0.85,
-    borderRadius: 20,
+    aspectRatio: 1,
+    borderRadius: 24,
     overflow: "hidden",
     borderWidth: 1,
     borderColor: Colors.main[100],
