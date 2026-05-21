@@ -1,2 +1,4 @@
-import { View } from 'react-native';
-export default function PlusPage() { return <View />; }
+import { View } from "react-native";
+export default function PlusPage() {
+  return <View />;
+}
