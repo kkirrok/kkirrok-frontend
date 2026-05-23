@@ -2,12 +2,14 @@ import KkBackground from "@/components/KkBackground";
 import { Image, View } from "react-native";
 import { useLocalSearchParams } from 'expo-router';
 import KkButton from "@/components/KkButton";
+import KkHeader from '@/components/KkHeader';
 
 export default function Preview() {
   const { uri } = useLocalSearchParams<{ uri: string }>();
 
   return (
     <KkBackground>
+      <KkHeader title="끼록하기" />
       <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 }}>
         <Image
           source={{ uri }}

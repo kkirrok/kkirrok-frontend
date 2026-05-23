@@ -5,6 +5,7 @@ import { router, useLocalSearchParams } from 'expo-router';
 import KkButton from '@/components/KkButton';
 import { Dimensions } from 'react-native';
 import { setMealPhoto } from '@/utils/mealPhotoStore';
+import KkHeader from '@/components/KkHeader';
 
 const { height } = Dimensions.get('window');
 
@@ -59,6 +60,8 @@ export default function CameraScreen() {
 
   return (
     <View style={styles.container}>
+      <KkHeader title="끼록하기" />
+
       <View style={styles.topContainer}>
         <View style={styles.row}>
           <KkButton
