@@ -2,6 +2,7 @@ import { View, Text, Animated, Easing } from 'react-native';
 import { useEffect, useRef, useState } from 'react';
 import KkBackground from '@/components/KkBackground';
 import KkButton from '@/components/KkButton';
+import KkHeader from '@/components/KkHeader';
 
 export default function Loading() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
@@ -26,6 +27,7 @@ export default function Loading() {
 
   return (
     <KkBackground>
+      <KkHeader title="끼록하기" />
       <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
         <Animated.View
           style={{
