@@ -2,6 +2,7 @@ import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useRouter } from "expo-router";
 
 const WEEK_DAYS = ["일", "월", "화", "수", "목", "금", "토"];
 
@@ -24,6 +25,7 @@ export default function MonthCalendar({
   onPrevMonth,
   onNextMonth,
 }: Props) {
+  const router = useRouter();
   const daysInMonth = new Date(year, month, 0).getDate();
   const firstDayOfWeek = new Date(year, month - 1, 1).getDay();
 
@@ -38,6 +40,17 @@ export default function MonthCalendar({
     rows.push(cells.slice(i, i + 7));
   }
 
+  const handlePressWeeklyReport = () => {
+    router.push({
+      pathname: "/weeklyreport",
+      params: {
+        year: String(year),
+        month: String(month),
+        ...(todayDay > 0 ? { day: String(todayDay) } : {}),
+      },
+    });
+  };
+
   return (
     <View style={styles.container}>
       <View style={styles.header}>
@@ -51,7 +64,9 @@ export default function MonthCalendar({
           <Ionicons name="chevron-forward" size={20} color={Colors.gray[200]} />
         </TouchableOpacity>
         <View style={{ flex: 1 }} />
-        <Ionicons name="bar-chart" size={22} color={Colors.gray[100]} />
+        <TouchableOpacity onPress={handlePressWeeklyReport} hitSlop={8}>
+          <Ionicons name="bar-chart" size={22} color={Colors.gray[100]} />
+        </TouchableOpacity>
       </View>
 
       <View style={styles.weekRow}>
