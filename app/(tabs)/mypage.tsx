@@ -1,4 +1,4 @@
-import { View, Text, ScrollView, StyleSheet, Image, TouchableOpacity } from 'react-native'
+import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
 import { SafeAreaView } from 'react-native-safe-area-context';
 import KkBackground from "@/components/KkBackground";
 import KkModal from "@/components/KkModal";
@@ -6,11 +6,24 @@ import { useState } from 'react';
 import { useRouter } from 'expo-router';
 import BellIcon from "@/assets/icons/bell.svg";
 import ProfileIcon from "@/assets/icons/profile.svg";
+import { signOut } from '@/utils/api/authApi';
+import { tokenStore } from '@/utils/store/tokenStore';
 
 export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
   const router = useRouter();
+
+  const handleLogout = async () => {
+    try {
+      await signOut();
+    } catch {
+      // 서버 오류여도 로컬 토큰은 삭제하고 로그인으로 이동
+    } finally {
+      await tokenStore.remove();
+      router.replace('/(auth)/Login');
+    }
+  };
   
   return (
     <KkBackground>
@@ -86,7 +99,7 @@ export default function MyPage() {
           onButtonPress={() => {
             setModalVisible(false);
             if (modalType === 'logout') {
-              // 로그아웃 로직
+              handleLogout();
             } else if (modalType === 'withdraw') {
               // 회원 탈퇴 로직
             }
