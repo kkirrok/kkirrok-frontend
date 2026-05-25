@@ -1,15 +1,20 @@
-import { View, Image, StyleSheet } from "react-native";
+import { useRouter } from "expo-router";
+import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BellIcon from "@/assets/icons/bell.svg"; 
+import BellIcon from "@/assets/icons/bell.svg";
 
 export default function KkLogoHeader() {
+  const router = useRouter();
+
   return (
     <SafeAreaView>
       <View style={styles.header}>
         {/* 임시 로고 이미지 */}
         <BellIcon width={24} height={24} />
 
-        <BellIcon width={24} height={24} />
+        <TouchableOpacity onPress={() => router.push("/notification")}>
+          <BellIcon width={24} height={24} />
+        </TouchableOpacity>
       </View>
     </SafeAreaView>
   );
