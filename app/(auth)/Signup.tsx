@@ -7,7 +7,7 @@ import { sendEmailVerification, verifyEmailCode } from "@/utils/api/authApi";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Signup() {
   const router = useRouter();
@@ -24,7 +24,10 @@ export default function Signup() {
     try {
       await sendEmailVerification(email);
     } catch (e) {
-      Alert.alert("발송 실패", e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.");
+      Alert.alert(
+        "발송 실패",
+        e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
+      );
     } finally {
       setSendingEmail(false);
     }
@@ -37,7 +40,10 @@ export default function Signup() {
       setIsVerified(verified);
       if (!verified) Alert.alert("인증 실패", "인증번호를 다시 확인해 주세요.");
     } catch (e) {
-      Alert.alert("인증 실패", e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.");
+      Alert.alert(
+        "인증 실패",
+        e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
+      );
     } finally {
       setVerifying(false);
     }
@@ -48,16 +54,20 @@ export default function Signup() {
       <KkHeader
         title="회원가입"
         variant="close"
-        onClose={() => isVerified ? setModalVisible(true) : router.back()}
+        onClose={() => (isVerified ? router.back() : setModalVisible(true))}
       />
-      <SafeAreaView style={{ flex: 1 }} edges={['bottom']}>
+      <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
         <View style={styles.content}>
           <KkTextBox
             label="이메일"
             value={email}
             onChangeText={setEmail}
             placeholder="이메일을 입력해 주세요."
-            error={email && !email.includes('@') ? '올바르지 않은 형태의 이메일입니다.' : undefined}
+            error={
+              email && !email.includes("@")
+                ? "올바르지 않은 형태의 이메일입니다."
+                : undefined
+            }
             rightButton={
               <KkButton
                 title="이메일 인증"
@@ -72,7 +82,11 @@ export default function Signup() {
             value={verificationCode}
             onChangeText={setVerificationCode}
             placeholder="인증번호를 입력해 주세요."
-            error={verificationCode && verificationCode.length !== 6 ? '올바르지 않은 인증번호입니다.' : undefined}
+            error={
+              verificationCode && verificationCode.length !== 6
+                ? "올바르지 않은 인증번호입니다."
+                : undefined
+            }
             rightButton={
               <KkButton
                 title={isVerified ? "인증완료" : "인증하기"}
@@ -87,10 +101,20 @@ export default function Signup() {
             <KkButton
               title="다음"
               disabled={!email || !verificationCode || !isVerified}
-              onPress={() => router.push({ pathname: "/(auth)/SignupPassword", params: { email } })}
+              onPress={() =>
+                router.push({
+                  pathname: "/(auth)/SignupPassword",
+                  params: { email },
+                })
+              }
             />
-            <TouchableOpacity style={styles.loginLink} onPress={() => router.back()}>
-              <Text style={styles.loginText}>이미 계정이 있으신가요? 로그인</Text>
+            <TouchableOpacity
+              style={styles.loginLink}
+              onPress={() => router.back()}
+            >
+              <Text style={styles.loginText}>
+                이미 계정이 있으신가요? 로그인
+              </Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -99,7 +123,9 @@ export default function Signup() {
       <KkModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        message={"아직 가입이 완료되지 않았어요.\n지금 나가면 작성된 정보가 사라져요."}
+        message={
+          "아직 가입이 완료되지 않았어요.\n지금 나가면 작성된 정보가 사라져요."
+        }
         cancelText="홈으로 이동"
         onCancelPress={() => router.replace("/(auth)/Login")}
         buttonText="계속 작성하기"
