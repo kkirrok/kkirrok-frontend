@@ -19,7 +19,7 @@ export default function Index() {
         if (role === "PENDING") {
           router.replace("/(auth)/KkirokStart");
         } else {
-          router.replace("/(auth)/Login");
+          router.replace("/(tabs)");
         }
       } catch {
         router.replace("/(auth)/Login");
