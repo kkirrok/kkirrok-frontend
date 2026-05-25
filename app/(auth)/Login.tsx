@@ -2,18 +2,39 @@ import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import KkTextBox from "@/components/KkTextBox";
+import { loginLocal } from "@/utils/api/authApi";
+import { tokenStore } from "@/utils/store/tokenStore";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  const handleLogin = async () => {
+    setLoading(true);
+    try {
+      const res = await loginLocal(email, password);
+      await tokenStore.save(res.data.access_token);
+      await tokenStore.setOnboarding(res.data.onboarding_completed);
+      if (res.data.onboarding_completed) {
+        router.replace("/(tabs)");
+      } else {
+        router.replace("/(auth)/KkirokStart");
+      }
+    } catch (e) {
+      Alert.alert("로그인 실패", e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.");
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KkBackground>
-      <KkHeader title="로그인 하기" variant="back" />
+      <KkHeader title="로그인 하기" />
       <View style={styles.content}>
         <KkTextBox
           label="이메일"
@@ -26,13 +47,14 @@ export default function Login() {
           value={password}
           onChangeText={setPassword}
           placeholder="비밀번호를 입력해 주세요."
+          secureTextEntry
         />
 
         <View style={styles.button}>
           <KkButton
             title="로그인 하기"
-            disabled={!email || !password}
-            onPress={() => {}}
+            disabled={!email || !password || loading}
+            onPress={handleLogin}
           />
         </View>
 
@@ -45,6 +67,12 @@ export default function Login() {
 
           <TouchableOpacity onPress={() => router.push("/(auth)/FindPassword")}>
             <Text style={styles.text}>비밀번호 찾기</Text>
+          </TouchableOpacity>
+
+          <Text style={styles.text}> | </Text>
+
+          <TouchableOpacity onPress={() => router.push("/(auth)/Signup")}>
+            <Text style={styles.text}>회원가입</Text>
           </TouchableOpacity>
         </View>
       </View>
