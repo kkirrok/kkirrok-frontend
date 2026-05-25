@@ -2,7 +2,6 @@ import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
-import KkTextBox from "@/components/KkTextBox";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View, Text, TextInput } from "react-native";
