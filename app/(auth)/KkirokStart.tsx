@@ -3,8 +3,9 @@ import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
+import { tokenStore } from "@/utils/store/tokenStore";
 import { useRouter } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
@@ -23,6 +24,12 @@ const formatPhone = (digits: string): string => {
 export default function KkirokStart() {
   const router = useRouter();
   const [name, setName] = useState("");
+
+  useEffect(() => {
+    tokenStore.get().then((token) => {
+      if (!token) router.replace("/(auth)/Login");
+    });
+  }, [router]);
   const [birthdateRaw, setBirthdateRaw] = useState("");
   const [phoneRaw, setPhoneRaw] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
