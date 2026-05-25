@@ -16,9 +16,11 @@ export default function ProfileSetting() {
   const [modalVisible, setModalVisible] = useState(false);
 
   useEffect(() => {
-    tokenStore.get().then((token) => {
-      if (!token) router.replace("/(auth)/Login");
-    });
+    tokenStore.get()
+      .then((token) => {
+        if (!token) router.replace("/(auth)/Login");
+      })
+      .catch(() => router.replace("/(auth)/Login"));
   }, [router]);
 
   return (
