@@ -19,8 +19,10 @@ export default function MyPage() {
       await signOut();
     } catch {
       // 서버 오류여도 로컬 토큰은 삭제하고 로그인으로 이동
-    } finally {
+    }
+    try {
       await tokenStore.remove();
+    } finally {
       router.replace('/(auth)/Login');
     }
   };

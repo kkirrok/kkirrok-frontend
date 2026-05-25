@@ -22,6 +22,11 @@ export default function SignupPassword() {
   const isSubmitEnabled = password.length >= 8 && password === confirmPassword;
 
   const handleSignUp = async () => {
+    if (!email) {
+      Alert.alert("오류", "이메일 정보가 없습니다. 처음부터 다시 시도해 주세요.");
+      router.replace("/(auth)/Signup");
+      return;
+    }
     setLoading(true);
     try {
       const res = await signUpLocal(email, password);
