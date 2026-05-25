@@ -26,9 +26,11 @@ export default function KkirokStart() {
   const [name, setName] = useState("");
 
   useEffect(() => {
-    tokenStore.get().then((token) => {
-      if (!token) router.replace("/(auth)/Login");
-    });
+    tokenStore.get()
+      .then((token) => {
+        if (!token) router.replace("/(auth)/Login");
+      })
+      .catch(() => router.replace("/(auth)/Login"));
   }, [router]);
   const [birthdateRaw, setBirthdateRaw] = useState("");
   const [phoneRaw, setPhoneRaw] = useState("");
