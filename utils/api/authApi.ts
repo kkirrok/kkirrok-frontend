@@ -5,6 +5,12 @@ import { AuthResponse, SetProfileParams } from "@/utils/types/auth";
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 if (!BASE_URL) throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
 
+async function getRequiredToken(): Promise<string> {
+  const token = await tokenStore.get();
+  if (!token) throw new Error("인증 토큰이 없습니다. 다시 로그인해 주세요.");
+  return token;
+}
+
 export async function sendEmailVerification(email: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/v1/users/email-verification/send`, {
     method: "POST",
@@ -30,7 +36,7 @@ export async function verifyEmailCode(email: string, code: string): Promise<bool
 }
 
 export async function setProfile(params: SetProfileParams, imageUri?: string): Promise<void> {
-  const token = await tokenStore.get();
+  const token = await getRequiredToken();
 
   // React Native FormData doesn't serialize Blob correctly at the native layer.
   // Writing JSON to a temp file and using its URI is the reliable multipart approach in RN.
@@ -85,7 +91,7 @@ export async function loginLocal(email: string, password: string): Promise<AuthR
 }
 
 export async function getUserRole(): Promise<string> {
-  const token = await tokenStore.get();
+  const token = await getRequiredToken();
   const res = await fetch(`${BASE_URL}/v1/users/auth/role`, {
     headers: { Authorization: `Bearer ${token}` },
   });
@@ -97,7 +103,7 @@ export async function getUserRole(): Promise<string> {
 }
 
 export async function signOut(): Promise<void> {
-  const token = await tokenStore.get();
+  const token = await getRequiredToken();
   const res = await fetch(`${BASE_URL}/v1/users/sign-out`, {
     method: "POST",
     headers: { Authorization: `Bearer ${token}` },
