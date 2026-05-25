@@ -22,9 +22,10 @@ export default function MyPage() {
     }
     try {
       await tokenStore.remove();
-    } finally {
-      router.replace('/(auth)/Login');
+    } catch {
+      // 토큰 삭제 실패해도 로그인으로 이동
     }
+    router.replace('/(auth)/Login');
   };
   
   return (
