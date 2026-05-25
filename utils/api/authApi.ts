@@ -3,6 +3,7 @@ import { tokenStore } from "@/utils/store/tokenStore";
 import { AuthResponse, SetProfileParams } from "@/utils/types/auth";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
+if (!BASE_URL) throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
 
 export async function sendEmailVerification(email: string): Promise<void> {
   const res = await fetch(`${BASE_URL}/v1/users/email-verification/send`, {
