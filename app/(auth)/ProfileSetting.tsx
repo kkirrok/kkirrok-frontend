@@ -2,8 +2,9 @@ import KkBackground from '@/components/KkBackground'
 import KkHeader from '@/components/KkHeader'
 import KkModal from '@/components/KkModal';
 import ProfileForm from '@/components/KkProfileForm';
+import { tokenStore } from '@/utils/store/tokenStore';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 
 export default function ProfileSetting() {
   const router = useRouter();
@@ -13,6 +14,12 @@ export default function ProfileSetting() {
     phone: string;
   }>();
   const [modalVisible, setModalVisible] = useState(false);
+
+  useEffect(() => {
+    tokenStore.get().then((token) => {
+      if (!token) router.replace("/(auth)/Login");
+    });
+  }, [router]);
 
   return (
     <KkBackground>
