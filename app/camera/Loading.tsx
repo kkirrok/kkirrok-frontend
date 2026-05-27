@@ -1,24 +1,22 @@
 import { View, Text, Animated, Easing } from 'react-native';
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef } from 'react';
 import KkBackground from '@/components/KkBackground';
 import KkButton from '@/components/KkButton';
 import KkHeader from '@/components/KkHeader';
 
 export default function Loading() {
   const rotateAnim = useRef(new Animated.Value(0)).current;
-  const animationRef = useRef(null);
-  const [isAnalyzing, setIsAnalyzing] = useState(true);
 
   useEffect(() => {
     Animated.loop(
       Animated.timing(rotateAnim, {
         toValue: 1,
-        duration: 2000, 
-        easing: Easing.bezier(0.4, 0.0, 0.2, 1), 
+        duration: 2000,
+        easing: Easing.bezier(0.4, 0.0, 0.2, 1),
         useNativeDriver: true,
       })
     ).start();
-  }, []);
+  }, [rotateAnim]);
   
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],

@@ -73,7 +73,7 @@ export default function GroupDrawer({ visible, onClose }: Props) {
         setView("main");
       });
     }
-  }, [visible]);
+  }, [visible, slideAnim, fadeAnim]);
 
   const activeGroup = MOCK_GROUPS.find((g) => g.id === activeGroupId) ?? MOCK_GROUPS[0];
 

@@ -1,10 +1,9 @@
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useRef, useState, useEffect } from 'react';
-import { StyleSheet, View, Text, TouchableOpacity } from 'react-native';
+import { Dimensions, StyleSheet, View, Text, TouchableOpacity } from 'react-native';
 import { router, useLocalSearchParams } from 'expo-router';
 import KkButton from '@/components/KkButton';
-import { Dimensions } from 'react-native';
-import { setMealPhoto } from '@/utils/mealPhotoStore';
+import { setMealPhoto } from '@/utils/store/mealPhotoStore';
 import KkHeader from '@/components/KkHeader';
 
 const { height } = Dimensions.get('window');
@@ -19,14 +18,11 @@ export default function CameraScreen() {
   const cameraRef = useRef<CameraView | null>(null);
   const [mode, setMode] = useState<'food' | 'nutrition'>('food');
 
-  const [foodPhoto, setFoodPhoto] = useState(null);
-  const [nutrition, setNutrition] = useState(null);
-
   useEffect(() => {
     if (permission && !permission.granted) {
       requestPermission();
     }
-  }, [permission]);
+  }, [permission, requestPermission]);
 
   if (!permission) return <View />;
 
