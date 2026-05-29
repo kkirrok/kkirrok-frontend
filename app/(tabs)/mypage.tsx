@@ -8,14 +8,16 @@ import BellIcon from "@/assets/icons/bell.svg";
 import ProfileIcon from "@/assets/icons/profile.svg";
 import { signOut } from '@/utils/api/authApi';
 import { tokenStore } from '@/utils/store/tokenStore';
+import { Image } from 'expo-image';
 import { useProfile } from '@/hooks/useProfile';
+import { useProfileImage } from '@/hooks/useProfileImage';
 
 export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
   const router = useRouter();
   const { data: profile, isLoading, error } = useProfile();
-  console.log(profile, isLoading, error);
+  const { data: imageUrl } = useProfileImage(profile?.profile_image);
 
   const handleLogout = async () => {
     try {
@@ -44,7 +46,15 @@ export default function MyPage() {
         </SafeAreaView>
 
         <View style={styles.profileSection}>
-          <ProfileIcon width={72} height={72} />
+          {imageUrl ? (
+            <Image
+              source={{ uri: imageUrl }}
+              style={styles.profileImage}
+              contentFit="cover"
+            />
+          ) : (
+            <ProfileIcon width={72} height={72} />
+          )}
           <View>
             <Text style={styles.name}>
               {isLoading ? "로딩중..." : `${profile?.nickname}님`}
@@ -198,5 +208,10 @@ const styles = StyleSheet.create({
     backgroundColor: '#D0C7C2',
     opacity: 0.4,
     marginVertical: 24,
+  },
+  profileImage: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
   },
 });
