@@ -8,11 +8,14 @@ import BellIcon from "@/assets/icons/bell.svg";
 import ProfileIcon from "@/assets/icons/profile.svg";
 import { signOut } from '@/utils/api/authApi';
 import { tokenStore } from '@/utils/store/tokenStore';
+import { useProfile } from '@/hooks/useProfile';
 
 export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
   const router = useRouter();
+  const { data: profile, isLoading, error } = useProfile();
+  console.log(profile, isLoading, error);
 
   const handleLogout = async () => {
     try {
@@ -43,7 +46,9 @@ export default function MyPage() {
         <View style={styles.profileSection}>
           <ProfileIcon width={72} height={72} />
           <View>
-            <Text style={styles.name}>김스냅님</Text>
+            <Text style={styles.name}>
+              {isLoading ? "로딩중..." : `${profile?.nickname}님`}
+            </Text>
             <Text style={styles.sub}>#디저트집착유형</Text>
             <Text style={styles.sub2}>권장 칼로리: 2500kcal</Text>
           </View>
@@ -63,7 +68,7 @@ export default function MyPage() {
             router.push('/(auth)/ResetPassword');
           }}
         />
-        <MenuItem 
+        <MenuItem
           title="권장 칼로리 변경"
           onPress={() => {
             router.push('/(auth)/ResetKcal');
