@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=https://coderabbit.ai/integrations/schema.v2.json
+language: "ko-KR"
+tone_instructions: ""
+early_access: false
+enable_free_tier: true
+inheritance: false
+
+reviews:
+  profile: "chill"
+  request_changes_workflow: false
+  high_level_summary: true
+  poem: false
+  review_status: true
+  auto_review:
+    enabled: true
+    drafts: false
+  path_filters:
+    - "!node_modules/**"
+    - "!android/**"
+    - "!ios/**"
+    - "!.expo/**"
+    - "!assets/**"
+    - "!**/*.lock"
+    - "!expo-env.d.ts"
+  path_instructions:
+    - path: "app/**"
+      instructions: |
+        Expo Router 파일 기반 라우팅 구조입니다.
+        - router.replace vs router.push 사용이 적절한지 확인해 주세요.
+        - 인증이 필요한 화면에서 tokenStore를 통한 토큰 검증 여부를 확인해 주세요.
+        - 화면 진입 시 불필요한 중복 API 호출이 없는지 확인해 주세요.
+
+    - path: "utils/api/**"
+      instructions: |
+        API 함수 파일입니다.
+        - 모든 fetch/axios 호출에 에러 처리가 있는지 확인해 주세요.
+        - Authorization 헤더가 필요한 엔드포인트에 토큰이 올바르게 포함되는지 확인해 주세요.
+        - 응답 타입이 utils/types에 정의되어 있는지 확인해 주세요.
+        - API baseURL, endpoint path, HTTP method가 명세와 일치하는지 확인해 주세요.
+
+    - path: "utils/types/**"
+      instructions: |
+        API 요청/응답 타입 정의 파일입니다.
+        - any 사용을 피하고 명확한 타입을 정의했는지 확인해 주세요.
+        - 백엔드 응답 필드와 프론트 타입명이 일치하는지 확인해 주세요.
+        - nullable 값에 대한 처리가 타입에 반영되어 있는지 확인해 주세요.
+
+    - path: "utils/store/**"
+      instructions: |
+        상태 저장소 파일입니다.
+        - 민감한 데이터(토큰 등)는 expo-secure-store를 사용하는지 확인해 주세요.
+        - 전역 상태가 불필요하게 비대해지지 않았는지 확인해 주세요.
+
+    - path: "components/**"
+      instructions: |
+        공통 컴포넌트 파일입니다. Kk 접두사를 사용합니다.
+        - props 타입이 명확하게 정의되어 있는지 확인해 주세요.
+        - StyleSheet.create를 사용하고 있는지 확인해 주세요.
+        - 재사용 가능한 UI와 화면 종속 UI가 적절히 분리되어 있는지 확인해 주세요.
+
+chat:
+  auto_reply: true
+
+knowledge_base:
+  opt_out: false
+  web_search:
+    enabled: false
+
+code_generation:
+  docstrings:
+    enabled: false
+  unit_tests:
+    enabled: false
+
+issue_enrichment:
+  enabled: false

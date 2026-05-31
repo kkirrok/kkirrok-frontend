@@ -1,7 +1,7 @@
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
-import { consumeMealPhoto } from "@/utils/mealPhotoStore";
+import { consumeMealPhoto } from "@/utils/store/mealPhotoStore";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useState } from "react";
 import { ScrollView, StyleSheet } from "react-native";

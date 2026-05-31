@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, ViewStyle, TextStyle, TouchableOpacity } from 'react-native';
+import { View, TextInput, Text, StyleSheet, ViewStyle, TextStyle, TouchableOpacity, KeyboardTypeOptions } from 'react-native';
 
 type KkTextBoxProps = {
   label?: string;
@@ -7,10 +7,11 @@ type KkTextBoxProps = {
   onChangeText: (text: string) => void;
   placeholder?: string;
   disabled?: boolean;
-  error?: string; 
+  error?: string;
   type?: 'text' | 'date';
-  rightButton?: React.ReactNode; 
+  rightButton?: React.ReactNode;
   secureTextEntry?: boolean;
+  keyboardType?: KeyboardTypeOptions;
   style?: ViewStyle;
   inputStyle?: TextStyle;
 };
@@ -25,6 +26,7 @@ export default function KkTextBox({
   type = 'text',
   rightButton,
   secureTextEntry = false,
+  keyboardType,
   style,
   inputStyle,
 }: KkTextBoxProps) {
@@ -63,6 +65,7 @@ export default function KkTextBox({
         editable={!disabled}
         placeholderTextColor="#C7C7C7"
         secureTextEntry={secureTextEntry}
+        keyboardType={keyboardType}
         onFocus={() => setIsFocused(true)}
         onBlur={() => setIsFocused(false)}
         style={[styles.textInput, inputStyle]}

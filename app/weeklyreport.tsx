@@ -1,6 +1,5 @@
 import { useMemo } from "react";
 import { ScrollView, StyleSheet, Text, View } from "react-native";
-import { Ionicons } from "@expo/vector-icons";
 import CalendarIcon from "@/assets/icons/CalendarIcon.svg";
 import { useLocalSearchParams } from "expo-router";
 import KkBackground from "@/components/KkBackground";
