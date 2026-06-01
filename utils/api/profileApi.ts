@@ -28,7 +28,6 @@ export async function getProfile(): Promise<UserProfile> {
   });
 
   const json = await res.json();
-  console.log("프로필 API 응답:", json);
 
   if (!res.ok) {
     throw new Error(json.message ?? "프로필 조회에 실패했습니다.");
