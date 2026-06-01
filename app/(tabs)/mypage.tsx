@@ -57,7 +57,7 @@ export default function MyPage() {
           )}
           <View>
             <Text style={styles.name}>
-              {isLoading ? "로딩중..." : `${profile?.nickname}님`}
+              {isLoading ? "로딩중..." : profile?.nickname ? `${profile.nickname}님` : "guest님"}
             </Text>
             <Text style={styles.sub}>#디저트집착유형</Text>
             <Text style={styles.sub2}>권장 칼로리: 2500kcal</Text>
