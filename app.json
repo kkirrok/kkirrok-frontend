@@ -11,7 +11,12 @@
     "ios": {
       "supportsTablet": true,
       "infoPlist": {
-        "NSPhotoLibraryUsageDescription": "프로필 사진을 설정하기 위해 사진 접근 권한이 필요합니다."
+        "NSPhotoLibraryUsageDescription": "프로필 사진을 설정하기 위해 사진 접근 권한이 필요합니다.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["naverkkirrok"]
+          }
+        ]
       }
     },
     "android": {
