@@ -84,10 +84,12 @@ export async function loginSocial(socialType: "KAKAO" | "NAVER", accessToken: st
     body: JSON.stringify({ social_type: socialType, access_token: accessToken }),
   });
 
-  const json = await res.json();
-  if (!res.ok) throw new Error(json.message ?? "소셜 로그인에 실패했습니다.");
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "소셜 로그인에 실패했습니다.");
+  }
 
-  return json;
+  return res.json();
 }
 
 export async function loginLocal(email: string, password: string): Promise<AuthResponse> {
