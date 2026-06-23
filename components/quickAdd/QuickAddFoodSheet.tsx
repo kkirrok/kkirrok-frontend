@@ -5,6 +5,7 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Keyboard,
+  KeyboardAvoidingView,
   Modal,
   Platform,
   Text,
@@ -16,10 +17,10 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 import NutrientInput from "./NutrientInput";
 import { styles } from "./QuickAddFoodSheet.styles";
 
-type MealType = "아침" | "점심" | "저녁" | "간식";
-const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식"];
+type MealType = "아침" | "점심" | "저녁" | "간식" | "야식";
+const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식", "야식"];
 
-type FormData = {
+export type QuickAddFormData = {
   mealType: MealType;
   name: string;
   calories: string;
@@ -30,7 +31,7 @@ type FormData = {
   sodium: string;
 };
 
-const INITIAL_FORM: FormData = {
+const INITIAL_FORM: QuickAddFormData = {
   mealType: "아침",
   name: "",
   calories: "",
@@ -43,30 +44,36 @@ const INITIAL_FORM: FormData = {
 
 type Props = {
   visible: boolean;
+  initialMealType?: MealType;
   onClose: () => void;
-  onSubmit?: (data: FormData) => void;
+  onSubmit?: (data: QuickAddFormData) => void;
 };
 
 export default function QuickAddFoodSheet({
   visible,
+  initialMealType = "아침",
   onClose,
   onSubmit,
 }: Props) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(600)).current;
-  const keyboardOffset = useRef(new Animated.Value(0)).current;
-  const [form, setForm] = useState<FormData>(INITIAL_FORM);
+  const [form, setForm] = useState<QuickAddFormData>({ ...INITIAL_FORM, mealType: initialMealType });
   const [showExitModal, setShowExitModal] = useState(false);
 
-  const isAllFilled = (Object.keys(INITIAL_FORM) as (keyof FormData)[])
+  const isAllFilled = (Object.keys(INITIAL_FORM) as (keyof QuickAddFormData)[])
     .filter((k) => k !== "mealType")
     .every((k) => form[k] !== "");
 
+  const hasAnyInput = (Object.keys(INITIAL_FORM) as (keyof QuickAddFormData)[])
+    .filter((k) => k !== "mealType")
+    .some((k) => form[k] !== "");
+
   useEffect(() => {
     if (visible) {
+      setForm((prev) => ({ ...prev, mealType: initialMealType }));
       Animated.spring(slideAnim, {
         toValue: 0,
-        useNativeDriver: false,
+        useNativeDriver: true,
         damping: 22,
         stiffness: 220,
       }).start();
@@ -74,44 +81,16 @@ export default function QuickAddFoodSheet({
       Animated.timing(slideAnim, {
         toValue: 600,
         duration: 220,
-        useNativeDriver: false,
-      }).start(() => setForm(INITIAL_FORM));
+        useNativeDriver: true,
+      }).start(() => setForm({ ...INITIAL_FORM, mealType: initialMealType }));
     }
-  }, [visible, slideAnim]);
+  }, [visible, slideAnim, initialMealType]);
 
-  useEffect(() => {
-    const showEvent =
-      Platform.OS === "ios" ? "keyboardWillShow" : "keyboardDidShow";
-    const hideEvent =
-      Platform.OS === "ios" ? "keyboardWillHide" : "keyboardDidHide";
-
-    const showSub = Keyboard.addListener(showEvent, (e) => {
-      Animated.timing(keyboardOffset, {
-        toValue: e.endCoordinates.height,
-        duration: Platform.OS === "ios" ? e.duration : 250,
-        useNativeDriver: false,
-      }).start();
-    });
-
-    const hideSub = Keyboard.addListener(hideEvent, (e) => {
-      Animated.timing(keyboardOffset, {
-        toValue: 0,
-        duration: Platform.OS === "ios" ? e.duration : 200,
-        useNativeDriver: false,
-      }).start();
-    });
-
-    return () => {
-      showSub.remove();
-      hideSub.remove();
-    };
-  }, [keyboardOffset]);
-
-  const set = (key: keyof FormData) => (value: string) =>
+  const set = (key: keyof QuickAddFormData) => (value: string) =>
     setForm((prev) => ({ ...prev, [key]: value }));
 
   const handleClose = () => {
-    if (isAllFilled) {
+    if (hasAnyInput) {
       setShowExitModal(true);
     } else {
       onClose();
@@ -131,7 +110,10 @@ export default function QuickAddFoodSheet({
       onRequestClose={handleClose}
       statusBarTranslucent
     >
-      <View style={styles.root}>
+      <KeyboardAvoidingView
+        style={styles.root}
+        behavior={Platform.OS === "ios" ? "padding" : "height"}
+      >
         <TouchableOpacity
           style={styles.backdrop}
           onPress={handleClose}
@@ -142,7 +124,6 @@ export default function QuickAddFoodSheet({
             styles.sheet,
             { paddingBottom: insets.bottom + 16 },
             { transform: [{ translateY: slideAnim }] },
-            { marginBottom: keyboardOffset },
           ]}
         >
           <View style={styles.header}>
@@ -249,7 +230,7 @@ export default function QuickAddFoodSheet({
             />
           </View>
         </Animated.View>
-      </View>
+      </KeyboardAvoidingView>
 
       <KkModal
         visible={showExitModal}
