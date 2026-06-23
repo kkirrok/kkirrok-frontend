@@ -12,7 +12,7 @@ export default function Index() {
       try {
         const token = await tokenStore.get();
         if (!token) {
-          router.replace("/(auth)/Login");
+          router.replace("/(auth)/SocialLogin");
           return;
         }
         const role = await getUserRole();
@@ -22,7 +22,7 @@ export default function Index() {
           router.replace("/(tabs)");
         }
       } catch {
-        router.replace("/(auth)/Login");
+        router.replace("/(auth)/SocialLogin");
       }
     }
     checkAuth();

@@ -30,7 +30,7 @@ export default function MyPage() {
     } catch {
       // 토큰 삭제 실패해도 로그인으로 이동
     }
-    router.replace('/(auth)/Login');
+    router.replace('/(auth)/SocialLogin');
   };
   
   return (
