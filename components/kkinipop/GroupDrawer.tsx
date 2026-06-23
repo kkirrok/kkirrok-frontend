@@ -1,4 +1,5 @@
 import KkModal from "@/components/KkModal";
+import * as Clipboard from "expo-clipboard";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import {
@@ -390,7 +391,10 @@ export default function GroupDrawer({
                       {activeGroup.invite_code}
                     </Text>
                   </View>
-                  <TouchableOpacity style={styles.copyPill}>
+                  <TouchableOpacity
+                    style={styles.copyPill}
+                    onPress={() => Clipboard.setStringAsync(activeGroup.invite_code)}
+                  >
                     <Text style={styles.copyPillText}>복사</Text>
                   </TouchableOpacity>
                 </View>
@@ -445,7 +449,10 @@ export default function GroupDrawer({
                       {activeGroup.invite_code}
                     </Text>
                   </View>
-                  <TouchableOpacity style={styles.copyPill}>
+                  <TouchableOpacity
+                    style={styles.copyPill}
+                    onPress={() => Clipboard.setStringAsync(activeGroup.invite_code)}
+                  >
                     <Text style={styles.copyPillText}>복사</Text>
                   </TouchableOpacity>
                 </View>
@@ -518,12 +525,13 @@ export default function GroupDrawer({
       <KkModal
         visible={showLeaveConfirm}
         onClose={() => setShowLeaveConfirm(false)}
+        title={activeGroup?.is_leader ? "그룹에서 나가시겠습니까?" : undefined}
         message={
           activeGroup?.is_leader
-            ? `'${activeGroup.name}'\n방장이 나가면 그룹 전체가 삭제돼요.\n그래도 나갈까요?`
+            ? `방장이 나가면 그룹이 즉시 삭제됩니다.\n모든 구성원이 더 이상 접근할 수 없으며,\n저장된 기록도 모두 사라집니다.`
             : `'${activeGroup?.name ?? ""}'\n그룹에서 나갈까요?`
         }
-        buttonText="나가기"
+        buttonText={activeGroup?.is_leader ? "삭제하기" : "나가기"}
         onButtonPress={async () => {
           if (!activeGroup) return;
           setShowLeaveConfirm(false);
