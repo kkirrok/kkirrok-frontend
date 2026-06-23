@@ -1,11 +1,12 @@
 import { tokenStore } from "@/utils/store/tokenStore";
+import type { MealType } from "@/utils/types/meal";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 if (!BASE_URL) throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
 
 type MealTimeSlot = "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK" | "MIDNIGHT_SNACK";
 
-const MEAL_TIME_SLOT_MAP: Record<string, MealTimeSlot> = {
+const MEAL_TIME_SLOT_MAP: Record<MealType, MealTimeSlot> = {
   아침: "BREAKFAST",
   점심: "LUNCH",
   저녁: "DINNER",
@@ -15,7 +16,7 @@ const MEAL_TIME_SLOT_MAP: Record<string, MealTimeSlot> = {
 
 export type RecordMealManualParams = {
   date: string;
-  mealType: string;
+  mealType: MealType;
   foodName: string;
   kcal: number;
   carbohydrateG: number;
@@ -42,7 +43,7 @@ export async function recordMealManual(params: RecordMealManualParams): Promise<
     },
     body: JSON.stringify({
       recorded_at: recordedAt,
-      meal_time_slot: MEAL_TIME_SLOT_MAP[params.mealType] ?? "SNACK",
+      meal_time_slot: MEAL_TIME_SLOT_MAP[params.mealType],
       category: "MEAL",
       food_name: params.foodName,
       kcal: params.kcal,
@@ -55,6 +56,7 @@ export async function recordMealManual(params: RecordMealManualParams): Promise<
     }),
   });
 
-  const json = await res.json();
+  let json: { message?: string } = {};
+  try { json = await res.json(); } catch {}
   if (!res.ok) throw new Error(json.message ?? "식단 기록에 실패했습니다.");
 }

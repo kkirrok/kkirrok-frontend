@@ -129,18 +129,23 @@ export default function ReportPage() {
 
   const handleQuickAddSubmit = useCallback(
     async (data: QuickAddFormData) => {
-      await recordMealManual({
-        date: formatDate(year, month, selectedDay),
-        mealType: data.mealType,
-        foodName: data.name,
-        kcal: Number(data.calories),
-        carbohydrateG: Number(data.carbs),
-        proteinG: Number(data.protein),
-        fatG: Number(data.fat),
-        sugarG: Number(data.sugar),
-        sodiumMg: Number(data.sodium),
-      });
-      setRefreshKey((k) => k + 1);
+      try {
+        await recordMealManual({
+          date: formatDate(year, month, selectedDay),
+          mealType: data.mealType,
+          foodName: data.name,
+          kcal: Number(data.calories),
+          carbohydrateG: Number(data.carbs),
+          proteinG: Number(data.protein),
+          fatG: Number(data.fat),
+          sugarG: Number(data.sugar),
+          sodiumMg: Number(data.sodium),
+        });
+        setRefreshKey((k) => k + 1);
+      } catch (err) {
+        // TODO: 토스트 등 사용자 피드백 추가
+        console.error(err);
+      }
     },
     [year, month, selectedDay],
   );

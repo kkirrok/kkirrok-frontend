@@ -46,7 +46,7 @@ type Props = {
   visible: boolean;
   initialMealType?: MealType;
   onClose: () => void;
-  onSubmit?: (data: QuickAddFormData) => void;
+  onSubmit?: (data: QuickAddFormData) => Promise<void> | void;
 };
 
 export default function QuickAddFoodSheet({
@@ -97,8 +97,8 @@ export default function QuickAddFoodSheet({
     }
   };
 
-  const handleSubmit = () => {
-    onSubmit?.(form);
+  const handleSubmit = async () => {
+    await onSubmit?.(form);
     onClose();
   };
 
