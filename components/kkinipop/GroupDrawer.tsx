@@ -1,7 +1,14 @@
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
-import { createGroup, deleteGroup, fetchGroupMembers, joinGroup, kickMember, quitGroup } from "@/utils/api/kkinipopApi";
+import {
+  createGroup,
+  deleteGroup,
+  fetchGroupMembers,
+  joinGroup,
+  kickMember,
+  quitGroup,
+} from "@/utils/api/kkinipopApi";
 import { getDownloadUrl } from "@/utils/api/r2Api";
 import { Group, GroupMember } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
@@ -22,7 +29,6 @@ import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const DRAWER_WIDTH = Dimensions.get("window").width * 0.68;
 
-
 type Props = {
   visible: boolean;
   onClose: () => void;
@@ -35,12 +41,24 @@ type Props = {
   onGroupLeft: (groupId: number) => void;
 };
 
-export default function GroupDrawer({ visible, onClose, groups, selectedGroupId, onSelectGroup, onGroupCreated, onGroupJoined, onGroupDeleted, onGroupLeft }: Props) {
+export default function GroupDrawer({
+  visible,
+  onClose,
+  groups,
+  selectedGroupId,
+  onSelectGroup,
+  onGroupCreated,
+  onGroupJoined,
+  onGroupDeleted,
+  onGroupLeft,
+}: Props) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const [mounted, setMounted] = useState(false);
-  const [view, setView] = useState<"main" | "manage" | "create" | "join">("main");
+  const [view, setView] = useState<"main" | "manage" | "create" | "join">(
+    "main",
+  );
   const [createName, setCreateName] = useState("");
   const [creating, setCreating] = useState(false);
   const [joinCode, setJoinCode] = useState("");
@@ -54,6 +72,9 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
   const [membersLoading, setMembersLoading] = useState(false);
   const [kickTarget, setKickTarget] = useState<GroupMember | null>(null);
   const [kicking, setKicking] = useState(false);
+
+  const activeGroup =
+    groups.find((g) => g.group_id === selectedGroupId) ?? groups[0];
 
   useEffect(() => {
     if (view !== "manage" || !activeGroup) return;
@@ -85,7 +106,7 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
       })
       .finally(() => setMembersLoading(false));
     return () => controller.abort();
-  }, [view, activeGroup?.group_id]);
+  }, [view, activeGroup]);
 
   useEffect(() => {
     if (visible) {
@@ -122,8 +143,6 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
       });
     }
   }, [visible, slideAnim, fadeAnim]);
-
-  const activeGroup = groups.find((g) => g.group_id === selectedGroupId) ?? groups[0];
 
   return (
     <Modal
@@ -162,10 +181,17 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
               {/* 그룹 생성 뷰 헤더 */}
               <View style={styles.manageHeader}>
                 <TouchableOpacity
-                  onPress={() => { setView("main"); setCreateName(""); }}
+                  onPress={() => {
+                    setView("main");
+                    setCreateName("");
+                  }}
                   style={styles.backBtn}
                 >
-                  <Ionicons name="chevron-back" size={24} color={Colors.gray[100]} />
+                  <Ionicons
+                    name="chevron-back"
+                    size={24}
+                    color={Colors.gray[100]}
+                  />
                 </TouchableOpacity>
                 <Text style={styles.manageTitle}>그룹 생성</Text>
                 <View style={styles.backBtn} />
@@ -187,7 +213,10 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
               <View style={{ flex: 1 }} />
 
               <TouchableOpacity
-                style={[styles.createBtn, (!createName.trim() || creating) && styles.createBtnDisabled]}
+                style={[
+                  styles.createBtn,
+                  (!createName.trim() || creating) && styles.createBtnDisabled,
+                ]}
                 disabled={!createName.trim() || creating}
                 onPress={async () => {
                   setCreating(true);
@@ -215,10 +244,17 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
               {/* 그룹 참여 뷰 헤더 */}
               <View style={styles.manageHeader}>
                 <TouchableOpacity
-                  onPress={() => { setView("main"); setJoinCode(""); }}
+                  onPress={() => {
+                    setView("main");
+                    setJoinCode("");
+                  }}
                   style={styles.backBtn}
                 >
-                  <Ionicons name="chevron-back" size={24} color={Colors.gray[100]} />
+                  <Ionicons
+                    name="chevron-back"
+                    size={24}
+                    color={Colors.gray[100]}
+                  />
                 </TouchableOpacity>
                 <Text style={styles.manageTitle}>그룹 참여</Text>
                 <View style={styles.backBtn} />
@@ -240,7 +276,10 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
               <View style={{ flex: 1 }} />
 
               <TouchableOpacity
-                style={[styles.createBtn, (!joinCode.trim() || joining) && styles.createBtnDisabled]}
+                style={[
+                  styles.createBtn,
+                  (!joinCode.trim() || joining) && styles.createBtnDisabled,
+                ]}
                 disabled={!joinCode.trim() || joining}
                 onPress={async () => {
                   setJoining(true);
@@ -291,7 +330,9 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
                       >
                         <View style={styles.groupRow}>
                           <Text style={styles.groupName}>{group.name}</Text>
-                          <Text style={styles.groupLevel}>LV.{group.level}</Text>
+                          <Text style={styles.groupLevel}>
+                            LV.{group.level}
+                          </Text>
                         </View>
                       </TouchableOpacity>
                       <View style={styles.groupRow}>
@@ -316,7 +357,10 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
 
               {/* 그룹 생성 / 참여 */}
               <View style={styles.actionRow}>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => setView("create")}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => setView("create")}
+                >
                   <Ionicons
                     name="add-circle-outline"
                     size={22}
@@ -324,7 +368,10 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
                   />
                   <Text style={styles.actionLabel}>그룹 생성</Text>
                 </TouchableOpacity>
-                <TouchableOpacity style={styles.actionBtn} onPress={() => setView("join")}>
+                <TouchableOpacity
+                  style={styles.actionBtn}
+                  onPress={() => setView("join")}
+                >
                   <Ionicons
                     name="person-add"
                     size={20}
@@ -339,7 +386,9 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
                 <View style={styles.inviteRow}>
                   <View style={styles.inviteLeft}>
                     <Text style={styles.inviteLabel}>초대코드</Text>
-                    <Text style={styles.inviteCode}>{activeGroup.invite_code}</Text>
+                    <Text style={styles.inviteCode}>
+                      {activeGroup.invite_code}
+                    </Text>
                   </View>
                   <TouchableOpacity style={styles.copyPill}>
                     <Text style={styles.copyPillText}>복사</Text>
@@ -359,7 +408,11 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
                   <ActivityIndicator size="small" color={Colors.gray[400]} />
                 ) : (
                   <>
-                    <Ionicons name="exit-outline" size={20} color={Colors.gray[400]} />
+                    <Ionicons
+                      name="exit-outline"
+                      size={20}
+                      color={Colors.gray[400]}
+                    />
                     <Text style={styles.leaveText}>그룹 나가기</Text>
                   </>
                 )}
@@ -388,7 +441,9 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
                 <View style={styles.inviteRow}>
                   <View style={styles.inviteLeft}>
                     <Text style={styles.inviteLabel}>초대코드</Text>
-                    <Text style={styles.inviteCode}>{activeGroup.invite_code}</Text>
+                    <Text style={styles.inviteCode}>
+                      {activeGroup.invite_code}
+                    </Text>
                   </View>
                   <TouchableOpacity style={styles.copyPill}>
                     <Text style={styles.copyPillText}>복사</Text>
@@ -409,11 +464,16 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
                       <View key={member.member_id} style={styles.memberRow}>
                         <View style={styles.memberAvatarRow}>
                           {imageUri ? (
-                            <Image source={{ uri: imageUri }} style={styles.memberAvatar} />
+                            <Image
+                              source={{ uri: imageUri }}
+                              style={styles.memberAvatar}
+                            />
                           ) : (
                             <View style={styles.memberAvatar} />
                           )}
-                          <Text style={styles.memberName}>{member.nickname}</Text>
+                          <Text style={styles.memberName}>
+                            {member.nickname}
+                          </Text>
                           {member.leader && (
                             <Text style={styles.leaderBadge}>방장</Text>
                           )}
@@ -454,83 +514,85 @@ export default function GroupDrawer({ visible, onClose, groups, selectedGroupId,
           ) : null}
         </Animated.View>
       </View>
+
+      <KkModal
+        visible={showLeaveConfirm}
+        onClose={() => setShowLeaveConfirm(false)}
+        message={
+          activeGroup?.is_leader
+            ? `'${activeGroup.name}'\n방장이 나가면 그룹 전체가 삭제돼요.\n그래도 나갈까요?`
+            : `'${activeGroup?.name ?? ""}'\n그룹에서 나갈까요?`
+        }
+        buttonText="나가기"
+        onButtonPress={async () => {
+          if (!activeGroup) return;
+          setShowLeaveConfirm(false);
+          setLeaving(true);
+          try {
+            await quitGroup(activeGroup.group_id);
+            onGroupLeft(activeGroup.group_id);
+          } catch (err) {
+            console.error(err);
+          } finally {
+            setLeaving(false);
+          }
+        }}
+        cancelText="취소"
+        onCancelPress={() => setShowLeaveConfirm(false)}
+      />
+
+      <KkModal
+        visible={showDeleteConfirm}
+        onClose={() => setShowDeleteConfirm(false)}
+        message={`'${activeGroup?.name ?? ""}'\n그룹을 삭제할까요?\n삭제 후 복구할 수 없습니다.`}
+        buttonText="삭제하기"
+        onButtonPress={async () => {
+          if (!activeGroup) return;
+          setShowDeleteConfirm(false);
+          setDeleting(true);
+          try {
+            await deleteGroup(activeGroup.group_id);
+            onGroupDeleted(activeGroup.group_id);
+            setView("main");
+          } catch (err) {
+            console.error(err);
+          } finally {
+            setDeleting(false);
+          }
+        }}
+        cancelText="취소"
+        onCancelPress={() => setShowDeleteConfirm(false)}
+      />
+
+      <KkModal
+        visible={kickTarget !== null}
+        onClose={() => setKickTarget(null)}
+        message={`'${kickTarget?.nickname ?? ""}' 님을\n그룹에서 추방할까요?`}
+        buttonText="추방하기"
+        onButtonPress={async () => {
+          if (!activeGroup || !kickTarget) return;
+          setKickTarget(null);
+          setKicking(true);
+          try {
+            await kickMember(activeGroup.group_id, kickTarget.member_id);
+            setMembers((prev) =>
+              prev.filter((m) => m.member_id !== kickTarget.member_id),
+            );
+            setMemberImages((prev) => {
+              const next = { ...prev };
+              delete next[kickTarget.member_id];
+              return next;
+            });
+          } catch (err) {
+            console.error(err);
+          } finally {
+            setKicking(false);
+          }
+        }}
+        cancelText="취소"
+        onCancelPress={() => setKickTarget(null)}
+      />
     </Modal>
-
-    <KkModal
-      visible={showLeaveConfirm}
-      onClose={() => setShowLeaveConfirm(false)}
-      message={
-        activeGroup?.is_leader
-          ? `'${activeGroup.name}'\n방장이 나가면 그룹 전체가 삭제돼요.\n그래도 나갈까요?`
-          : `'${activeGroup?.name ?? ""}'\n그룹에서 나갈까요?`
-      }
-      buttonText="나가기"
-      onButtonPress={async () => {
-        if (!activeGroup) return;
-        setShowLeaveConfirm(false);
-        setLeaving(true);
-        try {
-          await quitGroup(activeGroup.group_id);
-          onGroupLeft(activeGroup.group_id);
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setLeaving(false);
-        }
-      }}
-      cancelText="취소"
-      onCancelPress={() => setShowLeaveConfirm(false)}
-    />
-
-    <KkModal
-      visible={showDeleteConfirm}
-      onClose={() => setShowDeleteConfirm(false)}
-      message={`'${activeGroup?.name ?? ""}'\n그룹을 삭제할까요?\n삭제 후 복구할 수 없습니다.`}
-      buttonText="삭제하기"
-      onButtonPress={async () => {
-        if (!activeGroup) return;
-        setShowDeleteConfirm(false);
-        setDeleting(true);
-        try {
-          await deleteGroup(activeGroup.group_id);
-          onGroupDeleted(activeGroup.group_id);
-          setView("main");
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setDeleting(false);
-        }
-      }}
-      cancelText="취소"
-      onCancelPress={() => setShowDeleteConfirm(false)}
-    />
-
-    <KkModal
-      visible={kickTarget !== null}
-      onClose={() => setKickTarget(null)}
-      message={`'${kickTarget?.nickname ?? ""}' 님을\n그룹에서 추방할까요?`}
-      buttonText="추방하기"
-      onButtonPress={async () => {
-        if (!activeGroup || !kickTarget) return;
-        setKickTarget(null);
-        setKicking(true);
-        try {
-          await kickMember(activeGroup.group_id, kickTarget.member_id);
-          setMembers((prev) => prev.filter((m) => m.member_id !== kickTarget.member_id));
-          setMemberImages((prev) => {
-            const next = { ...prev };
-            delete next[kickTarget.member_id];
-            return next;
-          });
-        } catch (err) {
-          console.error(err);
-        } finally {
-          setKicking(false);
-        }
-      }}
-      cancelText="취소"
-      onCancelPress={() => setKickTarget(null)}
-    />
   );
 }
 
