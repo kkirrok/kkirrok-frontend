@@ -4,16 +4,17 @@ import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MealCard from "./MealCard";
-import { MealRecord, MealType } from "./types";
+import { MealRecord, MealType } from "@/utils/types/meal";
 
-const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식"];
+const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식", "야식"];
 
 type Props = {
   dateLabel: string;
   meals: MealRecord[];
+  onAdd: (mealType: MealType) => void;
 };
 
-export default function MealSection({ dateLabel, meals }: Props) {
+export default function MealSection({ dateLabel, meals, onAdd }: Props) {
   const [activeTab, setActiveTab] = useState<MealType>("아침");
 
   const filtered = meals.filter((m) => m.mealType === activeTab);
@@ -26,6 +27,7 @@ export default function MealSection({ dateLabel, meals }: Props) {
           style={styles.addButton}
           hitSlop={8}
           activeOpacity={0.7}
+          onPress={() => onAdd(activeTab)}
         >
           <Ionicons name="add" size={24} color={Colors.gray[200]} />
         </TouchableOpacity>

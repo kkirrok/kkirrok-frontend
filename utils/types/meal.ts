@@ -1,4 +1,4 @@
-export type MealType = "아침" | "점심" | "저녁" | "간식";
+export type MealType = "아침" | "점심" | "저녁" | "간식" | "야식";
 
 export type MealRecord = {
   id: string;
@@ -22,4 +22,8 @@ export type DayNutrition = {
   maxProtein: number;
   fat: number;
   maxFat: number;
+  sugar: number;
+  maxSugar: number;
+  sodium: number;
+  maxSodium: number;
 };
