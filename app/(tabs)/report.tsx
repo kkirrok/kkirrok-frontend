@@ -3,57 +3,159 @@ import KkLogoHeader from "@/components/KkLogoHeader";
 import MealSection from "@/components/report/MealSection";
 import MonthCalendar from "@/components/report/MonthCalendar";
 import NutritionCard from "@/components/report/NutritionCard";
-import { MOCK_MEALS, MOCK_NUTRITION } from "@/components/report/mockData";
-import { useState } from "react";
+import { DayNutrition, MealRecord, MealType } from "@/utils/types/meal";
+import { fetchCalendar, fetchDailyCalendar, MealItem } from "@/utils/api/calendarApi";
+import { recordMealManual } from "@/utils/api/mealApi";
+import QuickAddFoodSheet, { QuickAddFormData } from "@/components/quickAdd/QuickAddFoodSheet";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-function toDateKey(year: number, month: number, day: number) {
+const MAX_CALORIES = 2000;
+const MAX_CARBS = 300;
+const MAX_PROTEIN = 55;
+const MAX_FAT = 54;
+const MAX_SUGAR = 50;
+const MAX_SODIUM = 2000;
+
+function formatDate(year: number, month: number, day: number) {
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-}
-
-function toMonthKey(year: number, month: number) {
-  return `${year}-${String(month).padStart(2, "0")}`;
-}
-
-function getMarkedDays(year: number, month: number): number[] {
-  const prefix = toMonthKey(year, month);
-  return Object.keys(MOCK_MEALS)
-    .filter((k) => k.startsWith(prefix))
-    .map((k) => parseInt(k.split("-")[2], 10));
 }
 
 function toDateLabel(month: number, day: number) {
   return `${month}월 ${day}일`;
 }
 
+function mapMealItem(item: MealItem, mealType: MealRecord["mealType"]): MealRecord {
+  return {
+    id: String(item.meal_id),
+    name: item.food_name,
+    calories: item.kcal,
+    carbs: item.carbohydrate_g,
+    protein: item.protein_g,
+    fat: item.fat_g,
+    sodium: item.sodium_mg,
+    sugar: item.sugar_g,
+    mealType,
+  };
+}
+
 export default function ReportPage() {
   const insets = useSafeAreaInsets();
   const tabBarHeight = Platform.OS === "ios" ? 60 + insets.bottom + 20 : 90;
 
-  const today = new Date();
-  const [year, setYear] = useState(today.getFullYear());
-  const [month, setMonth] = useState(today.getMonth() + 1);
-  const [selectedDay, setSelectedDay] = useState(9);
+  const [year, setYear] = useState(() => new Date().getFullYear());
+  const [month, setMonth] = useState(() => new Date().getMonth() + 1);
+  const [selectedDay, setSelectedDay] = useState(() => new Date().getDate());
+  const [markedDays, setMarkedDays] = useState<number[]>([]);
+  const [meals, setMeals] = useState<MealRecord[]>([]);
+  const [nutrition, setNutrition] = useState<DayNutrition | null>(null);
+  const [quickAddVisible, setQuickAddVisible] = useState(false);
+  const [quickAddMealType, setQuickAddMealType] = useState<MealType>("아침");
+  const [refreshKey, setRefreshKey] = useState(0);
 
-  const markedDays = getMarkedDays(year, month);
-  const dateKey = toDateKey(year, month, selectedDay);
-  const nutrition = MOCK_NUTRITION[dateKey] ?? null;
-  const meals = MOCK_MEALS[dateKey] ?? [];
+  useEffect(() => {
+    const controller = new AbortController();
+    fetchCalendar(year, month, controller.signal)
+      .then((data) => {
+        const energeticDays = data.day_infos
+          .filter((d) => d.status === "ENERGETIC")
+          .map((d) => d.day_of_month);
+        setMarkedDays(energeticDays);
+      })
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setMarkedDays([]);
+      });
+    return () => controller.abort();
+  }, [year, month, refreshKey]);
+
+  useEffect(() => {
+    setMeals([]);
+    setNutrition(null);
+    const controller = new AbortController();
+    const dateStr = formatDate(year, month, selectedDay);
+    fetchDailyCalendar(dateStr, controller.signal)
+      .then((data) => {
+        const allMeals: MealRecord[] = [
+          ...data.breakfast_meals.map((m) => mapMealItem(m, "아침")),
+          ...data.lunch_meals.map((m) => mapMealItem(m, "점심")),
+          ...data.dinner_meals.map((m) => mapMealItem(m, "저녁")),
+          ...data.snack_meals.map((m) => mapMealItem(m, "간식")),
+          ...data.midnight_snack_meals.map((m) => mapMealItem(m, "야식")),
+        ];
+        setMeals(allMeals);
+        setNutrition(
+          data.total_kcal > 0
+            ? {
+                calories: data.total_kcal,
+                maxCalories: MAX_CALORIES,
+                carbs: data.total_carbohydrate_g,
+                maxCarbs: MAX_CARBS,
+                protein: data.total_protein_g,
+                maxProtein: MAX_PROTEIN,
+                fat: data.total_fat_g,
+                maxFat: MAX_FAT,
+                sugar: data.total_sugar_g,
+                maxSugar: MAX_SUGAR,
+                sodium: data.total_sodium_mg,
+                maxSodium: MAX_SODIUM,
+              }
+            : null,
+        );
+      })
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setMeals([]);
+        setNutrition(null);
+      });
+    return () => controller.abort();
+  }, [year, month, selectedDay, refreshKey]);
+
+  const todayDay = useMemo(() => {
+    const now = new Date();
+    return now.getFullYear() === year && now.getMonth() + 1 === month
+      ? now.getDate()
+      : -1;
+  }, [year, month]);
+
   const dateLabel = toDateLabel(month, selectedDay);
-  const nutritionDateLabel = `${year}.${String(month).padStart(2, "0")}.${String(selectedDay).padStart(2, "0")}`;
+  const nutritionDateLabel = formatDate(year, month, selectedDay).replace(/-/g, ".");
 
-  const handlePrevMonth = () => {
-    if (month === 1) { setYear((y) => y - 1); setMonth(12); }
-    else setMonth((m) => m - 1);
-    setSelectedDay(1);
-  };
+  const handleAddMeal = useCallback((mealType: MealType) => {
+    setQuickAddMealType(mealType);
+    setQuickAddVisible(true);
+  }, []);
 
-  const handleNextMonth = () => {
-    if (month === 12) { setYear((y) => y + 1); setMonth(1); }
-    else setMonth((m) => m + 1);
+  const handleQuickAddSubmit = useCallback(
+    async (data: QuickAddFormData) => {
+      await recordMealManual({
+        date: formatDate(year, month, selectedDay),
+        mealType: data.mealType,
+        foodName: data.name,
+        kcal: Number(data.calories),
+        carbohydrateG: Number(data.carbs),
+        proteinG: Number(data.protein),
+        fatG: Number(data.fat),
+        sugarG: Number(data.sugar),
+        sodiumMg: Number(data.sodium),
+      });
+      setRefreshKey((k) => k + 1);
+    },
+    [year, month, selectedDay],
+  );
+
+  const handlePrevMonth = useCallback(() => {
+    setYear((y) => (month === 1 ? y - 1 : y));
+    setMonth((m) => (m === 1 ? 12 : m - 1));
     setSelectedDay(1);
-  };
+  }, [month]);
+
+  const handleNextMonth = useCallback(() => {
+    setYear((y) => (month === 12 ? y + 1 : y));
+    setMonth((m) => (m === 12 ? 1 : m + 1));
+    setSelectedDay(1);
+  }, [month]);
 
   return (
     <KkBackground>
@@ -66,7 +168,7 @@ export default function ReportPage() {
           year={year}
           month={month}
           markedDays={markedDays}
-          todayDay={today.getMonth() + 1 === month && today.getFullYear() === year ? today.getDate() : -1}
+          todayDay={todayDay}
           onSelectDay={setSelectedDay}
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}
@@ -76,8 +178,19 @@ export default function ReportPage() {
           <NutritionCard dateLabel={nutritionDateLabel} nutrition={nutrition} />
         )}
 
-        <MealSection dateLabel={dateLabel} meals={meals} />
+        <MealSection
+          key={`${year}-${month}-${selectedDay}`}
+          dateLabel={dateLabel}
+          meals={meals}
+          onAdd={handleAddMeal}
+        />
       </ScrollView>
+      <QuickAddFoodSheet
+        visible={quickAddVisible}
+        initialMealType={quickAddMealType}
+        onClose={() => setQuickAddVisible(false)}
+        onSubmit={handleQuickAddSubmit}
+      />
     </KkBackground>
   );
 }
