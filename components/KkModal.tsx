@@ -1,9 +1,12 @@
 import KkButton from "@/components/KkButton";
+import { Colors } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
 import { Modal, StyleSheet, Text, View } from "react-native";
 
 interface KkModalProps {
   visible: boolean;
   onClose: () => void;
+  title?: string;
   message: string;
   highlight?: string;
   buttonText: string;
@@ -15,6 +18,7 @@ interface KkModalProps {
 export default function KkModal({
   visible,
   onClose,
+  title,
   message,
   highlight,
   buttonText,
@@ -31,16 +35,23 @@ export default function KkModal({
     >
       <View style={styles.overlay}>
         <View style={styles.box}>
-          <Text style={styles.message}>
-            {message}
-            {highlight && (
-              <>
-                {"\n"}
-                <Text style={styles.highlight}>{highlight}</Text>
-                <Text style={styles.message}>입니다.</Text>
-              </>
-            )}
-          </Text>
+          {title ? (
+            <View style={styles.textBlock}>
+              <Text style={styles.title}>{title}</Text>
+              <Text style={styles.description}>{message}</Text>
+            </View>
+          ) : (
+            <Text style={styles.message}>
+              {message}
+              {highlight && (
+                <>
+                  {"\n"}
+                  <Text style={styles.highlight}>{highlight}</Text>
+                  <Text style={styles.message}>입니다.</Text>
+                </>
+              )}
+            </Text>
+          )}
 
           {cancelText ? (
             <View style={styles.rowButtons}>
@@ -68,31 +79,42 @@ export default function KkModal({
 const styles = StyleSheet.create({
   overlay: {
     flex: 1,
-    backgroundColor: "#1A1614B2",
+    backgroundColor: `${Colors.gray[1000]}B2`,
     justifyContent: "center",
     alignItems: "center",
     paddingHorizontal: 24,
   },
   box: {
     width: "100%",
-    backgroundColor: "#372E2A",
+    backgroundColor: Colors.gray[900],
     borderRadius: 20,
     paddingHorizontal: 24,
     paddingVertical: 28,
     alignItems: "center",
     gap: 20,
   },
-  message: {
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
-    color: "#FDFCFC",
+  textBlock: {
+    alignItems: "center",
+    gap: 6,
+  },
+  title: {
+    ...Typography.title.s,
+    color: Colors.gray[200],
     textAlign: "center",
-    lineHeight: 28,
+  },
+  description: {
+    ...Typography.body.m,
+    color: Colors.gray[200],
+    textAlign: "center",
+  },
+  message: {
+    ...Typography.title.s,
+    color: Colors.gray[100],
+    textAlign: "center",
   },
   highlight: {
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
-    color: "#FF8868",
+    ...Typography.title.s,
+    color: Colors.main[400],
   },
   singleButton: {
     width: "100%",
@@ -107,9 +129,9 @@ const styles = StyleSheet.create({
   },
   cancelButton: {
     flex: 1,
-    backgroundColor: "#A49289",
+    backgroundColor: Colors.gray[500],
   },
   cancelText: {
-    color: "#E7E2DF",
+    color: Colors.gray[200],
   },
 });
