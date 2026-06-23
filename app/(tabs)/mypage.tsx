@@ -16,7 +16,7 @@ export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
   const router = useRouter();
-  const { data: profile, isLoading, error } = useProfile();
+  const { data: profile, isLoading } = useProfile();
   const { data: imageUrl } = useProfileImage(profile?.profile_image);
 
   const handleLogout = async () => {
