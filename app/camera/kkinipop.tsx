@@ -5,9 +5,9 @@ import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
+import { Image } from "expo-image";
 import { router } from "expo-router";
 import { useRef, useState } from "react";
-import { Image } from "expo-image";
 import {
   Dimensions,
   StyleSheet,
@@ -53,7 +53,7 @@ export default function KkinipopCamera() {
       if (!photo?.uri) return;
       setCapturedUri(photo.uri);
     } catch (e) {
-      console.error('촬영 실패:', e);
+      console.error("촬영 실패:", e);
     } finally {
       setIsTaking(false);
     }
@@ -65,7 +65,13 @@ export default function KkinipopCamera() {
     return (
       <KkBackground>
         <View style={styles.headerAbsolute}>
-          <KkHeader title="끼니팝" onBackPress={() => { setCapturedUri(null); setCameraReady(false); }} />
+          <KkHeader
+            title="끼니팝"
+            onBackPress={() => {
+              setCapturedUri(null);
+              setCameraReady(false);
+            }}
+          />
         </View>
         <Image
           source={{ uri: capturedUri }}
@@ -120,7 +126,7 @@ export default function KkinipopCamera() {
           style={{ flex: 1 }}
           ref={cameraRef}
           onCameraReady={() => setCameraReady(true)}
-          onMountError={(error) => console.error('카메라 마운트 에러:', error)}
+          onMountError={(error) => console.error("카메라 마운트 에러:", error)}
         />
       </View>
 
@@ -209,11 +215,11 @@ const styles = StyleSheet.create({
     backgroundColor: Colors.gray[100],
   },
   previewImage: {
-    position: 'absolute',
+    position: "absolute",
     borderRadius: 20,
   },
   previewBtnWrap: {
-    position: 'absolute',
+    position: "absolute",
     left: 16,
     right: 16,
   },

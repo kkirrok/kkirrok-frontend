@@ -1,8 +1,8 @@
 import KkBackground from "@/components/KkBackground";
-import { Image, View } from "react-native";
-import { useLocalSearchParams } from 'expo-router';
 import KkButton from "@/components/KkButton";
-import KkHeader from '@/components/KkHeader';
+import KkHeader from "@/components/KkHeader";
+import { useLocalSearchParams } from "expo-router";
+import { Image, View } from "react-native";
 
 export default function Preview() {
   const { uri } = useLocalSearchParams<{ uri: string }>();
@@ -10,11 +10,18 @@ export default function Preview() {
   return (
     <KkBackground>
       <KkHeader title="끼록하기" />
-      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', paddingHorizontal: 12 }}>
+      <View
+        style={{
+          flex: 1,
+          alignItems: "center",
+          justifyContent: "center",
+          paddingHorizontal: 12,
+        }}
+      >
         <Image
           source={{ uri }}
           style={{
-            width: '100%',
+            width: "100%",
             aspectRatio: 1,
             borderRadius: 20,
           }}
@@ -23,9 +30,9 @@ export default function Preview() {
         <KkButton
           title="끼록하기"
           style={{ marginTop: 24 }}
-          onPress={() => console.log('사진 확인')}
+          onPress={() => console.log("사진 확인")}
         />
       </View>
     </KkBackground>
   );
-};
+}

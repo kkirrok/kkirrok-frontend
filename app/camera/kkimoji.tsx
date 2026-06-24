@@ -1,20 +1,28 @@
-import { CameraView, useCameraPermissions } from 'expo-camera';
-import { Image } from 'expo-image';
-import { useRef, useState } from 'react';
-import { Dimensions, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { router, useLocalSearchParams } from 'expo-router';
-import KkBackground from '@/components/KkBackground';
-import KkButton from '@/components/KkButton';
-import KkHeader from '@/components/KkHeader';
-import { Colors } from '@/constants/colors';
+import KkBackground from "@/components/KkBackground";
+import KkButton from "@/components/KkButton";
+import KkHeader from "@/components/KkHeader";
+import { Colors } from "@/constants/colors";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
+import { useRef, useState } from "react";
+import {
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
-const { width, height: screenHeight } = Dimensions.get('window');
+const { width, height: screenHeight } = Dimensions.get("window");
 
 export default function KkimojiCamera() {
   const { uri: paramUri } = useLocalSearchParams<{ uri?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
-  const [capturedUri, setCapturedUri] = useState<string | null>(paramUri ?? null);
+  const [capturedUri, setCapturedUri] = useState<string | null>(
+    paramUri ?? null,
+  );
   const [cameraReady, setCameraReady] = useState(false);
   const [isTaking, setIsTaking] = useState(false);
 
@@ -31,7 +39,7 @@ export default function KkimojiCamera() {
       if (!photo?.uri) return;
       setCapturedUri(photo.uri);
     } catch (e) {
-      console.error('촬영 실패:', e);
+      console.error("촬영 실패:", e);
     } finally {
       setIsTaking(false);
     }
@@ -91,13 +99,15 @@ export default function KkimojiCamera() {
       <View style={styles.headerAbsolute}>
         <KkHeader title="끼모지 만들기" />
       </View>
-      <View style={[styles.cameraWrapper, { top: camTop, width, height: width }]}>
+      <View
+        style={[styles.cameraWrapper, { top: camTop, width, height: width }]}
+      >
         <CameraView
           style={{ flex: 1 }}
           ref={cameraRef}
           facing="front"
           onCameraReady={() => setCameraReady(true)}
-          onMountError={(error) => console.error('카메라 마운트 에러:', error)}
+          onMountError={(error) => console.error("카메라 마운트 에러:", error)}
         />
       </View>
       <View style={[styles.shutterWrap, { top: shutterTop }]}>
@@ -120,40 +130,40 @@ const styles = StyleSheet.create({
   },
   permissionWrap: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     gap: 16,
     paddingHorizontal: 24,
   },
   permissionText: {
     color: Colors.gray[100],
-    fontFamily: 'Pretendard-SemiBold',
+    fontFamily: "Pretendard-SemiBold",
     fontSize: 16,
   },
   headerAbsolute: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
   },
   cameraWrapper: {
-    position: 'absolute',
-    overflow: 'hidden',
+    position: "absolute",
+    overflow: "hidden",
   },
   shutterWrap: {
-    position: 'absolute',
+    position: "absolute",
     left: 0,
     right: 0,
-    alignItems: 'center',
+    alignItems: "center",
   },
   shutterOuter: {
     width: 72,
     height: 72,
     borderRadius: 36,
     backgroundColor: Colors.main[500],
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: "center",
+    justifyContent: "center",
   },
   shutterInner: {
     width: 56,
@@ -164,16 +174,16 @@ const styles = StyleSheet.create({
   previewContainer: {
     flex: 1,
     paddingHorizontal: 16,
-    justifyContent: 'center',
+    justifyContent: "center",
     gap: 24,
   },
   previewImage: {
-    width: '100%',
+    width: "100%",
     aspectRatio: 1,
     borderRadius: 20,
   },
   previewButtons: {
-    flexDirection: 'row',
+    flexDirection: "row",
     gap: 12,
   },
   previewBtn: {
