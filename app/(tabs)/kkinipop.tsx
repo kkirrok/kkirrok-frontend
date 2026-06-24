@@ -8,8 +8,10 @@ import { MealRecord } from "@/components/kkinipop/types";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { fetchGroups } from "@/utils/api/kkinipopApi";
+import { tokenStore } from "@/utils/store/tokenStore";
 import { Group } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
+import { router } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   Pressable,
@@ -36,14 +38,21 @@ export default function KkinipopPage() {
 
   useEffect(() => {
     const controller = new AbortController();
-    fetchGroups(controller.signal)
-      .then((data) => {
-        setGroups(data);
-        if (data.length > 0) setSelectedGroupId(data[0].group_id);
-      })
-      .catch((err) => {
-        if (err.name !== "AbortError") console.error(err);
-      });
+    (async () => {
+      const token = await tokenStore.get();
+      if (!token) {
+        router.replace("/(auth)/Login");
+        return;
+      }
+      fetchGroups(controller.signal)
+        .then((data) => {
+          setGroups(data);
+          if (data.length > 0) setSelectedGroupId(data[0].group_id);
+        })
+        .catch((err) => {
+          if (err.name !== "AbortError") console.error(err);
+        });
+    })();
     return () => controller.abort();
   }, []);
 
@@ -105,8 +114,8 @@ export default function KkinipopPage() {
                 style={[
                   styles.progressFill,
                   {
-                    width: activeGroup
-                      ? `${Math.round((activeGroup.cur_exp / activeGroup.max_exp) * 100)}%`
+                    width: activeGroup && activeGroup.max_exp > 0
+                      ? `${Math.min(100, Math.round((activeGroup.cur_exp / activeGroup.max_exp) * 100))}%`
                       : "0%",
                   },
                 ]}
@@ -203,6 +212,15 @@ export default function KkinipopPage() {
             setSelectedGroupId(next.length > 0 ? next[0].group_id : null);
             return next;
           });
+        }}
+        onMemberKicked={(groupId) => {
+          setGroups((prev) =>
+            prev.map((g) =>
+              g.group_id === groupId
+                ? { ...g, member_count: Math.max(0, g.member_count - 1) }
+                : g,
+            ),
+          );
         }}
       />
     </KkBackground>

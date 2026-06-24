@@ -40,6 +40,7 @@ type Props = {
   onGroupJoined: (group: Group) => void;
   onGroupDeleted: (groupId: number) => void;
   onGroupLeft: (groupId: number) => void;
+  onMemberKicked: (groupId: number) => void;
 };
 
 export default function GroupDrawer({
@@ -52,6 +53,7 @@ export default function GroupDrawer({
   onGroupJoined,
   onGroupDeleted,
   onGroupLeft,
+  onMemberKicked,
 }: Props) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -80,9 +82,13 @@ export default function GroupDrawer({
   useEffect(() => {
     if (view !== "manage" || !activeGroup) return;
     const controller = new AbortController();
+    let cancelled = false;
     setMembersLoading(true);
+    setMembers([]);
+    setMemberImages({});
     fetchGroupMembers(activeGroup.group_id, controller.signal)
       .then(async (data) => {
+        if (cancelled) return;
         setMembers(data);
         const entries = await Promise.all(
           data
@@ -100,14 +106,19 @@ export default function GroupDrawer({
         for (const entry of entries) {
           if (entry) imageMap[entry[0]] = entry[1];
         }
-        setMemberImages(imageMap);
+        if (!cancelled) setMemberImages(imageMap);
       })
       .catch((err) => {
         if (err.name !== "AbortError") console.error(err);
       })
-      .finally(() => setMembersLoading(false));
-    return () => controller.abort();
-  }, [view, activeGroup]);
+      .finally(() => {
+        if (!cancelled) setMembersLoading(false);
+      });
+    return () => {
+      cancelled = true;
+      controller.abort();
+    };
+  }, [view, activeGroup?.group_id]);
 
   useEffect(() => {
     if (visible) {
@@ -406,7 +417,7 @@ export default function GroupDrawer({
               <TouchableOpacity
                 style={styles.leaveBtn}
                 onPress={() => setShowLeaveConfirm(true)}
-                disabled={leaving}
+                disabled={leaving || !activeGroup}
               >
                 {leaving ? (
                   <ActivityIndicator size="small" color={Colors.gray[400]} />
@@ -591,6 +602,7 @@ export default function GroupDrawer({
               delete next[kickTarget.member_id];
               return next;
             });
+            onMemberKicked(activeGroup.group_id);
           } catch (err) {
             console.error(err);
           } finally {
