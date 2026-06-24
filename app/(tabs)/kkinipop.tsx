@@ -185,6 +185,8 @@ export default function KkinipopPage() {
                 style={styles.modalBtnPrimary}
                 activeOpacity={0.8}
                 onPress={() => {
+                  setKkimojiModalVisible(false);
+                  setOpenPickerId(null);
                   router.push("/camera/kkimoji");
                 }}
               >
@@ -201,6 +203,8 @@ export default function KkinipopPage() {
                     quality: 0.8,
                   });
                   if (!result.canceled) {
+                    setKkimojiModalVisible(false);
+                    setOpenPickerId(null);
                     router.push({
                       pathname: "/camera/kkimoji",
                       params: { uri: result.assets[0].uri },

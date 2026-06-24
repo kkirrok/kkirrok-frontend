@@ -18,20 +18,6 @@ export default function KkimojiCamera() {
   const [cameraReady, setCameraReady] = useState(false);
   const [isTaking, setIsTaking] = useState(false);
 
-  if (!permission) return <View style={styles.container} />;
-
-  if (!permission.granted) {
-    return (
-      <KkBackground>
-        <KkHeader title="끼모지 만들기" />
-        <View style={styles.permissionWrap}>
-          <Text style={styles.permissionText}>카메라 권한이 필요합니다.</Text>
-          <KkButton title="권한 허용" onPress={requestPermission} />
-        </View>
-      </KkBackground>
-    );
-  }
-
   const takePicture = async () => {
     if (!cameraRef.current || !cameraReady || isTaking) return;
     try {
@@ -51,6 +37,20 @@ export default function KkimojiCamera() {
     }
   };
 
+  if (!permission) return <View style={styles.container} />;
+
+  if (!permission.granted && !capturedUri) {
+    return (
+      <KkBackground>
+        <KkHeader title="끼모지 만들기" />
+        <View style={styles.permissionWrap}>
+          <Text style={styles.permissionText}>카메라 권한이 필요합니다.</Text>
+          <KkButton title="권한 허용" onPress={requestPermission} />
+        </View>
+      </KkBackground>
+    );
+  }
+
   if (capturedUri) {
     return (
       <KkBackground>
@@ -67,14 +67,14 @@ export default function KkimojiCamera() {
             <KkButton
               title="다시하기"
               style={styles.previewBtnGray}
-              onPress={() => router.back()}
+              onPress={() => setCapturedUri(null)}
             />
             <KkButton
               title="업로드 하기"
               style={styles.previewBtn}
+              disabled
               onPress={() => {
                 // TODO: API - upload kkimoji
-                router.back();
               }}
             />
           </View>

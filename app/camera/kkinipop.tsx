@@ -65,7 +65,7 @@ export default function KkinipopCamera() {
     return (
       <KkBackground>
         <View style={styles.headerAbsolute}>
-          <KkHeader title="끼니팝" onBackPress={() => setCapturedUri(null)} />
+          <KkHeader title="끼니팝" onBackPress={() => { setCapturedUri(null); setCameraReady(false); }} />
         </View>
         <Image
           source={{ uri: capturedUri }}
