@@ -10,6 +10,8 @@ export default function CameraLayout() {
     tokenStore.get().then((token) => {
       if (!token) router.replace("/(auth)/Login");
       else setChecked(true);
+    }).catch(() => {
+      router.replace("/(auth)/Login");
     });
   }, []);
 
