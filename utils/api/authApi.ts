@@ -77,6 +77,21 @@ export async function signUpLocal(email: string, password: string): Promise<Auth
   return json;
 }
 
+export async function loginSocial(socialType: "KAKAO" | "NAVER", accessToken: string): Promise<AuthResponse> {
+  const res = await fetch(`${BASE_URL}/v1/users/login/social`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json;charset=UTF-8" },
+    body: JSON.stringify({ social_type: socialType, access_token: accessToken }),
+  });
+
+  if (!res.ok) {
+    const json = await res.json().catch(() => ({}));
+    throw new Error((json as { message?: string }).message ?? "소셜 로그인에 실패했습니다.");
+  }
+
+  return res.json();
+}
+
 export async function loginLocal(email: string, password: string): Promise<AuthResponse> {
   const res = await fetch(`${BASE_URL}/v1/users/login/local`, {
     method: "POST",

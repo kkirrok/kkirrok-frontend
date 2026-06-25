@@ -2,7 +2,7 @@ import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { Image, StyleSheet, Text, View } from "react-native";
-import { MealRecord } from "./types";
+import { MealRecord } from "@/utils/types/meal";
 
 type Props = { record: MealRecord };
 

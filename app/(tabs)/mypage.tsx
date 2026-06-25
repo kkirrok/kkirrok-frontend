@@ -16,7 +16,7 @@ export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
   const router = useRouter();
-  const { data: profile, isLoading, error } = useProfile();
+  const { data: profile, isLoading } = useProfile();
   const { data: imageUrl } = useProfileImage(profile?.profile_image);
 
   const handleLogout = async () => {
@@ -30,7 +30,7 @@ export default function MyPage() {
     } catch {
       // 토큰 삭제 실패해도 로그인으로 이동
     }
-    router.replace('/(auth)/Login');
+    router.replace('/(auth)/SocialLogin');
   };
   
   return (

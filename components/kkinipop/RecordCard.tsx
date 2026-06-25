@@ -23,6 +23,7 @@ type Props = {
   onAddReaction: (emoji: string) => void;
   onDelete: () => void;
   hasReacted: boolean;
+  onOpenKkimoji?: () => void;
 };
 
 export default function RecordCard({
@@ -32,6 +33,7 @@ export default function RecordCard({
   onAddReaction,
   onDelete,
   hasReacted,
+  onOpenKkimoji,
 }: Props) {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const wiggleAnim = useRef(new Animated.Value(0)).current;
@@ -158,7 +160,7 @@ export default function RecordCard({
             onPress={() => {}}
           >
             <View style={styles.emojiTopSection}>
-              <TouchableOpacity>
+              <TouchableOpacity onPress={onOpenKkimoji}>
                 <Ionicons
                   name="add-circle-outline"
                   size={24}
