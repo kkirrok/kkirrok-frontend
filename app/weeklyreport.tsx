@@ -1,4 +1,4 @@
-import { useMemo } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { ScrollView, Text, View } from "react-native";
 import CalendarIcon from "@/assets/icons/CalendarIcon.svg";
 import { useLocalSearchParams } from "expo-router";
@@ -9,6 +9,8 @@ import WeeklyNutrientsCard from "@/components/weeklyreport/WeeklyNutrientsCard";
 import WeeklyPatternCard from "@/components/weeklyreport/WeeklyPatternCard";
 import WeeklySuggestionsCard from "@/components/weeklyreport/WeeklySuggestionsCard";
 import { styles } from "@/components/weeklyreport/styles";
+import { getWeeklyReport } from "@/utils/api/reportApi";
+import type { WeeklyReportResponse } from "@/utils/types/report";
 
 const WEEK_DAYS = ["월", "화", "수", "목", "금", "토", "일"];
 const DAILY_CALORIES = [1980, 1600, 1450, 830, 1480, 1240, 1080];
@@ -41,6 +43,8 @@ function getWeekOfMonth(date: Date) {
 
 export default function WeeklyReportPage() {
   const params = useLocalSearchParams();
+  const [report, setReport] = useState<WeeklyReportResponse["data"] | null>(null);
+  const [loading, setLoading] = useState(true);
 
   const selectedDate = useMemo(() => {
     const year = toNumberParam(params.year);
@@ -60,6 +64,17 @@ export default function WeeklyReportPage() {
     return today;
   }, [params.day, params.month, params.year]);
 
+  const weekStart = useMemo(() => {
+    const date = new Date(selectedDate);
+
+    const day = date.getDay(); // 일:0 ~ 토:6
+    const diff = day === 0 ? -6 : 1 - day;
+
+    date.setDate(date.getDate() + diff);
+
+    return date.toISOString().split("T")[0];
+  }, [selectedDate]);
+
   const weekTitle = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth() + 1;
@@ -72,6 +87,33 @@ export default function WeeklyReportPage() {
     (total, calories) => total + calories,
     0
   );
+
+  useEffect(() => {
+    const fetchWeeklyReport = async () => {
+      try {
+        const response = await getWeeklyReport(weekStart);
+        setReport(response.data);
+      } catch (error) {
+        console.error(error);
+      } finally {
+      setLoading(false);
+    }
+  };
+
+    fetchWeeklyReport();
+  }, [weekStart]);
+
+  if (loading) {
+  return (
+    <KkBackground>
+      <KkHeader title="주간 리포트" />
+    </KkBackground>
+  );
+  }
+
+  if (!report) {
+    return null;
+  }
 
   return (
     <KkBackground>
