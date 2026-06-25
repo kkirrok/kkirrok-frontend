@@ -10,7 +10,7 @@ import { StyleSheet, View } from "react-native";
 const BIRTH_REGEX = /^\d{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12]\d|3[01])$/;
 
 const formatBirthDate = (text: string) => {
-  const digits = text.replace(/\D/g, '').slice(0, 8);
+  const digits = text.replace(/\D/g, "").slice(0, 8);
   if (digits.length <= 4) return digits;
   if (digits.length <= 6) return `${digits.slice(0, 4)}.${digits.slice(4)}`;
   return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6)}`;
@@ -48,7 +48,9 @@ export default function FindId() {
           value={birthDate}
           onChangeText={(text) => setBirthDate(formatBirthDate(text))}
           placeholder="생년월일을 입력해 주세요."
-          error={isBirthInvalid ? "올바르지 않은 형태의 생년월일입니다." : undefined}
+          error={
+            isBirthInvalid ? "올바르지 않은 형태의 생년월일입니다." : undefined
+          }
         />
         <KkTextBox
           label="전화번호"
@@ -72,7 +74,7 @@ export default function FindId() {
         message={`${name}님의 아이디는`}
         highlight={foundId}
         buttonText="로그인하기"
-        onButtonPress={() => router.push("/(auth)/login")}
+        onButtonPress={() => router.push("/(auth)/Login")}
       />
     </KkBackground>
   );
