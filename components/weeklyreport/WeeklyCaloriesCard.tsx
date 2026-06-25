@@ -21,7 +21,7 @@ export default function WeeklyCaloriesCard({
     <View style={styles.card}>
       <Text style={styles.cardTitle}>일주일동안</Text>
       <Text style={styles.summaryText}>
-        평균 <Text style={styles.highlight}>1,980kcal</Text>를 섭취했어요!
+        평균 <Text style={styles.highlight}>{(totalCalories / dailyCalories.length).toFixed(0)}kcal</Text>를 섭취했어요!
       </Text>
 
       <View style={styles.chart}>

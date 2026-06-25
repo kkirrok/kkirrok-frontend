@@ -1,15 +1,14 @@
 import { Text, View } from "react-native";
 import { styles } from "./styles";
+import type { WeeklyReportResponse } from "@/utils/types/report";
 
-const NUTRIENTS = [
-  { label: "단백질", value: 60, max: 80, unit: "g" },
-  { label: "탄수화물", value: 60, max: 100, unit: "g" },
-  { label: "당", value: 60, max: 90, unit: "g" },
-  { label: "지방", value: 60, max: 105, unit: "g" },
-  { label: "나트륨", value: 60, max: 90, unit: "mg" },
-];
+type Props = {
+  nutrients: WeeklyReportResponse["data"]["nutrientFeedbacks"];
+};
 
-export default function WeeklyNutrientsCard() {
+export default function WeeklyNutrientsCard({ nutrients }: Props) {
+
+
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>
@@ -17,26 +16,23 @@ export default function WeeklyNutrientsCard() {
       </Text>
 
       <View style={styles.nutrientList}>
-        {NUTRIENTS.map((nutrient) => (
-          <View key={nutrient.label} style={styles.nutrientRow}>
-            <Text style={styles.nutrientLabel}>{nutrient.label}</Text>
+        {nutrients.map((nutrient) => (
+          <View key={nutrient.nutrient} style={styles.nutrientRow}>
+            <Text style={styles.nutrientLabel}>{nutrient.nutrient}</Text>
 
             <View style={styles.nutrientTrack}>
               <View
                 style={[
                   styles.nutrientFill,
                   {
-                    width: `${Math.min(
-                      100,
-                      (nutrient.value / nutrient.max) * 100
-                    )}%`,
+                    width: `${Math.min(100, nutrient.avgAmount)}%`,
                   },
                 ]}
               />
             </View>
 
             <Text style={styles.nutrientValue}>
-              {nutrient.value}
+              {nutrient.avgAmount}
               {nutrient.unit}
             </Text>
           </View>

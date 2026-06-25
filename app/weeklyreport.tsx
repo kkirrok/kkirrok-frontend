@@ -103,6 +103,12 @@ export default function WeeklyReportPage() {
     fetchWeeklyReport();
   }, [weekStart]);
 
+  const dailyCalories = useMemo(() => {
+    if (!report) return [];
+
+    return Object.values(report.dailyKcals);
+  }, [report]);
+
   if (loading) {
   return (
     <KkBackground>
@@ -129,13 +135,19 @@ export default function WeeklyReportPage() {
         </View>
 
         <WeeklyCaloriesCard
-          dailyCalories={DAILY_CALORIES}
+          dailyCalories={dailyCalories}
           weekDays={WEEK_DAYS}
           maxCalories={MAX_DAILY_CALORIES}
         />
-        <WeeklyNutrientsCard />
-        <WeeklyPatternCard />
-        <WeeklySuggestionsCard />
+        <WeeklyNutrientsCard
+          nutrients={report.nutrientFeedbacks}
+        />
+        <WeeklyPatternCard
+          description={report.mealPatternDescription}
+        />
+        <WeeklySuggestionsCard
+          suggestions={report.nextWeekSuggestions}
+        />
       </ScrollView>
     </KkBackground>
   );
