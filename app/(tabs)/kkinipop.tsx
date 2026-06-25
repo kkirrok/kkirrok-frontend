@@ -7,10 +7,13 @@ import { MOCK_RECORDS } from "@/components/kkinipop/mockData";
 import { MealRecord } from "@/components/kkinipop/types";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { fetchGroups } from "@/utils/api/kkinipopApi";
+import { tokenStore } from "@/utils/store/tokenStore";
+import { Group } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router } from "expo-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Modal,
   Pressable,
@@ -32,7 +35,32 @@ export default function KkinipopPage() {
   const [openPickerId, setOpenPickerId] = useState<string | null>(null);
   const [reactedIds, setReactedIds] = useState<string[]>([]);
   const [drawerOpen, setDrawerOpen] = useState(false);
+  const [groups, setGroups] = useState<Group[]>([]);
+  const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
   const [kkimojiModalVisible, setKkimojiModalVisible] = useState(false);
+
+  useEffect(() => {
+    const controller = new AbortController();
+    (async () => {
+      const token = await tokenStore.get();
+      if (!token) {
+        router.replace("/(auth)/Login");
+        return;
+      }
+      fetchGroups(controller.signal)
+        .then((data) => {
+          setGroups(data);
+          if (data.length > 0) setSelectedGroupId(data[0].group_id);
+        })
+        .catch((err) => {
+          if (err.name !== "AbortError") console.error(err);
+        });
+    })();
+    return () => controller.abort();
+  }, []);
+
+  const activeGroup =
+    groups.find((g) => g.group_id === selectedGroupId) ?? null;
 
   const handleTogglePicker = (id: string) =>
     setOpenPickerId((prev) => (prev === id ? null : id));
@@ -77,11 +105,24 @@ export default function KkinipopPage() {
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <View style={styles.headerTitleRow}>
-              <Text style={styles.headerLevel}>Lv.4 </Text>
-              <Text style={styles.headerGroupName}>그룹명입력</Text>
+              <Text style={styles.headerLevel}>
+                Lv.{activeGroup?.level ?? "-"}{" "}
+              </Text>
+              <Text style={styles.headerGroupName}>
+                {activeGroup?.name ?? "그룹 없음"}
+              </Text>
             </View>
             <View style={styles.progressBg}>
-              <View style={[styles.progressFill, { width: "45%" }]} />
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: activeGroup && activeGroup.max_exp > 0
+                      ? `${Math.min(100, Math.round((activeGroup.cur_exp / activeGroup.max_exp) * 100))}%`
+                      : "0%",
+                  },
+                ]}
+              />
             </View>
           </View>
           <View style={styles.headerRight}>
@@ -157,7 +198,44 @@ export default function KkinipopPage() {
         </Pressable>
       </ScrollView>
 
-      <GroupDrawer visible={drawerOpen} onClose={() => setDrawerOpen(false)} />
+      <GroupDrawer
+        visible={drawerOpen}
+        onClose={() => setDrawerOpen(false)}
+        groups={groups}
+        selectedGroupId={selectedGroupId}
+        onSelectGroup={setSelectedGroupId}
+        onGroupCreated={(group) => {
+          setGroups((prev) => [...prev, group]);
+          setSelectedGroupId(group.group_id);
+        }}
+        onGroupJoined={(group) => {
+          setGroups((prev) => [...prev, group]);
+          setSelectedGroupId(group.group_id);
+        }}
+        onGroupDeleted={(groupId) => {
+          setGroups((prev) => {
+            const next = prev.filter((g) => g.group_id !== groupId);
+            setSelectedGroupId(next.length > 0 ? next[0].group_id : null);
+            return next;
+          });
+        }}
+        onGroupLeft={(groupId) => {
+          setGroups((prev) => {
+            const next = prev.filter((g) => g.group_id !== groupId);
+            setSelectedGroupId(next.length > 0 ? next[0].group_id : null);
+            return next;
+          });
+        }}
+        onMemberKicked={(groupId) => {
+          setGroups((prev) =>
+            prev.map((g) =>
+              g.group_id === groupId
+                ? { ...g, member_count: Math.max(0, g.member_count - 1) }
+                : g,
+            ),
+          );
+        }}
+      />
 
       <Modal
         visible={kkimojiModalVisible}
