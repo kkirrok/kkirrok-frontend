@@ -1,5 +1,4 @@
 import KkModal from "@/components/KkModal";
-import * as Clipboard from "expo-clipboard";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import {
@@ -13,6 +12,7 @@ import {
 import { getDownloadUrl } from "@/utils/api/r2Api";
 import { Group, GroupMember } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
+import * as Clipboard from "expo-clipboard";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -118,6 +118,7 @@ export default function GroupDrawer({
       cancelled = true;
       controller.abort();
     };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [view, activeGroup?.group_id]);
 
   useEffect(() => {
@@ -404,7 +405,9 @@ export default function GroupDrawer({
                   </View>
                   <TouchableOpacity
                     style={styles.copyPill}
-                    onPress={() => Clipboard.setStringAsync(activeGroup.invite_code)}
+                    onPress={() =>
+                      Clipboard.setStringAsync(activeGroup.invite_code)
+                    }
                   >
                     <Text style={styles.copyPillText}>복사</Text>
                   </TouchableOpacity>
@@ -462,7 +465,9 @@ export default function GroupDrawer({
                   </View>
                   <TouchableOpacity
                     style={styles.copyPill}
-                    onPress={() => Clipboard.setStringAsync(activeGroup.invite_code)}
+                    onPress={() =>
+                      Clipboard.setStringAsync(activeGroup.invite_code)
+                    }
                   >
                     <Text style={styles.copyPillText}>복사</Text>
                   </TouchableOpacity>
