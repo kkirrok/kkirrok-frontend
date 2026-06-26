@@ -52,6 +52,7 @@ export default function KkinipopPage() {
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const postsControllerRef = useRef<AbortController | null>(null);
+  const skipNextFocusRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const rowRefs = useRef<(View | null)[]>([]);
 
@@ -92,10 +93,18 @@ export default function KkinipopPage() {
 
   useEffect(() => {
     if (selectedGroupId == null) return;
+    skipNextFocusRef.current = true;
+    setPostDays([]);
+    setMissions([]);
+    setMyMemberId(null);
+    setMoabogiMissionId(null);
+    setMissionIndex(0);
     setContentLoading(true);
     loadPosts(selectedGroupId);
-    fetchGroupMembers(selectedGroupId)
+    const membersCtrl = new AbortController();
+    fetchGroupMembers(selectedGroupId, membersCtrl.signal)
       .then((members) => {
+        if (membersCtrl.signal.aborted) return;
         const me = members.find((m) => m.is_me);
         if (me) setMyMemberId(me.member_id);
       })
@@ -112,17 +121,26 @@ export default function KkinipopPage() {
       });
     return () => {
       postsControllerRef.current?.abort();
+      membersCtrl.abort();
       missionCtrl.abort();
     };
   }, [selectedGroupId, loadPosts]);
 
   useFocusEffect(
     useCallback(() => {
+      if (skipNextFocusRef.current) {
+        skipNextFocusRef.current = false;
+        return;
+      }
       if (selectedGroupId != null) loadPosts(selectedGroupId);
     }, [selectedGroupId, loadPosts]),
   );
 
-  const todayStr = selectedDate.toISOString().split("T")[0];
+  const todayStr = [
+    selectedDate.getFullYear(),
+    String(selectedDate.getMonth() + 1).padStart(2, "0"),
+    String(selectedDate.getDate()).padStart(2, "0"),
+  ].join("-");
   const todayPosts =
     postDays.find((d) => d.date.startsWith(todayStr))?.posts ?? [];
 

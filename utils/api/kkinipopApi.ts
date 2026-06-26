@@ -205,7 +205,7 @@ export async function createPost(
   } as any);
   formData.append("save_to_personal_log", String(saveToPersonalLog));
 
-  const query = `?saveToPersonalLog=${saveToPersonalLog}&missionId=${scanType}`;
+  const query = `?saveToPersonalLog=${saveToPersonalLog}&scanType=${scanType}`;
   const res = await fetch(
     `${BASE_URL}/v1/kkinipop/groups/${groupId}/posts${query}`,
     {

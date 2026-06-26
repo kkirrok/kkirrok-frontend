@@ -18,7 +18,7 @@ export default function SkeletonBox({
   const opacity = useRef(new Animated.Value(0.4)).current;
 
   useEffect(() => {
-    Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(opacity, {
           toValue: 0.25,
@@ -31,7 +31,9 @@ export default function SkeletonBox({
           useNativeDriver: true,
         }),
       ]),
-    ).start();
+    );
+    pulse.start();
+    return () => pulse.stop();
   }, [opacity]);
 
   return (

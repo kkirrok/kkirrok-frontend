@@ -29,6 +29,7 @@ function useIsLive(startAt: string | null, endAt: string | null) {
   const [isLive, setIsLive] = useState(check);
 
   useEffect(() => {
+    setIsLive(check());
     const id = setInterval(() => setIsLive(check()), 1000);
     return () => clearInterval(id);
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -46,6 +47,7 @@ function useCountdown(endAt: string | null) {
 
   useEffect(() => {
     if (!endAt) return;
+    setSec(calc());
     const id = setInterval(() => {
       const r = calc();
       setSec(r);
@@ -99,7 +101,7 @@ export default function MissionCard({
       borderAnim.setValue(0);
       return;
     }
-    Animated.loop(
+    const pulse = Animated.loop(
       Animated.sequence([
         Animated.timing(borderAnim, {
           toValue: 1,
@@ -112,7 +114,9 @@ export default function MissionCard({
           useNativeDriver: false,
         }),
       ]),
-    ).start();
+    );
+    pulse.start();
+    return () => pulse.stop();
   }, [isLive, borderAnim]);
 
   const animatedBorderColor = borderAnim.interpolate({

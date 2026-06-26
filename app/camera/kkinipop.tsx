@@ -22,6 +22,11 @@ const { width, height: screenHeight } = Dimensions.get("window");
 
 export default function KkinipopCamera() {
   const { groupId } = useLocalSearchParams<{ groupId?: string }>();
+  const numericGroupId = Number(groupId);
+  const validGroupId =
+    Number.isInteger(numericGroupId) && numericGroupId > 0
+      ? numericGroupId
+      : null;
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [autoSave, setAutoSave] = useState(true);
@@ -35,11 +40,11 @@ export default function KkinipopCamera() {
   } | null>(null);
 
   useEffect(() => {
-    if (!groupId) return;
-    fetchMyKkirokStatus(parseInt(groupId))
+    if (validGroupId == null) return;
+    fetchMyKkirokStatus(validGroupId)
       .then(setKkirokStatus)
       .catch(() => {});
-  }, [groupId]);
+  }, [validGroupId]);
 
   if (!permission) return <View style={styles.container} />;
 
@@ -98,10 +103,10 @@ export default function KkinipopCamera() {
             title="끼록하기"
             disabled={uploading}
             onPress={async () => {
-              if (!groupId || !capturedUri) return;
+              if (validGroupId == null || !capturedUri) return;
               try {
                 setUploading(true);
-                await createPost(parseInt(groupId), capturedUri, {
+                await createPost(validGroupId, capturedUri, {
                   saveToPersonalLog: autoSave,
                   scanType: "CAMERA",
                 });
