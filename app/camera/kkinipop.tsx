@@ -3,12 +3,14 @@ import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { createPost, fetchMyKkirokStatus } from "@/utils/api/kkinipopApi";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
-import { router } from "expo-router";
-import { useRef, useState } from "react";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import {
+  Alert,
   Dimensions,
   StyleSheet,
   Text,
@@ -19,12 +21,30 @@ import {
 const { width, height: screenHeight } = Dimensions.get("window");
 
 export default function KkinipopCamera() {
+  const { groupId } = useLocalSearchParams<{ groupId?: string }>();
+  const numericGroupId = Number(groupId);
+  const validGroupId =
+    Number.isInteger(numericGroupId) && numericGroupId > 0
+      ? numericGroupId
+      : null;
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [autoSave, setAutoSave] = useState(true);
   const [cameraReady, setCameraReady] = useState(false);
   const [isTaking, setIsTaking] = useState(false);
   const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [kkirokStatus, setKkirokStatus] = useState<{
+    remaining_count: number;
+    max_count: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (validGroupId == null) return;
+    fetchMyKkirokStatus(validGroupId)
+      .then(setKkirokStatus)
+      .catch(() => {});
+  }, [validGroupId]);
 
   if (!permission) return <View style={styles.container} />;
 
@@ -81,9 +101,40 @@ export default function KkinipopCamera() {
         <View style={[styles.previewBtnWrap, { top: btnTop }]}>
           <KkButton
             title="끼록하기"
-            onPress={() => {
-              // TODO: API
-              router.back();
+            disabled={uploading}
+            onPress={async () => {
+              if (validGroupId == null || !capturedUri) return;
+              try {
+                setUploading(true);
+                await createPost(validGroupId, capturedUri, {
+                  saveToPersonalLog: autoSave,
+                  scanType: "CAMERA",
+                });
+                router.back();
+              } catch (err: any) {
+                const msg: string = err?.message ?? "";
+                if (
+                  msg.includes("LIVE_MISSION_NOT_FOUND") ||
+                  msg.includes("실시간 미션")
+                ) {
+                  Alert.alert("끼니팝", "현재 진행 중인 미션이 없어요.");
+                } else if (
+                  msg.includes("GENERAL_POST_LIMIT_EXCEEDED") ||
+                  msg.includes("3회")
+                ) {
+                  Alert.alert(
+                    "끼니팝",
+                    "나의끼록 자동 저장은 하루 3회까지만 가능해요.",
+                  );
+                } else {
+                  Alert.alert(
+                    "끼니팝",
+                    "게시글 작성에 실패했어요. 다시 시도해 주세요.",
+                  );
+                }
+              } finally {
+                setUploading(false);
+              }
             }}
           />
         </View>
@@ -103,20 +154,31 @@ export default function KkinipopCamera() {
       </View>
 
       <TouchableOpacity
-        style={[styles.chip, { top: chipTop }]}
+        style={[
+          styles.chip,
+          {
+            top: chipTop,
+            backgroundColor: autoSave ? Colors.main[600] : Colors.gray[900],
+          },
+        ]}
         onPress={() => setAutoSave((v) => !v)}
         activeOpacity={0.8}
       >
         {autoSave ? (
           <Ionicons
             name="checkmark-circle-outline"
-            size={24}
-            color={Colors.gray[200]}
+            size={20}
+            color={Colors.gray[100]}
           />
         ) : (
-          <View style={styles.emptyCircle} />
+          <Ionicons name="ellipse-outline" size={20} color={Colors.gray[300]} />
         )}
-        <Text style={styles.chipText}>나의 끼록 자동 저장 3/3</Text>
+        <Text style={[styles.chipText]}>
+          나의 끼록 자동 저장{" "}
+          {kkirokStatus
+            ? `${kkirokStatus.remaining_count}/${kkirokStatus.max_count}`
+            : "-/-"}
+        </Text>
       </TouchableOpacity>
 
       <View
@@ -168,20 +230,12 @@ const styles = StyleSheet.create({
     alignSelf: "center",
     paddingHorizontal: 16,
     paddingVertical: 8,
-    backgroundColor: Colors.gray[900],
     borderRadius: 16,
     zIndex: 5,
   },
-  emptyCircle: {
-    width: 16,
-    height: 16,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: Colors.gray[100],
-  },
   chipText: {
-    color: Colors.gray[200],
     ...Typography.body.l,
+    color: Colors.gray[200],
   },
   headerAbsolute: {
     position: "absolute",

@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { MealRecord } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
@@ -12,7 +13,6 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { MealRecord } from "./types";
 
 const EMOJI_OPTIONS = ["🔥", "🐷", "👍", "😊", "😋", "❤️"];
 
@@ -23,6 +23,7 @@ type Props = {
   onAddReaction: (emoji: string) => void;
   onDelete: () => void;
   hasReacted: boolean;
+  highlighted?: boolean;
   onOpenKkimoji?: () => void;
 };
 
@@ -33,6 +34,7 @@ export default function RecordCard({
   onAddReaction,
   onDelete,
   hasReacted,
+  highlighted = false,
   onOpenKkimoji,
 }: Props) {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
@@ -86,7 +88,9 @@ export default function RecordCard({
   };
 
   return (
-    <View style={styles.card}>
+    <View
+      style={[styles.card, highlighted && { borderColor: Colors.main[600] }]}
+    >
       {record.image ? (
         <Image
           source={{ uri: record.image }}
