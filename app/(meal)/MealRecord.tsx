@@ -1,6 +1,7 @@
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
+import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import {
@@ -15,7 +16,6 @@ import { BlurView } from "expo-blur";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
-  Alert,
   ScrollView,
   StyleSheet,
   Text,
@@ -25,6 +25,23 @@ import {
 import MealCards, { NutrientKey } from "./components/MealCards";
 import MealDonutChart, { DonutSegment } from "./components/MealDonutChart";
 import MealTypeTab, { MealType } from "./components/MealTypeTab";
+
+function makeSegments(
+  carb: number,
+  protein: number,
+  fat: number,
+): DonutSegment[] | undefined {
+  const carbKcal = carb * 4;
+  const proteinKcal = protein * 4;
+  const fatKcal = fat * 9;
+  const total = carbKcal + proteinKcal + fatKcal;
+  if (total === 0) return undefined;
+  return [
+    { label: "탄수화물", color: Colors.main[500], pct: carbKcal / total },
+    { label: "단백질", color: Colors.main[400], pct: proteinKcal / total },
+    { label: "지방", color: Colors.main[200], pct: fatKcal / total },
+  ];
+}
 
 function formatTime(date: Date) {
   const h = date.getHours();
@@ -52,17 +69,20 @@ export default function MealRecord() {
   const [calories, setCalories] = useState("0");
   const [nutrients, setNutrients] =
     useState<Record<NutrientKey, string>>(defaultNutrients());
-  const [recordTime, setRecordTime] = useState("00:00 AM");
+  const [recordTime, setRecordTime] = useState(() => formatTime(new Date()));
   const [segments, setSegments] = useState<DonutSegment[] | undefined>(
     undefined,
   );
   const [saving, setSaving] = useState(false);
+  const [modalMessage, setModalMessage] = useState<string | null>(null);
   const [searchResults, setSearchResults] = useState<FoodSearchResult[]>([]);
   const searchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const scanControllerRef = useRef<AbortController | null>(null);
 
-  const analyzePhoto = async (uri: string) => {
+  const analyzePhoto = async (uri: string, signal: AbortSignal) => {
     try {
       const result = await scanMeal(uri, "CAMERA");
+      if (signal.aborted) return;
       setImageKey(result.image_key);
       setScanType(result.scan_type);
       setMealName(result.food_name);
@@ -75,9 +95,12 @@ export default function MealRecord() {
         나트륨: String(result.sodium_mg),
       });
       setRecordTime(formatTime(new Date()));
-      setSegments(undefined);
+      setSegments(
+        makeSegments(result.carbohydrate_g, result.protein_g, result.fat_g),
+      );
       setRecognitionFailed(false);
     } catch {
+      if (signal.aborted) return;
       setMealName("");
       setCalories("0");
       setNutrients(defaultNutrients());
@@ -90,13 +113,26 @@ export default function MealRecord() {
     useCallback(() => {
       const uri = consumeMealPhoto();
       if (uri) {
+        scanControllerRef.current?.abort();
+        const controller = new AbortController();
+        scanControllerRef.current = controller;
+
         setPhoto(uri);
         setImageKey(null);
         setScanType(null);
         setSearchResults([]);
         setRecognitionFailed(false);
-        analyzePhoto(uri);
+        analyzePhoto(uri, controller.signal);
       }
+
+      return () => {
+        scanControllerRef.current?.abort();
+        scanControllerRef.current = null;
+        if (searchTimerRef.current) {
+          clearTimeout(searchTimerRef.current);
+          searchTimerRef.current = null;
+        }
+      };
     }, []),
   );
 
@@ -128,14 +164,45 @@ export default function MealRecord() {
       지방: String(item.fat_g),
       나트륨: String(item.sodium_mg),
     });
+    setSegments(makeSegments(item.carbohydrate_g, item.protein_g, item.fat_g));
     setSearchResults([]);
   };
 
   const handleSubmit = async () => {
     if (saving) return;
+
+    if (!mealName.trim()) {
+      setModalMessage("음식 이름을 입력해 주세요.");
+      return;
+    }
+
+    const kcal = Number(calories);
+    const carb = Number(nutrients.탄수화물);
+    const protein = Number(nutrients.단백질);
+    const fat = Number(nutrients.지방);
+    const sugar = Number(nutrients.당);
+    const sodium = Number(nutrients.나트륨);
+
+    if (
+      !Number.isFinite(kcal) ||
+      kcal < 0 ||
+      !Number.isFinite(carb) ||
+      carb < 0 ||
+      !Number.isFinite(protein) ||
+      protein < 0 ||
+      !Number.isFinite(fat) ||
+      fat < 0 ||
+      !Number.isFinite(sugar) ||
+      sugar < 0 ||
+      !Number.isFinite(sodium) ||
+      sodium < 0
+    ) {
+      setModalMessage("영양 정보를 올바르게 입력해 주세요.");
+      return;
+    }
+
     setSaving(true);
     try {
-      const kcal = Number(calories);
       if (imageKey != null && scanType != null) {
         await confirmScanMeal({
           imageKey,
@@ -143,11 +210,11 @@ export default function MealRecord() {
           mealType,
           foodName: mealName,
           kcal,
-          carbohydrateG: Number(nutrients.탄수화물),
-          proteinG: Number(nutrients.단백질),
-          fatG: Number(nutrients.지방),
-          sugarG: Number(nutrients.당),
-          sodiumMg: Number(nutrients.나트륨),
+          carbohydrateG: carb,
+          proteinG: protein,
+          fatG: fat,
+          sugarG: sugar,
+          sodiumMg: sodium,
         });
       } else {
         const today = new Date();
@@ -161,19 +228,16 @@ export default function MealRecord() {
           mealType,
           foodName: mealName,
           kcal,
-          carbohydrateG: Number(nutrients.탄수화물),
-          proteinG: Number(nutrients.단백질),
-          fatG: Number(nutrients.지방),
-          sugarG: Number(nutrients.당),
-          sodiumMg: Number(nutrients.나트륨),
+          carbohydrateG: carb,
+          proteinG: protein,
+          fatG: fat,
+          sugarG: sugar,
+          sodiumMg: sodium,
         });
       }
       router.back();
     } catch (err: any) {
-      Alert.alert(
-        "끼니 기록",
-        err?.message ?? "기록에 실패했어요. 다시 시도해 주세요.",
-      );
+      setModalMessage(err?.message ?? "기록에 실패했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -241,6 +305,13 @@ export default function MealRecord() {
           style={styles.submitButton}
         />
       </ScrollView>
+      <KkModal
+        visible={modalMessage != null}
+        onClose={() => setModalMessage(null)}
+        message={modalMessage ?? ""}
+        buttonText="확인"
+        onButtonPress={() => setModalMessage(null)}
+      />
     </KkBackground>
   );
 }

@@ -6,7 +6,7 @@ import { updateMeal } from "@/utils/api/mealApi";
 import { useFocusEffect } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
-import { Alert, BackHandler, ScrollView, StyleSheet } from "react-native";
+import { BackHandler, ScrollView, StyleSheet } from "react-native";
 import MealCards, { NutrientKey } from "./components/MealCards";
 import MealDonutChart from "./components/MealDonutChart";
 import MealTypeTab, { MealType } from "./components/MealTypeTab";
@@ -41,6 +41,7 @@ export default function MealEdit() {
   }>();
 
   const [exitModalVisible, setExitModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
 
   const [mealType, setMealType] = useState<MealType>(params.mealType ?? "간식");
@@ -89,10 +90,7 @@ export default function MealEdit() {
       });
       router.back();
     } catch (err: any) {
-      Alert.alert(
-        "끼니 수정",
-        err?.message ?? "수정에 실패했어요. 다시 시도해 주세요.",
-      );
+      setErrorMessage(err?.message ?? "수정에 실패했어요. 다시 시도해 주세요.");
     } finally {
       setSaving(false);
     }
@@ -161,6 +159,13 @@ export default function MealEdit() {
         buttonText="계속 작성하기"
         onCancelPress={handleExit}
         onButtonPress={handleContinue}
+      />
+      <KkModal
+        visible={errorMessage != null}
+        onClose={() => setErrorMessage(null)}
+        message={errorMessage ?? ""}
+        buttonText="확인"
+        onButtonPress={() => setErrorMessage(null)}
       />
     </KkBackground>
   );

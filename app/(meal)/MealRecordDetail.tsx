@@ -66,6 +66,7 @@ export default function MealRecordDetail() {
   const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
   const [yesterdayPicks, setYesterdayPicks] =
     useState<YesterdayPicksResult | null>(null);
 
@@ -73,23 +74,38 @@ export default function MealRecordDetail() {
     useCallback(() => {
       let cancelled = false;
       setLoading(true);
-      Promise.all([fetchTodayMeals(), fetchYesterdayPicks()])
-        .then(([meals, picks]) => {
-          if (!cancelled) {
-            setRecords(meals);
-            setCurrentIndex(0);
-            setYesterdayPicks(picks);
+
+      const loadData = async () => {
+        const [mealsResult, picksResult] = await Promise.allSettled([
+          fetchTodayMeals(),
+          fetchYesterdayPicks(),
+        ]);
+        if (cancelled) return;
+
+        if (mealsResult.status === "fulfilled") {
+          setRecords(mealsResult.value);
+          setCurrentIndex(0);
+        } else {
+          setRecords([]);
+          const msg =
+            mealsResult.reason?.message ?? "식사 기록을 불러오지 못했어요.";
+          if (msg.includes("인증 토큰")) {
+            router.replace("/(auth)/SocialLogin");
+            return;
           }
-        })
-        .catch(() => {
-          if (!cancelled) {
-            setRecords([]);
-            setYesterdayPicks(null);
-          }
-        })
-        .finally(() => {
-          if (!cancelled) setLoading(false);
-        });
+          setErrorMessage(msg);
+        }
+
+        if (picksResult.status === "fulfilled") {
+          setYesterdayPicks(picksResult.value);
+        } else {
+          setYesterdayPicks(null);
+        }
+
+        setLoading(false);
+      };
+
+      loadData();
       return () => {
         cancelled = true;
       };
@@ -115,8 +131,10 @@ export default function MealRecordDetail() {
     if (!record) return;
     try {
       await deleteMeal(record.meal_id);
-    } catch {}
-    router.back();
+      router.back();
+    } catch (err: any) {
+      setErrorMessage(err?.message ?? "삭제에 실패했어요. 다시 시도해 주세요.");
+    }
   };
 
   return (
@@ -302,6 +320,13 @@ export default function MealRecordDetail() {
         buttonText="삭제하기"
         onCancelPress={() => setDeleteModalVisible(false)}
         onButtonPress={handleDelete}
+      />
+      <KkModal
+        visible={errorMessage != null}
+        onClose={() => setErrorMessage(null)}
+        message={errorMessage ?? ""}
+        buttonText="확인"
+        onButtonPress={() => setErrorMessage(null)}
       />
     </KkBackground>
   );

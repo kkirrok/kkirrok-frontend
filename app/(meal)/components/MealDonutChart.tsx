@@ -107,11 +107,18 @@ export default function MealDonutChart({
                 style={styles.chartPhoto}
                 resizeMode="cover"
               />
-
-              {!!mealName && (
-                <View style={styles.mealNameBadge}>
-                  <Text style={styles.mealNameText}>{mealName}</Text>
+              {recognitionFailed ? (
+                <View style={styles.failedOverlay}>
+                  <Text style={styles.recognitionFailed}>
+                    식사를 인식할 수 없어요.
+                  </Text>
                 </View>
+              ) : (
+                !!mealName && (
+                  <View style={styles.mealNameBadge}>
+                    <Text style={styles.mealNameText}>{mealName}</Text>
+                  </View>
+                )
               )}
             </View>
           ) : (
@@ -196,6 +203,18 @@ const styles = StyleSheet.create({
     ...Typography.caption[1],
     color: Colors.gray[300],
     marginLeft: 2,
+  },
+  failedOverlay: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 100,
+    backgroundColor: "rgba(0,0,0,0.5)",
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 16,
   },
   mealNameBadge: {
     position: "absolute",
