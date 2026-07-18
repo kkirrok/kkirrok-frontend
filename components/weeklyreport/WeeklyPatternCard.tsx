@@ -12,8 +12,8 @@ export default function WeeklyPatternCard({ description }: Props) {
 
       <View style={styles.patternRow}>
         <View style={styles.patternTextBox}>
-          {description.split("\n").map((text) => (
-            <Text key={text} style={styles.patternText}>
+          {description.split("\n").map((text, i) => (
+            <Text key={i} style={styles.patternText}>
               · {text}
             </Text>
           ))}

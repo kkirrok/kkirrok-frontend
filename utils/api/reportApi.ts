@@ -2,7 +2,8 @@ import { tokenStore } from "../store/tokenStore";
 import { WeeklyReportResponse } from "../types/report";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
-if (!BASE_URL) throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
+if (!BASE_URL)
+  throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
 
 async function getRequiredToken(): Promise<string> {
   const token = await tokenStore.get();
@@ -11,7 +12,7 @@ async function getRequiredToken(): Promise<string> {
 }
 
 export async function getWeeklyReport(
-  weekStart: string
+  weekStart: string,
 ): Promise<WeeklyReportResponse> {
   const token = await getRequiredToken();
 
@@ -22,16 +23,17 @@ export async function getWeeklyReport(
       headers: {
         Authorization: `Bearer ${token}`,
       },
-    }
+    },
   );
 
-  const json = await res.json();
-
   if (!res.ok) {
-    throw new Error(
-      json.message ?? "주간 리포트 조회에 실패했습니다."
-    );
+    let message = "주간 리포트 조회에 실패했습니다.";
+    try {
+      const json = await res.json();
+      if (json.message) message = json.message;
+    } catch {}
+    throw new Error(message);
   }
 
-  return json;
+  return res.json();
 }

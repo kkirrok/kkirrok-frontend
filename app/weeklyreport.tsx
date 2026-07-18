@@ -1,7 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
-import { ScrollView, Text, View } from "react-native";
 import CalendarIcon from "@/assets/icons/CalendarIcon.svg";
-import { useLocalSearchParams } from "expo-router";
 import KkBackground from "@/components/KkBackground";
 import KkHeader from "@/components/KkHeader";
 import WeeklyCaloriesCard from "@/components/weeklyreport/WeeklyCaloriesCard";
@@ -11,8 +8,26 @@ import WeeklySuggestionsCard from "@/components/weeklyreport/WeeklySuggestionsCa
 import { styles } from "@/components/weeklyreport/styles";
 import { getWeeklyReport } from "@/utils/api/reportApi";
 import type { WeeklyReportResponse } from "@/utils/types/report";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const WEEK_DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const DAY_OF_WEEK_ORDER = [
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+  "SUNDAY",
+] as const;
 const DAILY_CALORIES = [1980, 1600, 1450, 830, 1480, 1240, 1080];
 const MAX_DAILY_CALORIES = 2400;
 
@@ -43,8 +58,11 @@ function getWeekOfMonth(date: Date) {
 
 export default function WeeklyReportPage() {
   const params = useLocalSearchParams();
-  const [report, setReport] = useState<WeeklyReportResponse["data"] | null>(null);
+  const [report, setReport] = useState<WeeklyReportResponse["data"] | null>(
+    null,
+  );
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedDate = useMemo(() => {
     const year = toNumberParam(params.year);
@@ -72,7 +90,10 @@ export default function WeeklyReportPage() {
 
     date.setDate(date.getDate() + diff);
 
-    return date.toISOString().split("T")[0];
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
   }, [selectedDate]);
 
   const weekTitle = useMemo(() => {
@@ -85,36 +106,70 @@ export default function WeeklyReportPage() {
 
   const totalCalories = DAILY_CALORIES.reduce(
     (total, calories) => total + calories,
-    0
+    0,
   );
 
   useEffect(() => {
+    const controller = new AbortController();
+
     const fetchWeeklyReport = async () => {
+      setLoading(true);
+      setError(null);
       try {
         const response = await getWeeklyReport(weekStart);
-        setReport(response.data);
-      } catch (error) {
-        console.error(error);
+        if (!controller.signal.aborted) {
+          setReport(response.data);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          const message =
+            err instanceof Error ? err.message : "오류가 발생했습니다.";
+          if (message.includes("인증 토큰")) {
+            router.replace("/(auth)/SocialLogin");
+            return;
+          }
+          setError(message);
+        }
       } finally {
-      setLoading(false);
-    }
-  };
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
 
     fetchWeeklyReport();
+    return () => controller.abort();
   }, [weekStart]);
 
   const dailyCalories = useMemo(() => {
     if (!report) return [];
 
-    return Object.values(report.dailyKcals);
+    return DAY_OF_WEEK_ORDER.map((day) => report.dailyKcals[day] ?? 0);
   }, [report]);
 
   if (loading) {
-  return (
-    <KkBackground>
-      <KkHeader title="주간 리포트" />
-    </KkBackground>
-  );
+    return (
+      <KkBackground>
+        <KkHeader title="주간 리포트" />
+      </KkBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <KkBackground>
+        <KkHeader title="주간 리포트" />
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.message}>{error}</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={errorStyles.button}
+          >
+            <Text style={errorStyles.buttonText}>돌아가기</Text>
+          </TouchableOpacity>
+        </View>
+      </KkBackground>
+    );
   }
 
   if (!report) {
@@ -139,17 +194,37 @@ export default function WeeklyReportPage() {
           weekDays={WEEK_DAYS}
           maxCalories={MAX_DAILY_CALORIES}
         />
-        <WeeklyNutrientsCard
-          nutrients={report.nutrientFeedbacks}
-        />
-        <WeeklyPatternCard
-          description={report.mealPatternDescription}
-        />
-        <WeeklySuggestionsCard
-          suggestions={report.nextWeekSuggestions}
-        />
+        <WeeklyNutrientsCard nutrients={report.nutrientFeedbacks} />
+        <WeeklyPatternCard description={report.mealPatternDescription} />
+        <WeeklySuggestionsCard suggestions={report.nextWeekSuggestions} />
       </ScrollView>
     </KkBackground>
   );
 }
 
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 16,
+    paddingHorizontal: 24,
+  },
+  message: {
+    color: "#E7E2DF",
+    fontSize: 16,
+    textAlign: "center",
+    fontFamily: "Pretendard-Regular",
+  },
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.1)",
+  },
+  buttonText: {
+    color: "#E7E2DF",
+    fontSize: 14,
+    fontFamily: "Pretendard-SemiBold",
+  },
+});
