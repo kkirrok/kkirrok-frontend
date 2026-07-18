@@ -1,12 +1,33 @@
-import { useMemo } from "react";
-import { ScrollView, StyleSheet, Text, View } from "react-native";
 import CalendarIcon from "@/assets/icons/CalendarIcon.svg";
-import { useLocalSearchParams } from "expo-router";
 import KkBackground from "@/components/KkBackground";
 import KkHeader from "@/components/KkHeader";
-import { Colors } from "@/constants/colors";
+import WeeklyCaloriesCard from "@/components/weeklyreport/WeeklyCaloriesCard";
+import WeeklyNutrientsCard from "@/components/weeklyreport/WeeklyNutrientsCard";
+import WeeklyPatternCard from "@/components/weeklyreport/WeeklyPatternCard";
+import WeeklySuggestionsCard from "@/components/weeklyreport/WeeklySuggestionsCard";
+import { styles } from "@/components/weeklyreport/styles";
+import { getWeeklyReport } from "@/utils/api/reportApi";
+import type { WeeklyReportResponse } from "@/utils/types/report";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
 
 const WEEK_DAYS = ["월", "화", "수", "목", "금", "토", "일"];
+const DAY_OF_WEEK_ORDER = [
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
+  "SUNDAY",
+] as const;
 const DAILY_CALORIES = [1980, 1600, 1450, 830, 1480, 1240, 1080];
 const MAX_DAILY_CALORIES = 2400;
 
@@ -37,6 +58,11 @@ function getWeekOfMonth(date: Date) {
 
 export default function WeeklyReportPage() {
   const params = useLocalSearchParams();
+  const [report, setReport] = useState<WeeklyReportResponse["data"] | null>(
+    null,
+  );
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   const selectedDate = useMemo(() => {
     const year = toNumberParam(params.year);
@@ -56,6 +82,20 @@ export default function WeeklyReportPage() {
     return today;
   }, [params.day, params.month, params.year]);
 
+  const weekStart = useMemo(() => {
+    const date = new Date(selectedDate);
+
+    const day = date.getDay(); // 일:0 ~ 토:6
+    const diff = day === 0 ? -6 : 1 - day;
+
+    date.setDate(date.getDate() + diff);
+
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }, [selectedDate]);
+
   const weekTitle = useMemo(() => {
     const year = selectedDate.getFullYear();
     const month = selectedDate.getMonth() + 1;
@@ -66,8 +106,75 @@ export default function WeeklyReportPage() {
 
   const totalCalories = DAILY_CALORIES.reduce(
     (total, calories) => total + calories,
-    0
+    0,
   );
+
+  useEffect(() => {
+    const controller = new AbortController();
+
+    const fetchWeeklyReport = async () => {
+      setLoading(true);
+      setError(null);
+      try {
+        const response = await getWeeklyReport(weekStart);
+        if (!controller.signal.aborted) {
+          setReport(response.data);
+        }
+      } catch (err) {
+        if (!controller.signal.aborted) {
+          const message =
+            err instanceof Error ? err.message : "오류가 발생했습니다.";
+          if (message.includes("인증 토큰")) {
+            router.replace("/(auth)/SocialLogin");
+            return;
+          }
+          setError(message);
+        }
+      } finally {
+        if (!controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
+    };
+
+    fetchWeeklyReport();
+    return () => controller.abort();
+  }, [weekStart]);
+
+  const dailyCalories = useMemo(() => {
+    if (!report) return [];
+
+    return DAY_OF_WEEK_ORDER.map((day) => report.dailyKcals[day] ?? 0);
+  }, [report]);
+
+  if (loading) {
+    return (
+      <KkBackground>
+        <KkHeader title="주간 리포트" />
+      </KkBackground>
+    );
+  }
+
+  if (error) {
+    return (
+      <KkBackground>
+        <KkHeader title="주간 리포트" />
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.message}>{error}</Text>
+          <TouchableOpacity
+            onPress={() => router.back()}
+            style={errorStyles.button}
+          >
+            <Text style={errorStyles.buttonText}>돌아가기</Text>
+          </TouchableOpacity>
+        </View>
+      </KkBackground>
+    );
+  }
+
+  if (!report) {
+    return null;
+  }
 
   return (
     <KkBackground>
@@ -82,283 +189,42 @@ export default function WeeklyReportPage() {
           <CalendarIcon />
         </View>
 
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>일주일동안</Text>
-          <Text style={styles.summaryText}>
-            평균 <Text style={styles.highlight}>1,980kcal</Text>를
-            섭취했어요!
-          </Text>
-
-          <View style={styles.chart}>
-            {DAILY_CALORIES.map((calories, index) => {
-              const barHeight = Math.max(
-                32,
-                (calories / MAX_DAILY_CALORIES) * 116
-              );
-
-              return (
-                <View key={`${WEEK_DAYS[index]}-${calories}`} style={styles.day}>
-                  <View style={styles.barTrack}>
-                    <View style={[styles.barFill, { height: barHeight }]} />
-                  </View>
-                  <Text style={styles.dayText}>{WEEK_DAYS[index]}</Text>
-                </View>
-              );
-            })}
-          </View>
-
-          <Text style={styles.totalText}>
-            총 섭취 칼로리: {totalCalories.toLocaleString()}kcal
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>평균적으로 다음과 같이 섭취했어요.</Text>
-
-          <View style={styles.nutrientList}>
-            {NUTRIENTS.map((nutrient) => (
-              <View key={nutrient.label} style={styles.nutrientRow}>
-                <Text style={styles.nutrientLabel}>{nutrient.label}</Text>
-                <View style={styles.nutrientTrack}>
-                  <View
-                    style={[
-                      styles.nutrientFill,
-                      {
-                        width: `${Math.min(
-                          100,
-                          (nutrient.value / nutrient.max) * 100
-                        )}%`,
-                      },
-                    ]}
-                  />
-                </View>
-                <Text style={styles.nutrientValue}>
-                  {nutrient.value}
-                  {nutrient.unit}
-                </Text>
-              </View>
-            ))}
-          </View>
-
-          <Text style={styles.description}>
-            일주일간의 식단은 총 505 kcal로 비교적 낮은 섭취량을 나타내며,
-            탄수화물 비중이 84g으로 주요 에너지원으로 활용되었어요.
-          </Text>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>칼로리 섭취 패턴</Text>
-
-          <View style={styles.patternRow}>
-            <View style={styles.patternTextBox}>
-              {PATTERN_TEXTS.map((text) => (
-                <Text key={text} style={styles.patternText}>
-                  · {text}
-                </Text>
-              ))}
-            </View>
-            <View style={styles.imagePlaceholder} />
-          </View>
-        </View>
-
-        <View style={styles.card}>
-          <Text style={styles.cardTitle}>다음에는 이렇게 해보아요:)</Text>
-
-          <View style={styles.tipRow}>
-            <View style={styles.smallImagePlaceholder} />
-            <View style={styles.tipTextBox}>
-              <Text style={styles.tipTitle}>영양소는 고르게 섭취해요</Text>
-              <Text style={styles.tipBody}>
-                다양한 식품군을 포함하여 영양소의 균형을 맞추는 것이
-                중요합니다.
-              </Text>
-            </View>
-          </View>
-
-          <View style={styles.tipRow}>
-            <View style={styles.tipTextBox}>
-              <Text style={styles.tipTitle}>저녁과 야식은 라이트하게!</Text>
-              <Text style={styles.tipBody}>
-                저녁과 식사는 가볍고 소화가 잘되는 음식으로 구성하여 건강을
-                지킵시다.
-              </Text>
-            </View>
-            <View style={styles.smallImagePlaceholder} />
-          </View>
-        </View>
+        <WeeklyCaloriesCard
+          dailyCalories={dailyCalories}
+          weekDays={WEEK_DAYS}
+          maxCalories={MAX_DAILY_CALORIES}
+        />
+        <WeeklyNutrientsCard nutrients={report.nutrientFeedbacks} />
+        <WeeklyPatternCard description={report.mealPatternDescription} />
+        <WeeklySuggestionsCard suggestions={report.nextWeekSuggestions} />
       </ScrollView>
     </KkBackground>
   );
 }
 
-const styles = StyleSheet.create({
-  content: {
-    paddingHorizontal: 14,
-    paddingBottom: 28,
-  },
-  weekSelector: {
-    marginTop: 16,
-    marginBottom: 22,
-    paddingVertical: 12,
-    paddingHorizontal: 22,
-    borderRadius: 24,
-    backgroundColor: "#FDFCFC0A",
-    flexDirection: "row",
+const errorStyles = StyleSheet.create({
+  container: {
+    flex: 1,
     alignItems: "center",
     justifyContent: "center",
-    gap: 12,
+    gap: 16,
+    paddingHorizontal: 24,
   },
-  weekSelectorText: {
-    color: Colors.gray[100],
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
-  },
-  card: {
-    marginBottom: 22,
-    paddingHorizontal: 20,
-    paddingVertical: 12,
-    borderRadius: 22,
-    backgroundColor: "#FDFCFC0A",
-  },
-  cardTitle: {
-    color: Colors.gray[100],
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
-    marginBottom: 6,
+  message: {
+    color: "#E7E2DF",
+    fontSize: 16,
     textAlign: "center",
-  },
-  summaryText: {
-    color: Colors.gray[100],
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
-    marginBottom: 18,
-    textAlign: "center",
-  },
-  highlight: {
-    color: Colors.main[400],
-    fontFamily: "Pretendard-SemiBold",
-  },
-  chart: {
-    flexDirection: "row",
-    alignItems: "flex-end",
-    justifyContent: "space-between",
-  },
-  day: {
-    width: 26,
-    alignItems: "center",
-  },
-  barTrack: {
-    width: 26,
-    height: 128,
-    borderRadius: 7,
-    overflow: "hidden",
-    backgroundColor: "#FDFCFC1A",
-    justifyContent: "flex-end",
-  },
-  barFill: {
-    width: "100%",
-    backgroundColor: Colors.main[400],
-  },
-  dayText: {
-    color: Colors.gray[200],
-    fontSize: 16,
     fontFamily: "Pretendard-Regular",
-    marginTop: 8,
   },
-  totalText: {
-    color: Colors.gray[200],
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
-    marginTop: 14,
-    textAlign: "center",
+  button: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 100,
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
-  nutrientList: {
-    marginTop: 10,
-    gap: 14,
-  },
-  nutrientRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 12,
-  },
-  nutrientLabel: {
-    minWidth: 60,
-    color: Colors.gray[200],
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
-  },
-  nutrientTrack: {
-    flex: 1,
-    height: 20,
-    borderRadius: 8,
-    overflow: "hidden",
-  },
-  nutrientFill: {
-    height: "100%",
-    borderRadius: 8,
-    backgroundColor: Colors.main[300],
-  },
-  nutrientValue: {
-    minWidth: 55,
-    color: Colors.gray[200],
+  buttonText: {
+    color: "#E7E2DF",
     fontSize: 14,
-    fontFamily: "Pretendard-Regular",
-    textAlign: "right",
-  },
-  description: {
-    color: Colors.gray[200],
-    fontSize: 12,
-    fontFamily: "Pretendard-Regular",
-    lineHeight: 18,
-    marginTop: 16,
-  },
-  patternRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginTop: 10,
-  },
-  patternTextBox: {
-    flex: 1,
-    gap: 5,
-  },
-  patternText: {
-    color: Colors.gray[100],
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
-    lineHeight: 20,
-  },
-  imagePlaceholder: {
-    width: 96,
-    height: 96,
-    borderRadius: 7,
-    backgroundColor: Colors.gray[900],
-  },
-  tipRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 14,
-    marginTop: 14,
-  },
-  smallImagePlaceholder: {
-    width: 44,
-    height: 44,
-    borderRadius: 7,
-    backgroundColor: Colors.gray[900],
-  },
-  tipTextBox: {
-    flex: 1,
-  },
-  tipTitle: {
-    color: Colors.gray[100],
-    fontSize: 16,
     fontFamily: "Pretendard-SemiBold",
-    marginBottom: 4,
-  },
-  tipBody: {
-    color: Colors.gray[200],
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
-    lineHeight: 19,
   },
 });
