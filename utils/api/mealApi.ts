@@ -1,16 +1,31 @@
 import { tokenStore } from "@/utils/store/tokenStore";
-import type { MealType } from "@/utils/types/meal";
+import type {
+  ConfirmScanParams,
+  FoodSearchResult,
+  MealTimeSlot,
+  MealType,
+  NutritionSummary,
+  RecordMealManualParams,
+  ScanMealResult,
+  TodayMealRecord,
+  UpdateMealParams,
+  YesterdayPicksResult,
+} from "@/utils/types/meal";
+
+export type {
+  ConfirmScanParams,
+  FoodSearchResult,
+  NutritionSummary,
+  RecordMealManualParams,
+  ScanMealResult,
+  TodayMealRecord,
+  UpdateMealParams,
+  YesterdayPicksResult
+};
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 if (!BASE_URL)
   throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
-
-type MealTimeSlot =
-  | "BREAKFAST"
-  | "LUNCH"
-  | "DINNER"
-  | "SNACK"
-  | "MIDNIGHT_SNACK";
 
 const MEAL_TIME_SLOT_MAP: Record<MealType, MealTimeSlot> = {
   아침: "BREAKFAST",
@@ -26,51 +41,6 @@ export const MEAL_TIME_SLOT_TO_TYPE: Record<MealTimeSlot, MealType> = {
   DINNER: "저녁",
   SNACK: "간식",
   MIDNIGHT_SNACK: "야식",
-};
-
-export type TodayMealRecord = {
-  meal_id: number;
-  recorded_at: string | null;
-  meal_time_slot: MealTimeSlot;
-  category: string;
-  scan_type: string;
-  food_name: string;
-  kcal: number;
-  carbohydrate_g: number;
-  protein_g: number;
-  fat_g: number;
-  sugar_g: number;
-  sodium_mg: number;
-  carbohydrate_percent: number | null;
-  protein_percent: number | null;
-  fat_percent: number | null;
-  memo: string | null;
-};
-
-export type NutritionSummary = {
-  total_kcal: number;
-  total_carbohydrate_g: number;
-  total_protein_g: number;
-  total_fat_g: number;
-  total_sugar_g: number;
-  total_sodium_mg: number;
-  recommended_kcal: number;
-  recommended_carbohydrate_g: number;
-  recommended_protein_g: number;
-  recommended_fat_g: number;
-};
-
-export type ScanMealResult = {
-  image_key: string;
-  food_name: string;
-  meal_time_slot: MealTimeSlot;
-  kcal: number;
-  carbohydrate_g: number;
-  protein_g: number;
-  fat_g: number;
-  sugar_g: number;
-  sodium_mg: number;
-  scan_type: string;
 };
 
 export async function scanMeal(
@@ -104,20 +74,6 @@ export async function scanMeal(
 
   return json.data as ScanMealResult;
 }
-
-export type ConfirmScanParams = {
-  imageKey: string;
-  scanType: string;
-  mealType: MealType;
-  foodName: string;
-  kcal: number;
-  carbohydrateG: number;
-  proteinG: number;
-  fatG: number;
-  sugarG: number;
-  sodiumMg: number;
-  memo?: string | null;
-};
 
 export async function confirmScanMeal(
   params: ConfirmScanParams,
@@ -178,18 +134,6 @@ export async function fetchTodayNutritionSummary(): Promise<NutritionSummary> {
   return json.data as NutritionSummary;
 }
 
-export type FoodSearchResult = {
-  food_name: string;
-  manufacturer: string;
-  kcal: number;
-  carbohydrate_g: number;
-  protein_g: number;
-  fat_g: number;
-  sugar_g: number;
-  sodium_mg: number;
-  source_type: string;
-};
-
 export async function searchFoods(
   keyword: string,
 ): Promise<FoodSearchResult[]> {
@@ -214,19 +158,6 @@ export async function searchFoods(
 
   return json.data as FoodSearchResult[];
 }
-
-type YesterdayPick = {
-  meal_id: number;
-  food_name: string;
-  kcal: number;
-  image_url: string;
-};
-
-export type YesterdayPicksResult = {
-  meal_style: string;
-  time_slot: string;
-  picks: YesterdayPick[];
-};
 
 export async function fetchYesterdayPicks(): Promise<YesterdayPicksResult> {
   const token = await tokenStore.get();
@@ -268,31 +199,6 @@ export async function fetchTodayMeals(): Promise<TodayMealRecord[]> {
 
   return json.data as TodayMealRecord[];
 }
-
-export type RecordMealManualParams = {
-  date: string;
-  mealType: MealType;
-  foodName: string;
-  kcal: number;
-  carbohydrateG: number;
-  proteinG: number;
-  fatG: number;
-  sugarG: number;
-  sodiumMg: number;
-};
-
-export type UpdateMealParams = {
-  mealId: number;
-  mealType: MealType;
-  foodName: string;
-  kcal: number;
-  carbohydrateG: number;
-  proteinG: number;
-  fatG: number;
-  sugarG: number;
-  sodiumMg: number;
-  memo?: string | null;
-};
 
 export async function updateMeal(
   params: UpdateMealParams,
