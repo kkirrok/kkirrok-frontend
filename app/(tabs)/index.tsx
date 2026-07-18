@@ -2,6 +2,12 @@ import BellIcon from "@/assets/icons/bell.svg";
 import KkBackground from "@/components/KkBackground";
 import KkLogoHeader from "@/components/KkLogoHeader";
 import {
+  fetchTodayNutritionSummary,
+  NutritionSummary,
+} from "@/utils/api/mealApi";
+import { useFocusEffect } from "expo-router";
+import React, { useCallback, useState } from "react";
+import {
   Image,
   ScrollView,
   StyleSheet,
@@ -21,22 +27,44 @@ function Card({ children, style }: CardProps) {
 
 type NutrientBarProps = {
   label: string;
-  value: number;
+  actual: number;
+  recommended?: number;
+  unit: string;
 };
 
-function NutrientBar({ label, value }: NutrientBarProps) {
+function NutrientBar({ label, actual, recommended, unit }: NutrientBarProps) {
+  const pct = recommended ? Math.min((actual / recommended) * 100, 100) : 0;
+  const valueText = recommended
+    ? `${actual}/${recommended}${unit}`
+    : `${actual}${unit}`;
   return (
     <View style={styles.nutrientRow}>
       <Text style={styles.nutrientLabel}>{label}</Text>
       <View style={styles.barBg}>
-        <View style={[styles.barFill, { width: `${value}%` }]} />
+        <View style={[styles.barFill, { width: `${pct}%` }]} />
       </View>
-      <Text style={styles.nutrientValue}>20/60g</Text>
+      <Text style={styles.nutrientValue}>{valueText}</Text>
     </View>
   );
 }
 
 export default function Home() {
+  const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
+
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      fetchTodayNutritionSummary()
+        .then((data) => {
+          if (!cancelled) setNutrition(data);
+        })
+        .catch(() => {});
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
   return (
     <KkBackground>
       <ScrollView>
@@ -70,11 +98,34 @@ export default function Home() {
           {/* 영양 성분 */}
           <Text style={styles.sectionTitle}>오늘의 영양성분</Text>
           <Card>
-            <NutrientBar label="단백질" value={70} />
-            <NutrientBar label="탄수화물" value={50} />
-            <NutrientBar label="당" value={60} />
-            <NutrientBar label="지방" value={50} />
-            <NutrientBar label="나트륨" value={60} />
+            <NutrientBar
+              label="단백질"
+              actual={nutrition?.total_protein_g ?? 0}
+              recommended={nutrition?.recommended_protein_g}
+              unit="g"
+            />
+            <NutrientBar
+              label="탄수화물"
+              actual={nutrition?.total_carbohydrate_g ?? 0}
+              recommended={nutrition?.recommended_carbohydrate_g}
+              unit="g"
+            />
+            <NutrientBar
+              label="지방"
+              actual={nutrition?.total_fat_g ?? 0}
+              recommended={nutrition?.recommended_fat_g}
+              unit="g"
+            />
+            <NutrientBar
+              label="당"
+              actual={nutrition?.total_sugar_g ?? 0}
+              unit="g"
+            />
+            <NutrientBar
+              label="나트륨"
+              actual={nutrition?.total_sodium_mg ?? 0}
+              unit="mg"
+            />
           </Card>
 
           {/* 피드백 */}

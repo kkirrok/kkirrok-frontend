@@ -2,10 +2,19 @@ import KkBackground from "@/components/KkBackground";
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
-import { Ionicons } from "@expo/vector-icons";
-import { router } from "expo-router";
-import React, { useRef, useState } from "react";
 import {
+  deleteMeal,
+  fetchTodayMeals,
+  fetchYesterdayPicks,
+  MEAL_TIME_SLOT_TO_TYPE,
+  TodayMealRecord,
+  YesterdayPicksResult,
+} from "@/utils/api/mealApi";
+import { Ionicons } from "@expo/vector-icons";
+import { router, useFocusEffect } from "expo-router";
+import React, { useCallback, useRef, useState } from "react";
+import {
+  ActivityIndicator,
   Dimensions,
   FlatList,
   NativeScrollEvent,
@@ -19,178 +28,113 @@ import {
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import FoodItemScroll, { FoodItem } from "./components/FoodItemScroll";
 import MealCards, { NutrientKey } from "./components/MealCards";
-import MealDonutChart from "./components/MealDonutChart";
-import MealTypeTab, { MealType } from "./components/MealTypeTab";
+import MealDonutChart, { DonutSegment } from "./components/MealDonutChart";
+import MealTypeTab from "./components/MealTypeTab";
 
 const SCREEN_WIDTH = Dimensions.get("window").width;
 const HORIZONTAL_PADDING = 20;
 const CHART_AREA_WIDTH = SCREEN_WIDTH - HORIZONTAL_PADDING * 2;
 
-const MOCK_RECORDS = [
-  {
-    id: "1",
-    mealType: "아침" as MealType,
-    mealName: "에그 토스트",
-    calories: "455",
-    recordTime: "08:30 AM",
-    nutrients: {
-      단백질: "18",
-      탄수화물: "46",
-      당: "10",
-      지방: "23",
-      나트륨: "720",
-    } as Record<NutrientKey, string>,
-    photo:
-      "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=500&h=500&fit=crop",
-    title: "디저트 집착 유형 끼록이들의 어제 이 시간대 픽!",
-    timeLabel: "18:00 기준",
-    foods: [
-      {
-        id: "b1",
-        name: "토스트",
-        calories: "250",
-        badge: "탄수화물 높음",
-        image:
-          "https://images.unsplash.com/photo-1525351484163-7529414344d8?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "b2",
-        name: "시리얼",
-        calories: "200",
-        badge: "당류 높음",
-        image:
-          "https://images.unsplash.com/photo-1585032226651-759b368d7246?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "b3",
-        name: "김밥",
-        calories: "400",
-        badge: "나트륨 높음",
-        image:
-          "https://images.unsplash.com/photo-1617093727343-374698b1b08d?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "b4",
-        name: "베이글",
-        calories: "320",
-        badge: "탄수화물 높음",
-        image:
-          "https://images.unsplash.com/photo-1533243232422-0bb12bb388c7?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "b5",
-        name: "오트밀",
-        calories: "150",
-        badge: "지방 낮음",
-        image:
-          "https://images.unsplash.com/photo-1517673132405-a56a62b18caf?q=80&w=300&h=300&fit=crop",
-      },
-    ] as FoodItem[],
-  },
-  {
-    id: "2",
-    mealType: "점심" as MealType,
-    mealName: "떡볶이",
-    calories: "685",
-    recordTime: "12:15 PM",
-    nutrients: {
-      단백질: "14",
-      탄수화물: "118",
-      당: "32",
-      지방: "17",
-      나트륨: "1580",
-    } as Record<NutrientKey, string>,
-    photo:
-      "https://images.unsplash.com/photo-1635363638580-c2809d049eee?q=80&w=500&h=500&fit=crop",
-    title: "디저트 집착 유형 끼록이들의 어제 이 시간대 픽!",
-    timeLabel: "18:00 기준",
-    foods: [
-      {
-        id: "l1",
-        name: "제육덮밥",
-        calories: "750",
-        badge: "단백질 많음",
-        image:
-          "https://images.unsplash.com/photo-1604329760661-e71dc83f8f26?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "l2",
-        name: "돈까스",
-        calories: "850",
-        badge: "지방 높음",
-        image:
-          "https://images.unsplash.com/photo-1627308595229-7830a5c91f9f?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "l3",
-        name: "비빔밥",
-        calories: "500",
-        badge: "탄수화물 높음",
-        image:
-          "https://images.unsplash.com/photo-1590301157890-4810ed352733?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "l4",
-        name: "김치찌개",
-        calories: "450",
-        badge: "나트륨 높음",
-        image:
-          "https://images.unsplash.com/photo-1582878826629-29b7ad1cdc43?q=80&w=300&h=300&fit=crop",
-      },
-      {
-        id: "l5",
-        name: "샌드위치",
-        calories: "400",
-        badge: "단백질 많음",
-        image:
-          "https://images.unsplash.com/photo-1528735602780-2552fd46c7af?q=80&w=300&h=300&fit=crop",
-      },
-    ] as FoodItem[],
-  },
-];
+function formatRecordedAt(recordedAt: string | null): string {
+  if (!recordedAt) return "--:-- --";
+  const date = new Date(recordedAt);
+  const h = date.getHours();
+  const m = date.getMinutes();
+  const period = h >= 12 ? "PM" : "AM";
+  const hour = h % 12 || 12;
+  return `${String(hour).padStart(2, "0")}:${String(m).padStart(2, "0")} ${period}`;
+}
+
+function makeSegments(r: TodayMealRecord): DonutSegment[] | undefined {
+  if (
+    r.carbohydrate_percent == null ||
+    r.protein_percent == null ||
+    r.fat_percent == null
+  )
+    return undefined;
+  return [
+    { label: "탄수화물", color: "#F6623B", pct: r.carbohydrate_percent / 100 },
+    { label: "단백질", color: "#F99B85", pct: r.protein_percent / 100 },
+    { label: "지방", color: "#FECFC6", pct: r.fat_percent / 100 },
+  ];
+}
 
 export default function MealRecordDetail() {
   const insets = useSafeAreaInsets();
-  const chartListRef = useRef<FlatList<(typeof MOCK_RECORDS)[number]>>(null);
+  const chartListRef = useRef<FlatList<TodayMealRecord>>(null);
+  const [records, setRecords] = useState<TodayMealRecord[]>([]);
+  const [loading, setLoading] = useState(true);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [yesterdayPicks, setYesterdayPicks] =
+    useState<YesterdayPicksResult | null>(null);
 
-  const record = MOCK_RECORDS[currentIndex];
-  const total = MOCK_RECORDS.length;
+  useFocusEffect(
+    useCallback(() => {
+      let cancelled = false;
+      setLoading(true);
+
+      const loadData = async () => {
+        const [mealsResult, picksResult] = await Promise.allSettled([
+          fetchTodayMeals(),
+          fetchYesterdayPicks(),
+        ]);
+        if (cancelled) return;
+
+        if (mealsResult.status === "fulfilled") {
+          setRecords(mealsResult.value);
+          setCurrentIndex(0);
+        } else {
+          setRecords([]);
+          const msg =
+            mealsResult.reason?.message ?? "식사 기록을 불러오지 못했어요.";
+          if (msg.includes("인증 토큰")) {
+            router.replace("/(auth)/SocialLogin");
+            return;
+          }
+          setErrorMessage(msg);
+        }
+
+        if (picksResult.status === "fulfilled") {
+          setYesterdayPicks(picksResult.value);
+        } else {
+          setYesterdayPicks(null);
+        }
+
+        setLoading(false);
+      };
+
+      loadData();
+      return () => {
+        cancelled = true;
+      };
+    }, []),
+  );
+
+  const record = records[currentIndex];
+  const total = records.length;
 
   const moveToIndex = (index: number) => {
     const nextIndex = Math.max(0, Math.min(total - 1, index));
-
     setCurrentIndex(nextIndex);
-
-    chartListRef.current?.scrollToIndex({
-      index: nextIndex,
-      animated: true,
-    });
-  };
-
-  const handlePrev = () => {
-    moveToIndex(currentIndex - 1);
-  };
-
-  const handleNext = () => {
-    moveToIndex(currentIndex + 1);
+    chartListRef.current?.scrollToIndex({ index: nextIndex, animated: true });
   };
 
   const handleChartSwipe = (e: NativeSyntheticEvent<NativeScrollEvent>) => {
     const x = e.nativeEvent.contentOffset.x;
-    const nextIndex = Math.round(x / CHART_AREA_WIDTH);
-
-    setCurrentIndex(nextIndex);
+    setCurrentIndex(Math.round(x / CHART_AREA_WIDTH));
   };
 
-  const handleDelete = () => {
+  const handleDelete = async () => {
     setDeleteModalVisible(false);
-
-    // TODO: 실제 삭제 API
-    // DELETE /meals/{id}
-
-    router.back(); // 삭제 후 뒤로
+    if (!record) return;
+    try {
+      await deleteMeal(record.meal_id);
+      router.back();
+    } catch (err: any) {
+      setErrorMessage(err?.message ?? "삭제에 실패했어요. 다시 시도해 주세요.");
+    }
   };
 
   return (
@@ -202,130 +146,172 @@ export default function MealRecordDetail() {
         >
           <Ionicons name="chevron-back" size={28} color={Colors.gray[100]} />
         </TouchableOpacity>
-
         <Text style={styles.headerTitle}>끼니 기록</Text>
-
         <View style={styles.headerRightBlank} />
       </View>
 
-      <ScrollView
-        style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        <View style={styles.chartArea}>
-          <FlatList
-            ref={chartListRef}
-            data={MOCK_RECORDS}
-            keyExtractor={(item) => item.id}
-            horizontal
-            pagingEnabled
-            showsHorizontalScrollIndicator={false}
-            onMomentumScrollEnd={handleChartSwipe}
-            renderItem={({ item }) => (
-              <View style={styles.chartPage}>
-                <MealDonutChart
-                  photo={item.photo}
-                  mealName={item.mealName}
-                  recognitionFailed={false}
-                  onCameraPress={() => {}}
+      {loading ? (
+        <View style={styles.centerFill}>
+          <ActivityIndicator color={Colors.main[500]} />
+        </View>
+      ) : total === 0 ? (
+        <View style={styles.centerFill}>
+          <Text style={styles.emptyText}>오늘 기록된 식사가 없어요.</Text>
+        </View>
+      ) : (
+        <ScrollView
+          style={styles.scroll}
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.chartArea}>
+            <FlatList
+              ref={chartListRef}
+              data={records}
+              keyExtractor={(item) => String(item.meal_id)}
+              horizontal
+              pagingEnabled
+              showsHorizontalScrollIndicator={false}
+              onMomentumScrollEnd={handleChartSwipe}
+              renderItem={({ item }) => (
+                <View style={styles.chartPage}>
+                  <MealDonutChart
+                    photo={null}
+                    mealName={item.food_name}
+                    recognitionFailed={false}
+                    onCameraPress={() => {}}
+                    segments={makeSegments(item)}
+                  />
+                </View>
+              )}
+            />
+
+            <TouchableOpacity
+              onPress={() => moveToIndex(currentIndex - 1)}
+              style={[
+                styles.sideNavBtn,
+                styles.leftNavBtn,
+                currentIndex === 0 && styles.sideNavBtnDisabled,
+              ]}
+              disabled={currentIndex === 0}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="chevron-back"
+                size={24}
+                color={Colors.gray[100]}
+              />
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              onPress={() => moveToIndex(currentIndex + 1)}
+              style={[
+                styles.sideNavBtn,
+                styles.rightNavBtn,
+                currentIndex === total - 1 && styles.sideNavBtnDisabled,
+              ]}
+              disabled={currentIndex === total - 1}
+              activeOpacity={0.8}
+            >
+              <Ionicons
+                name="chevron-forward"
+                size={24}
+                color={Colors.gray[100]}
+              />
+            </TouchableOpacity>
+          </View>
+
+          <View style={styles.dots}>
+            {records.map((_, i) => (
+              <View
+                key={i}
+                style={[styles.dot, i === currentIndex && styles.dotActive]}
+              />
+            ))}
+          </View>
+
+          {record && (
+            <>
+              <MealTypeTab
+                mealType={MEAL_TIME_SLOT_TO_TYPE[record.meal_time_slot]}
+                onSelect={() => {}}
+              />
+
+              <MealCards
+                mealName={record.food_name}
+                onMealNameChange={() => {}}
+                calories={String(record.kcal)}
+                recordTime={formatRecordedAt(record.recorded_at)}
+                nutrients={
+                  {
+                    단백질: String(record.protein_g),
+                    탄수화물: String(record.carbohydrate_g),
+                    당: String(record.sugar_g),
+                    지방: String(record.fat_g),
+                    나트륨: String(record.sodium_mg),
+                  } as Record<NutrientKey, string>
+                }
+                onNutrientChange={() => {}}
+              />
+
+              {yesterdayPicks != null && yesterdayPicks.picks.length > 0 && (
+                <FoodItemScroll
+                  title={`${yesterdayPicks.meal_style} 유형 끼록이들의 어제 이 시간대 픽!`}
+                  timeLabel={
+                    MEAL_TIME_SLOT_TO_TYPE[
+                      yesterdayPicks.time_slot as keyof typeof MEAL_TIME_SLOT_TO_TYPE
+                    ] ?? yesterdayPicks.time_slot
+                  }
+                  foods={yesterdayPicks.picks.map(
+                    (p): FoodItem => ({
+                      id: String(p.meal_id),
+                      name: p.food_name,
+                      calories: String(p.kcal),
+                      image: p.image_url ?? null,
+                    }),
+                  )}
                 />
+              )}
+
+              <View style={styles.actionRow}>
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.editBtn]}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/MealEdit",
+                      params: {
+                        id: String(record.meal_id),
+                        mealName: record.food_name,
+                        calories: String(record.kcal),
+                        recordTime: formatRecordedAt(record.recorded_at),
+                        mealType: MEAL_TIME_SLOT_TO_TYPE[record.meal_time_slot],
+                        protein: String(record.protein_g),
+                        carb: String(record.carbohydrate_g),
+                        sugar: String(record.sugar_g),
+                        fat: String(record.fat_g),
+                        sodium: String(record.sodium_mg),
+                        photo: "",
+                      },
+                    })
+                  }
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.actionBtnText}>수정하기</Text>
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[styles.actionBtn, styles.deleteBtn]}
+                  onPress={() => setDeleteModalVisible(true)}
+                  activeOpacity={0.85}
+                >
+                  <Text style={styles.actionBtnText}>삭제하기</Text>
+                </TouchableOpacity>
               </View>
-            )}
-          />
+            </>
+          )}
+        </ScrollView>
+      )}
 
-          <TouchableOpacity
-            onPress={handlePrev}
-            style={[
-              styles.sideNavBtn,
-              styles.leftNavBtn,
-              currentIndex === 0 && styles.sideNavBtnDisabled,
-            ]}
-            disabled={currentIndex === 0}
-            activeOpacity={0.8}
-          >
-            <Ionicons name="chevron-back" size={24} color={Colors.gray[100]} />
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            onPress={handleNext}
-            style={[
-              styles.sideNavBtn,
-              styles.rightNavBtn,
-              currentIndex === total - 1 && styles.sideNavBtnDisabled,
-            ]}
-            disabled={currentIndex === total - 1}
-            activeOpacity={0.8}
-          >
-            <Ionicons
-              name="chevron-forward"
-              size={24}
-              color={Colors.gray[100]}
-            />
-          </TouchableOpacity>
-        </View>
-
-        <View style={styles.dots}>
-          {MOCK_RECORDS.map((_, i) => (
-            <View
-              key={i}
-              style={[styles.dot, i === currentIndex && styles.dotActive]}
-            />
-          ))}
-        </View>
-
-        <MealTypeTab mealType={record.mealType} onSelect={() => {}} />
-
-        <MealCards
-          mealName={record.mealName}
-          onMealNameChange={() => {}}
-          calories={record.calories}
-          recordTime={record.recordTime}
-          nutrients={record.nutrients}
-          onNutrientChange={() => {}}
-        />
-
-        <FoodItemScroll
-          foods={record.foods}
-          title={record.title}
-          timeLabel={record.timeLabel}
-        />
-
-        <View style={styles.actionRow}>
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.editBtn]}
-            onPress={() =>
-              router.push({
-                pathname: "/MealEdit",
-                params: {
-                  id: record.id,
-                  mealName: record.mealName,
-                  calories: record.calories,
-                  recordTime: record.recordTime,
-                  mealType: record.mealType,
-                  protein: record.nutrients.단백질,
-                  carb: record.nutrients.탄수화물,
-                  sugar: record.nutrients.당,
-                  fat: record.nutrients.지방,
-                  sodium: record.nutrients.나트륨,
-                  photo: record.photo ?? "",
-                },
-              })
-            }
-            activeOpacity={0.85}
-          >
-            <Text style={styles.actionBtnText}>수정하기</Text>
-          </TouchableOpacity>
-
-          <TouchableOpacity
-            style={[styles.actionBtn, styles.deleteBtn]}
-            onPress={() => setDeleteModalVisible(true)}
-            activeOpacity={0.85}
-          >
-            <Text style={styles.actionBtnText}>삭제하기</Text>
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
       <KkModal
         visible={deleteModalVisible}
         onClose={() => setDeleteModalVisible(false)}
@@ -334,6 +320,13 @@ export default function MealRecordDetail() {
         buttonText="삭제하기"
         onCancelPress={() => setDeleteModalVisible(false)}
         onButtonPress={handleDelete}
+      />
+      <KkModal
+        visible={errorMessage != null}
+        onClose={() => setErrorMessage(null)}
+        message={errorMessage ?? ""}
+        buttonText="확인"
+        onButtonPress={() => setErrorMessage(null)}
       />
     </KkBackground>
   );
@@ -360,6 +353,16 @@ const styles = StyleSheet.create({
   },
   headerRightBlank: {
     width: 40,
+  },
+
+  centerFill: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyText: {
+    ...Typography.body.l,
+    color: Colors.gray[400],
   },
 
   scroll: {

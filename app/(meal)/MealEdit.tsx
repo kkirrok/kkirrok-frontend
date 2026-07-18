@@ -2,6 +2,7 @@ import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
+import { updateMeal } from "@/utils/api/mealApi";
 import { useFocusEffect } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
@@ -40,6 +41,8 @@ export default function MealEdit() {
   }>();
 
   const [exitModalVisible, setExitModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState<string | null>(null);
+  const [saving, setSaving] = useState(false);
 
   const [mealType, setMealType] = useState<MealType>(params.mealType ?? "간식");
   const [mealName, setMealName] = useState(params.mealName ?? "");
@@ -70,9 +73,27 @@ export default function MealEdit() {
     setExitModalVisible(false);
   };
 
-  const handleSave = () => {
-    // TODO: PATCH API 연결
-    router.back();
+  const handleSave = async () => {
+    if (saving || !params.id) return;
+    setSaving(true);
+    try {
+      await updateMeal({
+        mealId: parseInt(params.id),
+        mealType,
+        foodName: mealName,
+        kcal: Number(calories),
+        carbohydrateG: Number(nutrients.탄수화물),
+        proteinG: Number(nutrients.단백질),
+        fatG: Number(nutrients.지방),
+        sugarG: Number(nutrients.당),
+        sodiumMg: Number(nutrients.나트륨),
+      });
+      router.back();
+    } catch (err: any) {
+      setErrorMessage(err?.message ?? "수정에 실패했어요. 다시 시도해 주세요.");
+    } finally {
+      setSaving(false);
+    }
   };
 
   useFocusEffect(
@@ -122,6 +143,7 @@ export default function MealEdit() {
         <KkButton
           title="수정 완료"
           size="large"
+          disabled={saving}
           onPress={handleSave}
           style={styles.submitButton}
         />
@@ -137,6 +159,13 @@ export default function MealEdit() {
         buttonText="계속 작성하기"
         onCancelPress={handleExit}
         onButtonPress={handleContinue}
+      />
+      <KkModal
+        visible={errorMessage != null}
+        onClose={() => setErrorMessage(null)}
+        message={errorMessage ?? ""}
+        buttonText="확인"
+        onButtonPress={() => setErrorMessage(null)}
       />
     </KkBackground>
   );
