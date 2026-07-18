@@ -10,11 +10,13 @@ const CY = CHART_SIZE / 2;
 const OUTER_R = 118;
 const INNER_R = 100;
 
-const SEGMENTS = [
+const DEFAULT_SEGMENTS = [
   { label: "탄수화물", color: Colors.main[500], pct: 0.55 },
   { label: "단백질", color: Colors.main[400], pct: 0.25 },
   { label: "지방", color: Colors.main[200], pct: 0.2 },
 ];
+
+export type DonutSegment = { label: string; color: string; pct: number };
 
 function polarToCartesian(cx: number, cy: number, r: number, deg: number) {
   const rad = (deg - 90) * (Math.PI / 180);
@@ -35,11 +37,11 @@ function arcPath(
   return `M ${o1.x} ${o1.y} A ${outerR} ${outerR} 0 ${large} 1 ${o2.x} ${o2.y} L ${i1.x} ${i1.y} A ${innerR} ${innerR} 0 ${large} 0 ${i2.x} ${i2.y} Z`;
 }
 
-function NutrientDonut() {
+function NutrientDonut({ segments }: { segments: DonutSegment[] }) {
   let cursor = 0;
   return (
     <Svg width={CHART_SIZE} height={CHART_SIZE}>
-      {SEGMENTS.map((seg) => {
+      {segments.map((seg) => {
         const startDeg = cursor * 360;
         cursor += seg.pct;
         const endDeg = cursor * 360;
@@ -79,6 +81,7 @@ type Props = {
   mealName?: string;
   recognitionFailed: boolean;
   onCameraPress: () => void;
+  segments?: DonutSegment[];
 };
 
 export default function MealDonutChart({
@@ -86,11 +89,12 @@ export default function MealDonutChart({
   mealName,
   recognitionFailed,
   onCameraPress,
+  segments = DEFAULT_SEGMENTS,
 }: Props) {
   return (
     <View style={styles.chartSection}>
       <View style={styles.chartContainer}>
-        <NutrientDonut />
+        <NutrientDonut segments={segments} />
         <TouchableOpacity
           style={styles.chartCenterIcon}
           onPress={onCameraPress}
@@ -123,7 +127,7 @@ export default function MealDonutChart({
         </TouchableOpacity>
       </View>
       <View style={styles.legend}>
-        {SEGMENTS.map((seg) => (
+        {segments.map((seg) => (
           <LegendDot
             key={seg.label}
             color={seg.color}
