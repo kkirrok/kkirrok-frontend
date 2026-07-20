@@ -271,32 +271,36 @@ export default function MealRecord() {
           onNutrientChange={(key, value) =>
             setNutrients((prev) => ({ ...prev, [key]: value }))
           }
+          searchDropdown={
+            searchResults.length > 0 ? (
+              <BlurView intensity={40} tint="dark" style={styles.searchResults}>
+                {searchResults.map((item, i) => (
+                  <TouchableOpacity
+                    key={i}
+                    style={[
+                      styles.searchItem,
+                      i < searchResults.length - 1 && styles.searchItemBorder,
+                    ]}
+                    onPress={() => applySearchResult(item)}
+                    activeOpacity={0.7}
+                  >
+                    <View style={styles.searchItemLeft}>
+                      <Text style={styles.searchFoodName}>
+                        {item.food_name}
+                      </Text>
+                      {!!item.manufacturer && (
+                        <Text style={styles.searchManufacturer}>
+                          {item.manufacturer}
+                        </Text>
+                      )}
+                    </View>
+                    <Text style={styles.searchKcal}>{item.kcal} kcal</Text>
+                  </TouchableOpacity>
+                ))}
+              </BlurView>
+            ) : null
+          }
         />
-        {searchResults.length > 0 && (
-          <BlurView intensity={40} tint="dark" style={styles.searchResults}>
-            {searchResults.map((item, i) => (
-              <TouchableOpacity
-                key={i}
-                style={[
-                  styles.searchItem,
-                  i < searchResults.length - 1 && styles.searchItemBorder,
-                ]}
-                onPress={() => applySearchResult(item)}
-                activeOpacity={0.7}
-              >
-                <View style={styles.searchItemLeft}>
-                  <Text style={styles.searchFoodName}>{item.food_name}</Text>
-                  {!!item.manufacturer && (
-                    <Text style={styles.searchManufacturer}>
-                      {item.manufacturer}
-                    </Text>
-                  )}
-                </View>
-                <Text style={styles.searchKcal}>{item.kcal} kcal</Text>
-              </TouchableOpacity>
-            ))}
-          </BlurView>
-        )}
         <KkButton
           title="끼록하기"
           size="large"

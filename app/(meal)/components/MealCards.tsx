@@ -1,6 +1,7 @@
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { BlurView } from "expo-blur";
+import React from "react";
 import { StyleSheet, Text, TextInput, View } from "react-native";
 
 export type NutrientKey = "단백질" | "탄수화물" | "당" | "지방" | "나트륨";
@@ -25,6 +26,7 @@ type Props = {
   recordTime: string;
   nutrients: Record<NutrientKey, string>;
   onNutrientChange: (key: NutrientKey, value: string) => void;
+  searchDropdown?: React.ReactNode;
 };
 
 export default function MealCards({
@@ -35,6 +37,7 @@ export default function MealCards({
   recordTime,
   nutrients,
   onNutrientChange,
+  searchDropdown,
 }: Props) {
   return (
     <>
@@ -48,6 +51,7 @@ export default function MealCards({
           style={[styles.inputValue, styles.mealInput]}
         />
       </BlurView>
+      {searchDropdown}
 
       <View style={styles.infoRow}>
         <BlurView intensity={40} tint="dark" style={[styles.card, styles.flex]}>
