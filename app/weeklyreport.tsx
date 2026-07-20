@@ -8,8 +8,8 @@ import WeeklySuggestionsCard from "@/components/weeklyreport/WeeklySuggestionsCa
 import { styles } from "@/components/weeklyreport/styles";
 import { getWeeklyReport } from "@/utils/api/reportApi";
 import type { WeeklyReportResponse } from "@/utils/types/report";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -48,6 +48,7 @@ export default function WeeklyReportPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lastFetchedWeekRef = useRef<string | null>(null);
 
   const selectedDate = useMemo(() => {
     const year = toNumberParam(params.year);
@@ -89,37 +90,40 @@ export default function WeeklyReportPage() {
     return `${year}년 ${String(month).padStart(2, "0")}월 ${week}주차`;
   }, [selectedDate]);
 
-  useEffect(() => {
-    const controller = new AbortController();
+  useFocusEffect(
+    useCallback(() => {
+      const controller = new AbortController();
 
-    const fetchWeeklyReport = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getWeeklyReport(weekStart);
-        if (!controller.signal.aborted) {
-          setReport(response.data);
-        }
-      } catch (err) {
-        if (!controller.signal.aborted) {
-          const message =
-            err instanceof Error ? err.message : "오류가 발생했습니다.";
-          if (message.includes("인증 토큰")) {
-            router.replace("/(auth)/SocialLogin");
-            return;
+      const fetchWeeklyReport = async () => {
+        if (lastFetchedWeekRef.current !== weekStart) setLoading(true);
+        setError(null);
+        try {
+          const response = await getWeeklyReport(weekStart);
+          if (!controller.signal.aborted) {
+            lastFetchedWeekRef.current = weekStart;
+            setReport(response.data);
           }
-          setError(message);
+        } catch (err) {
+          if (!controller.signal.aborted) {
+            const message =
+              err instanceof Error ? err.message : "오류가 발생했습니다.";
+            if (message.includes("인증 토큰")) {
+              router.replace("/(auth)/SocialLogin");
+              return;
+            }
+            setError(message);
+          }
+        } finally {
+          if (!controller.signal.aborted) {
+            setLoading(false);
+          }
         }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
+      };
 
-    fetchWeeklyReport();
-    return () => controller.abort();
-  }, [weekStart]);
+      fetchWeeklyReport();
+      return () => controller.abort();
+    }, [weekStart]),
+  );
 
   const dailyCalories = useMemo(() => {
     if (!report) return [];

@@ -5,19 +5,20 @@ import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 const DAY_LABELS = ["일", "월", "화", "수", "목", "금", "토"];
 
-export function getWeekDays(base: Date) {
-  const dow = base.getDay();
-  const monday = new Date(base);
-  monday.setDate(base.getDate() - ((dow + 6) % 7));
+export function getWeekDays(today: Date) {
   return Array.from({ length: 7 }, (_, i) => {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
+    const d = new Date(today);
+    d.setDate(today.getDate() - 6 + i);
     return d;
   });
 }
 
 export function isSameDay(a: Date, b: Date) {
-  return a.getDate() === b.getDate() && a.getMonth() === b.getMonth();
+  return (
+    a.getFullYear() === b.getFullYear() &&
+    a.getMonth() === b.getMonth() &&
+    a.getDate() === b.getDate()
+  );
 }
 
 type Props = {
@@ -26,7 +27,8 @@ type Props = {
 };
 
 export default function WeekCalendar({ selectedDate, onSelectDate }: Props) {
-  const weekDays = getWeekDays(new Date());
+  const today = new Date();
+  const weekDays = getWeekDays(today);
 
   return (
     <View style={styles.dateSection}>

@@ -139,7 +139,7 @@ export default function MealDonutChart({
             key={seg.label}
             color={seg.color}
             label={seg.label}
-            value="%"
+            value={`${Math.round(seg.pct * 100)}%`}
           />
         ))}
       </View>

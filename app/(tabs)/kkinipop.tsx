@@ -9,15 +9,25 @@ import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import {
   addReaction,
+  deleteGroupEmoji,
   deletePost,
+  fetchGroupEmojis,
   fetchGroupMembers,
   fetchGroups,
   fetchMissions,
   fetchPosts,
+  fetchSystemEmojis,
 } from "@/utils/api/kkinipopApi";
 import { getDownloadUrl } from "@/utils/api/r2Api";
 import { tokenStore } from "@/utils/store/tokenStore";
-import { Group, MealRecord, Mission, PostDay } from "@/utils/types/kkinipop";
+import {
+  Group,
+  GroupEmoji,
+  MealRecord,
+  Mission,
+  PostDay,
+  SystemEmoji,
+} from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
@@ -34,6 +44,15 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
+const SYSTEM_EMOJI_CHAR: Record<string, string> = {
+  SYSTEM_HEART: "❤️",
+  SYSTEM_FIRE: "🔥",
+  SYSTEM_PIG: "🐷",
+  SYSTEM_YUMMY: "😋",
+  SYSTEM_SMILE: "😊",
+  SYSTEM_DDABONG: "👍",
+};
+
 export default function KkinipopPage() {
   const insets = useSafeAreaInsets();
   const today = new Date();
@@ -49,9 +68,17 @@ export default function KkinipopPage() {
   const [moabogiMissionId, setMoabogiMissionId] = useState<number | null>(null);
   const [postDays, setPostDays] = useState<PostDay[]>([]);
   const [myMemberId, setMyMemberId] = useState<number | null>(null);
+  const [globalSystemEmojis, setGlobalSystemEmojis] = useState<SystemEmoji[]>(
+    [],
+  );
+  const [customEmojiList, setCustomEmojiList] = useState<
+    (GroupEmoji & { imageUrl: string | null })[]
+  >([]);
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
+  const [missionLoading, setMissionLoading] = useState(false);
   const postsControllerRef = useRef<AbortController | null>(null);
+  const emojiControllerRef = useRef<AbortController | null>(null);
   const skipNextFocusRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const rowRefs = useRef<(View | null)[]>([]);
@@ -64,10 +91,14 @@ export default function KkinipopPage() {
         router.replace("/(auth)/Login");
         return;
       }
-      fetchGroups(controller.signal)
-        .then((data) => {
-          setGroups(data);
-          if (data.length > 0) setSelectedGroupId(data[0].group_id);
+      Promise.all([
+        fetchGroups(controller.signal),
+        fetchSystemEmojis(controller.signal),
+      ])
+        .then(([groups, systemEmojis]) => {
+          setGroups(groups);
+          if (groups.length > 0) setSelectedGroupId(groups[0].group_id);
+          setGlobalSystemEmojis(systemEmojis);
         })
         .catch((err) => {
           if (err.name !== "AbortError") console.error(err);
@@ -75,6 +106,50 @@ export default function KkinipopPage() {
         .finally(() => setGroupsLoading(false));
     })();
     return () => controller.abort();
+  }, []);
+
+  const loadGroupEmojis = useCallback(async (groupId: number) => {
+    emojiControllerRef.current?.abort();
+    const controller = new AbortController();
+    emojiControllerRef.current = controller;
+    try {
+      const data = await fetchGroupEmojis(groupId, controller.signal);
+      if (controller.signal.aborted) return;
+      const withUrls = await Promise.all(
+        data.custom_emojis.map(async (e) => {
+          if (!e.image) return { ...e, imageUrl: null };
+          try {
+            const url = await getDownloadUrl(e.image);
+            return { ...e, imageUrl: url };
+          } catch {
+            return { ...e, imageUrl: null };
+          }
+        }),
+      );
+      if (!controller.signal.aborted) setCustomEmojiList(withUrls);
+    } catch (err: any) {
+      if (err?.name !== "AbortError") console.error(err);
+    }
+  }, []);
+
+  const missionControllerRef = useRef<AbortController | null>(null);
+
+  const loadMissions = useCallback(async (groupId: number, date: string) => {
+    missionControllerRef.current?.abort();
+    const controller = new AbortController();
+    missionControllerRef.current = controller;
+    setMissionLoading(true);
+    try {
+      const data = await fetchMissions(groupId, date, controller.signal);
+      if (controller.signal.aborted) return;
+      setMissions(data);
+      const realTimeIdx = data.findIndex((m) => m.is_real_time);
+      setMissionIndex(realTimeIdx >= 0 ? realTimeIdx : 0);
+    } catch (err: any) {
+      if (err?.name !== "AbortError") console.error(err);
+    } finally {
+      if (!controller.signal.aborted) setMissionLoading(false);
+    }
   }, []);
 
   const loadPosts = useCallback(async (groupId: number) => {
@@ -99,8 +174,10 @@ export default function KkinipopPage() {
     setMyMemberId(null);
     setMoabogiMissionId(null);
     setMissionIndex(0);
+    setCustomEmojiList([]);
     setContentLoading(true);
     loadPosts(selectedGroupId);
+    loadGroupEmojis(selectedGroupId);
     const membersCtrl = new AbortController();
     fetchGroupMembers(selectedGroupId, membersCtrl.signal)
       .then((members) => {
@@ -109,22 +186,26 @@ export default function KkinipopPage() {
         if (me) setMyMemberId(me.member_id);
       })
       .catch(() => {});
-    const missionCtrl = new AbortController();
-    fetchMissions(selectedGroupId, missionCtrl.signal)
-      .then((data) => {
-        setMissions(data);
-        const realTimeIdx = data.findIndex((m) => m.is_real_time);
-        setMissionIndex(realTimeIdx >= 0 ? realTimeIdx : 0);
-      })
-      .catch((err) => {
-        if (err?.name !== "AbortError") console.error(err);
-      });
     return () => {
       postsControllerRef.current?.abort();
+      emojiControllerRef.current?.abort();
       membersCtrl.abort();
-      missionCtrl.abort();
     };
-  }, [selectedGroupId, loadPosts]);
+  }, [selectedGroupId, loadPosts, loadGroupEmojis]);
+
+  useEffect(() => {
+    if (selectedGroupId == null) return;
+    const dateStr = [
+      selectedDate.getFullYear(),
+      String(selectedDate.getMonth() + 1).padStart(2, "0"),
+      String(selectedDate.getDate()).padStart(2, "0"),
+    ].join("-");
+    setMissions([]);
+    setMissionIndex(0);
+    setMoabogiMissionId(null);
+    loadMissions(selectedGroupId, dateStr);
+    return () => missionControllerRef.current?.abort();
+  }, [selectedGroupId, selectedDate, loadMissions]);
 
   useFocusEffect(
     useCallback(() => {
@@ -132,8 +213,11 @@ export default function KkinipopPage() {
         skipNextFocusRef.current = false;
         return;
       }
-      if (selectedGroupId != null) loadPosts(selectedGroupId);
-    }, [selectedGroupId, loadPosts]),
+      if (selectedGroupId != null) {
+        loadPosts(selectedGroupId);
+        loadGroupEmojis(selectedGroupId);
+      }
+    }, [selectedGroupId, loadPosts, loadGroupEmojis]),
   );
 
   const todayStr = [
@@ -179,12 +263,7 @@ export default function KkinipopPage() {
 
   const visibleMissions = missions.filter((m) => {
     if (!m.start_at) return true;
-    const mDate = new Date(m.start_at);
-    const sameDay =
-      mDate.getFullYear() === selectedDate.getFullYear() &&
-      mDate.getMonth() === selectedDate.getMonth() &&
-      mDate.getDate() === selectedDate.getDate();
-    return sameDay && mDate.getTime() <= Date.now();
+    return new Date(m.start_at).getTime() <= Date.now();
   });
 
   const records: MealRecord[] = todayPosts.map((p) => ({
@@ -201,7 +280,11 @@ export default function KkinipopPage() {
     isOwn: p.member_id === myMemberId,
     missionId: p.mission_id,
     reactions: p.reactions.map((r) => ({
-      emoji: r.emoji_code,
+      emoji:
+        SYSTEM_EMOJI_CHAR[r.emoji_code] ??
+        globalSystemEmojis.find((e) => e.emoji_code === r.emoji_code)?.label ??
+        customEmojiList.find((e) => e.emoji_code === r.emoji_code)?.label ??
+        r.emoji_code,
       count: r.count,
     })),
   }));
@@ -212,23 +295,33 @@ export default function KkinipopPage() {
   const handleTogglePicker = (id: string) =>
     setOpenPickerId((prev) => (prev === id ? null : id));
 
-  const handleAddReaction = async (id: string, emoji: string) => {
+  const handleAddReaction = async (id: string, emojiCode: string) => {
     if (!selectedGroupId) return;
     const postId = parseInt(id);
     try {
-      await addReaction(selectedGroupId, postId, emoji);
+      const result = await addReaction(selectedGroupId, postId, emojiCode);
       setPostDays((prev) =>
         prev.map((day) => ({
           ...day,
           posts: day.posts.map((p) => {
             if (p.post_id !== postId) return p;
-            const existing = p.reactions.find((r) => r.emoji_code === emoji);
+            const existing = p.reactions.find(
+              (r) => r.emoji_code === result.emoji_code,
+            );
             if (existing) {
+              if (result.count === 0) {
+                return {
+                  ...p,
+                  reactions: p.reactions.filter(
+                    (r) => r.emoji_code !== result.emoji_code,
+                  ),
+                };
+              }
               return {
                 ...p,
                 reactions: p.reactions.map((r) =>
-                  r.emoji_code === emoji
-                    ? { ...r, count: r.count + 1, reacted: true }
+                  r.emoji_code === result.emoji_code
+                    ? { ...r, count: result.count, reacted: result.reacted }
                     : r,
                 ),
               };
@@ -238,11 +331,11 @@ export default function KkinipopPage() {
               reactions: [
                 ...p.reactions,
                 {
-                  emoji_code: emoji,
-                  label: emoji,
-                  count: 1,
-                  emoji_type: "CUSTOM",
-                  reacted: true,
+                  emoji_code: result.emoji_code,
+                  label: result.label,
+                  count: result.count,
+                  emoji_type: result.emoji_type,
+                  reacted: result.reacted,
                 },
               ],
             };
@@ -266,6 +359,16 @@ export default function KkinipopPage() {
           posts: day.posts.filter((p) => p.post_id !== postId),
         })),
       );
+    } catch (err) {
+      console.error(err);
+    }
+  };
+
+  const handleDeleteCustomEmoji = async (emojiId: number) => {
+    if (!selectedGroupId) return;
+    try {
+      await deleteGroupEmoji(selectedGroupId, emojiId);
+      setCustomEmojiList((prev) => prev.filter((e) => e.emoji_id !== emojiId));
     } catch (err) {
       console.error(err);
     }
@@ -378,7 +481,7 @@ export default function KkinipopPage() {
             if (openPickerId) setOpenPickerId(null);
           }}
         >
-          {contentLoading ? (
+          {contentLoading || missionLoading ? (
             <SkeletonMissionCard />
           ) : (
             visibleMissions.length > 0 &&
@@ -392,6 +495,7 @@ export default function KkinipopPage() {
                 <MissionCard
                   title={m.title}
                   startAt={m.start_at}
+                  isRealTime={m.is_real_time}
                   endAt={m.end_at}
                   successMembers={m.success_members}
                   successMemberCount={m.success_member_count}
@@ -468,6 +572,12 @@ export default function KkinipopPage() {
                         record.missionId === moabogiMissionId
                       }
                       onOpenKkimoji={() => setKkimojiModalVisible(true)}
+                      systemEmojis={globalSystemEmojis.map((e) => ({
+                        emoji_code: e.emoji_code,
+                        display: SYSTEM_EMOJI_CHAR[e.emoji_code] ?? e.label,
+                      }))}
+                      customGroupEmojis={customEmojiList}
+                      onDeleteCustomEmoji={handleDeleteCustomEmoji}
                     />
                   ))}
                   {row.length === 1 && (
@@ -547,7 +657,10 @@ export default function KkinipopPage() {
                 onPress={() => {
                   setKkimojiModalVisible(false);
                   setOpenPickerId(null);
-                  router.push("/camera/kkimoji");
+                  router.push({
+                    pathname: "/camera/kkimoji",
+                    params: { groupId: selectedGroupId },
+                  });
                 }}
               >
                 <Text style={styles.modalBtnText}>촬영하기</Text>
@@ -567,7 +680,10 @@ export default function KkinipopPage() {
                     setOpenPickerId(null);
                     router.push({
                       pathname: "/camera/kkimoji",
-                      params: { uri: result.assets[0].uri },
+                      params: {
+                        uri: result.assets[0].uri,
+                        groupId: selectedGroupId,
+                      },
                     });
                   }
                 }}

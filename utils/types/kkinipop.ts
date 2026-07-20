@@ -75,3 +75,21 @@ export type Mission = {
   success_member_count: number;
   success_members: MissionSuccessMember[];
 };
+
+export type SystemEmoji = {
+  emoji_code: string;
+  label: string;
+};
+
+export type GroupEmoji = {
+  emoji_id: number;
+  emoji_code: string;
+  label: string;
+  image: string | null;
+  emoji_type: "SYSTEM_EMOJI" | "CUSTOM_EMOJI";
+};
+
+export type GroupEmojiList = {
+  system_emojis: GroupEmoji[];
+  custom_emojis: GroupEmoji[];
+};

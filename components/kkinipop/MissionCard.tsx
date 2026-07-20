@@ -66,6 +66,7 @@ type Props = {
   title: string;
   startAt: string | null;
   endAt: string | null;
+  isRealTime?: boolean;
   successMembers?: MissionSuccessMember[];
   successMemberCount?: number;
   hasPrev?: boolean;
@@ -81,6 +82,7 @@ export default function MissionCard({
   title,
   startAt,
   endAt,
+  isRealTime = false,
   successMembers = [],
   successMemberCount = 0,
   hasPrev = false,
@@ -91,7 +93,8 @@ export default function MissionCard({
   onMoabogi,
   moabogiActive = false,
 }: Props) {
-  const isLive = useIsLive(startAt, endAt);
+  const isLiveByTime = useIsLive(startAt, endAt);
+  const isLive = isRealTime || isLiveByTime;
   const countdown = useCountdown(endAt);
 
   const borderAnim = useRef(new Animated.Value(0)).current;
