@@ -2,11 +2,11 @@ import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { MealRecord } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
+import { Image } from "expo-image";
 import { LinearGradient } from "expo-linear-gradient";
 import { useEffect, useRef, useState } from "react";
 import {
   Animated,
-  Image,
   Pressable,
   StyleSheet,
   Text,
@@ -14,17 +14,26 @@ import {
   View,
 } from "react-native";
 
-const EMOJI_OPTIONS = ["🔥", "🐷", "👍", "😊", "😋", "❤️"];
+type SystemEmojiItem = { emoji_code: string; display: string };
+type CustomEmojiItem = {
+  emoji_id: number;
+  emoji_code: string;
+  label: string;
+  imageUrl: string | null;
+};
 
 type Props = {
   record: MealRecord;
   pickerOpen: boolean;
   onTogglePicker: () => void;
-  onAddReaction: (emoji: string) => void;
+  onAddReaction: (emojiCode: string) => void;
   onDelete: () => void;
   hasReacted: boolean;
   highlighted?: boolean;
   onOpenKkimoji?: () => void;
+  systemEmojis: SystemEmojiItem[];
+  customGroupEmojis: CustomEmojiItem[];
+  onDeleteCustomEmoji?: (emojiId: number) => void;
 };
 
 export default function RecordCard({
@@ -36,15 +45,16 @@ export default function RecordCard({
   hasReacted,
   highlighted = false,
   onOpenKkimoji,
+  systemEmojis,
+  customGroupEmojis,
+  onDeleteCustomEmoji,
 }: Props) {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const wiggleAnim = useRef(new Animated.Value(0)).current;
 
-  const [customEmojis, setCustomEmojis] = useState([
-    { id: "1", emoji: "🔥" },
-    { id: "2", emoji: "🔥" },
-    { id: "3", emoji: "🔥" },
-  ]);
+  useEffect(() => {
+    if (customGroupEmojis.length === 0) setIsDeleteMode(false);
+  }, [customGroupEmojis.length]);
 
   useEffect(() => {
     if (!pickerOpen) setIsDeleteMode(false);
@@ -95,7 +105,7 @@ export default function RecordCard({
         <Image
           source={{ uri: record.image }}
           style={StyleSheet.absoluteFillObject}
-          resizeMode="cover"
+          contentFit="cover"
         />
       ) : (
         <View style={[StyleSheet.absoluteFillObject, styles.cardPlaceholder]} />
@@ -172,29 +182,36 @@ export default function RecordCard({
                 />
               </TouchableOpacity>
 
-              {customEmojis.map((item) => (
+              {customGroupEmojis.map((item) => (
                 <Animated.View
-                  key={item.id}
+                  key={item.emoji_id}
                   style={[styles.emojiCurrentItem, isDeleteMode && wiggleStyle]}
                 >
                   <Pressable
                     onLongPress={() => setIsDeleteMode(true)}
                     onPress={() => {
-                      if (isDeleteMode) setIsDeleteMode(false);
+                      if (isDeleteMode) {
+                        setIsDeleteMode(false);
+                      } else {
+                        onAddReaction(item.emoji_code);
+                      }
                     }}
                   >
-                    <Text style={styles.emojiCurrentText}>{item.emoji}</Text>
+                    {item.imageUrl ? (
+                      <Image
+                        source={{ uri: item.imageUrl }}
+                        style={styles.customEmojiImage}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <Text style={styles.emojiCurrentText}>{item.label}</Text>
+                    )}
                   </Pressable>
 
                   {isDeleteMode && (
                     <TouchableOpacity
                       style={styles.emojiCloseBtn}
-                      onPress={() => {
-                        setCustomEmojis((prev) =>
-                          prev.filter((e) => e.id !== item.id),
-                        );
-                        if (customEmojis.length === 1) setIsDeleteMode(false);
-                      }}
+                      onPress={() => onDeleteCustomEmoji?.(item.emoji_id)}
                     >
                       <Ionicons
                         name="close-circle"
@@ -210,13 +227,13 @@ export default function RecordCard({
             <View style={styles.emojiDivider} />
 
             <View style={styles.emojiGrid}>
-              {EMOJI_OPTIONS.map((emoji) => (
+              {systemEmojis.map((emoji) => (
                 <TouchableOpacity
-                  key={emoji}
+                  key={emoji.emoji_code}
                   style={styles.emojiOption}
-                  onPress={() => onAddReaction(emoji)}
+                  onPress={() => onAddReaction(emoji.emoji_code)}
                 >
-                  <Text style={styles.emojiOptionText}>{emoji}</Text>
+                  <Text style={styles.emojiOptionText}>{emoji.display}</Text>
                 </TouchableOpacity>
               ))}
             </View>
@@ -302,12 +319,13 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   emojiCurrentItem: {
-    width: 24,
-    height: 24,
+    width: 28,
+    height: 28,
     alignItems: "center",
     justifyContent: "center",
   },
   emojiCurrentText: { ...Typography.title.xs },
+  customEmojiImage: { width: 28, height: 28, borderRadius: 14 },
   emojiCloseBtn: {
     position: "absolute",
     top: 0,
