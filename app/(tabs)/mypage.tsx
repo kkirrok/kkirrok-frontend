@@ -87,7 +87,7 @@ export default function MyPage() {
         <MenuItem
           title="비밀번호 변경"
           onPress={() => {
-            router.push("/(auth)/ResetPassword");
+            router.push("/(auth)/FindPassword");
           }}
         />
         <MenuItem
