@@ -1,20 +1,28 @@
-import { View, Text, ScrollView, StyleSheet, TouchableOpacity } from 'react-native'
-import { SafeAreaView } from 'react-native-safe-area-context';
-import KkBackground from "@/components/KkBackground";
-import KkModal from "@/components/KkModal";
-import { useState } from 'react';
-import { useRouter } from 'expo-router';
 import BellIcon from "@/assets/icons/bell.svg";
 import ProfileIcon from "@/assets/icons/profile.svg";
-import { signOut } from '@/utils/api/authApi';
-import { tokenStore } from '@/utils/store/tokenStore';
-import { Image } from 'expo-image';
-import { useProfile } from '@/hooks/useProfile';
-import { useProfileImage } from '@/hooks/useProfileImage';
+import KkBackground from "@/components/KkBackground";
+import KkModal from "@/components/KkModal";
+import { useProfile } from "@/hooks/useProfile";
+import { useProfileImage } from "@/hooks/useProfileImage";
+import { deleteAccount, signOut } from "@/utils/api/authApi";
+import { tokenStore } from "@/utils/store/tokenStore";
+import { Image } from "expo-image";
+import { useRouter } from "expo-router";
+import { useState } from "react";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function MyPage() {
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
   const router = useRouter();
   const { data: profile, isLoading } = useProfile();
   const { data: imageUrl } = useProfileImage(profile?.profile_image);
@@ -30,9 +38,9 @@ export default function MyPage() {
     } catch {
       // 토큰 삭제 실패해도 로그인으로 이동
     }
-    router.replace('/(auth)/SocialLogin');
+    router.replace("/(auth)/SocialLogin");
   };
-  
+
   return (
     <KkBackground>
       <ScrollView contentContainerStyle={styles.container}>
@@ -57,31 +65,35 @@ export default function MyPage() {
           )}
           <View>
             <Text style={styles.name}>
-              {isLoading ? "로딩중..." : profile?.nickname ? `${profile.nickname}님` : "guest님"}
+              {isLoading
+                ? "로딩중..."
+                : profile?.nickname
+                  ? `${profile.nickname}님`
+                  : "guest님"}
             </Text>
             <Text style={styles.sub}>#디저트집착유형</Text>
             <Text style={styles.sub2}>권장 칼로리: 2500kcal</Text>
           </View>
         </View>
-        
+
         <Text style={styles.sectionTitle}>내 정보</Text>
 
         <MenuItem
           title="프로필 변경"
           onPress={() => {
-            router.push('/(auth)/ProfileEdit');
+            router.push("/(auth)/ProfileEdit");
           }}
         />
         <MenuItem
           title="비밀번호 변경"
           onPress={() => {
-            router.push('/(auth)/ResetPassword');
+            router.push("/(auth)/ResetPassword");
           }}
         />
         <MenuItem
           title="권장 칼로리 변경"
           onPress={() => {
-            router.push('/(auth)/ResetKcal');
+            router.push("/(auth)/ResetKcal");
           }}
         />
 
@@ -94,7 +106,7 @@ export default function MyPage() {
         <MenuItem
           title="로그아웃"
           onPress={() => {
-            setModalType('logout');
+            setModalType("logout");
             setModalVisible(true);
           }}
         />
@@ -102,7 +114,7 @@ export default function MyPage() {
         <MenuItem
           title="회원 탈퇴"
           onPress={() => {
-            setModalType('withdraw');
+            setModalType("withdraw");
             setModalVisible(true);
           }}
         />
@@ -110,18 +122,41 @@ export default function MyPage() {
         <KkModal
           visible={modalVisible}
           onClose={() => setModalVisible(false)}
-          message={modalType === 'logout' ? "로그아웃하시겠습니까?" : "탈퇴하면 지금까지 모든 기록이 삭제되고 다시 복구할 수 없습니다. 정말 탈퇴하시겠습니까?"}
+          message={
+            modalType === "logout"
+              ? "로그아웃하시겠습니까?"
+              : "탈퇴하면 지금까지 모든 기록이 삭제되고 다시 복구할 수 없습니다. 정말 탈퇴하시겠습니까?"
+          }
           cancelText="취소"
           onCancelPress={() => setModalVisible(false)}
           buttonText="확인"
           onButtonPress={() => {
             setModalVisible(false);
-            if (modalType === 'logout') {
+            if (modalType === "logout") {
               handleLogout();
-            } else if (modalType === 'withdraw') {
-              // 회원 탈퇴 로직
+            } else if (modalType === "withdraw") {
+              deleteAccount()
+                .then(async () => {
+                  await tokenStore.remove();
+                  router.replace("/(auth)/SocialLogin");
+                })
+                .catch((e) => {
+                  setErrorMessage(
+                    e instanceof Error
+                      ? e.message
+                      : "회원 탈퇴에 실패했습니다.",
+                  );
+                  setErrorModalVisible(true);
+                });
             }
           }}
+        />
+        <KkModal
+          visible={errorModalVisible}
+          onClose={() => setErrorModalVisible(false)}
+          message={errorMessage}
+          buttonText="확인"
+          onButtonPress={() => setErrorModalVisible(false)}
         />
       </ScrollView>
     </KkBackground>
@@ -153,44 +188,44 @@ const styles = StyleSheet.create({
     left: 0,
     right: 0,
     textAlign: "center",
-    color: 'white',
+    color: "white",
     fontSize: 20,
-    fontWeight: '600',
+    fontWeight: "600",
     fontFamily: "Pretendard-SemiBold",
   },
   bellIconContainer: {
-    marginLeft: 'auto',
+    marginLeft: "auto",
   },
   profileSection: {
     gap: 24,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
     marginBottom: 30,
   },
   name: {
     color: "#FDFCFC",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     fontFamily: "Pretendard-SemiBold",
   },
 
   sub: {
-    color: '#E7E2DF',
+    color: "#E7E2DF",
     fontSize: 16,
     fontFamily: "Pretendard-SemiBold",
     marginTop: 4,
   },
   sub2: {
-    color: '#D0C7C2',
+    color: "#D0C7C2",
     marginTop: 4,
     fontSize: 16,
     fontFamily: "Pretendard-SemiBold",
   },
   sectionTitle: {
-    color: '#FDFCFC',
+    color: "#FDFCFC",
     fontSize: 18,
-    fontWeight: '600',
+    fontWeight: "600",
     marginTop: 10,
     marginBottom: 10,
   },
@@ -199,13 +234,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   menuText: {
-    color: '#E7E2DF',
+    color: "#E7E2DF",
     fontSize: 16,
     fontFamily: "Pretendard-SemiBold",
   },
   divider: {
     height: 1,
-    backgroundColor: '#D0C7C2',
+    backgroundColor: "#D0C7C2",
     opacity: 0.4,
     marginVertical: 24,
   },
