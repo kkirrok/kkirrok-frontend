@@ -28,22 +28,7 @@ const DAY_OF_WEEK_ORDER = [
   "SATURDAY",
   "SUNDAY",
 ] as const;
-const DAILY_CALORIES = [1980, 1600, 1450, 830, 1480, 1240, 1080];
 const MAX_DAILY_CALORIES = 2400;
-
-const NUTRIENTS = [
-  { label: "단백질", value: 60, max: 80, unit: "g" },
-  { label: "탄수화물", value: 60, max: 100, unit: "g" },
-  { label: "당", value: 60, max: 90, unit: "g" },
-  { label: "지방", value: 60, max: 105, unit: "g" },
-  { label: "나트륨", value: 60, max: 90, unit: "mg" },
-];
-
-const PATTERN_TEXTS = [
-  "하루 식사 중 특정 시간대에 섭취가 집중되는 경향",
-  "전체 칼로리 섭취가 한 끼에 치우쳐 있는 패턴",
-  "식사 이후 추가적인 간식 또는 야식 섭취가 이어짐",
-];
 
 function toNumberParam(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -103,11 +88,6 @@ export default function WeeklyReportPage() {
 
     return `${year}년 ${String(month).padStart(2, "0")}월 ${week}주차`;
   }, [selectedDate]);
-
-  const totalCalories = DAILY_CALORIES.reduce(
-    (total, calories) => total + calories,
-    0,
-  );
 
   useEffect(() => {
     const controller = new AbortController();
