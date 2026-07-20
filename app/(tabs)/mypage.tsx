@@ -137,7 +137,11 @@ export default function MyPage() {
             } else if (modalType === "withdraw") {
               deleteAccount()
                 .then(async () => {
-                  await tokenStore.remove();
+                  try {
+                    await tokenStore.remove();
+                  } catch {
+                    // 토큰 삭제 실패해도 계정은 이미 삭제됨
+                  }
                   router.replace("/(auth)/SocialLogin");
                 })
                 .catch((e) => {

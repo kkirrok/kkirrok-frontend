@@ -87,7 +87,9 @@ export default function FindPassword() {
           value={code}
           onChangeText={setCode}
           placeholder="인증번호를 입력해 주세요."
-          error={verified ? undefined : undefined}
+          error={
+            !verified && !!code ? "인증번호가 올바르지 않습니다." : undefined
+          }
           rightButton={
             <KkButton
               title={

@@ -90,7 +90,10 @@ export default function SignupPassword() {
       />
       <KkModal
         visible={errorModalVisible}
-        onClose={() => setErrorModalVisible(false)}
+        onClose={() => {
+          setErrorModalVisible(false);
+          if (!email) router.replace("/(auth)/Signup");
+        }}
         message={errorMessage}
         buttonText="확인"
         onButtonPress={() => {
