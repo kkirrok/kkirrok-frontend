@@ -2,6 +2,7 @@ import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import { Colors } from "@/constants/colors";
+import { createGroupEmoji } from "@/utils/api/kkinipopApi";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -17,7 +18,10 @@ import {
 const { width, height: screenHeight } = Dimensions.get("window");
 
 export default function KkimojiCamera() {
-  const { uri: paramUri } = useLocalSearchParams<{ uri?: string }>();
+  const { uri: paramUri, groupId: paramGroupId } = useLocalSearchParams<{
+    uri?: string;
+    groupId?: string;
+  }>();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [capturedUri, setCapturedUri] = useState<string | null>(
@@ -25,6 +29,8 @@ export default function KkimojiCamera() {
   );
   const [cameraReady, setCameraReady] = useState(false);
   const [isTaking, setIsTaking] = useState(false);
+  const [isUploading, setIsUploading] = useState(false);
+  const [uploadError, setUploadError] = useState<string | null>(null);
 
   const takePicture = async () => {
     if (!cameraRef.current || !cameraReady || isTaking) return;
@@ -71,18 +77,34 @@ export default function KkimojiCamera() {
             style={styles.previewImage}
             contentFit="cover"
           />
+          {uploadError && <Text style={styles.errorText}>{uploadError}</Text>}
           <View style={styles.previewButtons}>
             <KkButton
               title="다시하기"
               style={styles.previewBtnGray}
-              onPress={() => setCapturedUri(null)}
+              onPress={() => {
+                setCapturedUri(null);
+                setUploadError(null);
+              }}
             />
             <KkButton
               title="업로드 하기"
               style={styles.previewBtn}
-              disabled
-              onPress={() => {
-                // TODO: API - upload kkimoji
+              disabled={isUploading || !paramGroupId}
+              onPress={async () => {
+                if (!capturedUri || !paramGroupId) return;
+                setIsUploading(true);
+                setUploadError(null);
+                try {
+                  await createGroupEmoji(Number(paramGroupId), capturedUri);
+                  router.back();
+                } catch (e) {
+                  setUploadError(
+                    e instanceof Error ? e.message : "업로드에 실패했습니다.",
+                  );
+                } finally {
+                  setIsUploading(false);
+                }
               }}
             />
           </View>
@@ -181,6 +203,12 @@ const styles = StyleSheet.create({
     width: "100%",
     aspectRatio: 1,
     borderRadius: 20,
+  },
+  errorText: {
+    color: "#FF6B6B",
+    fontFamily: "Pretendard-Regular",
+    fontSize: 14,
+    textAlign: "center",
   },
   previewButtons: {
     flexDirection: "row",
