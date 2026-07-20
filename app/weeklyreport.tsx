@@ -8,8 +8,8 @@ import WeeklySuggestionsCard from "@/components/weeklyreport/WeeklySuggestionsCa
 import { styles } from "@/components/weeklyreport/styles";
 import { getWeeklyReport } from "@/utils/api/reportApi";
 import type { WeeklyReportResponse } from "@/utils/types/report";
-import { router, useLocalSearchParams } from "expo-router";
-import { useEffect, useMemo, useState } from "react";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
+import { useCallback, useMemo, useRef, useState } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -28,22 +28,7 @@ const DAY_OF_WEEK_ORDER = [
   "SATURDAY",
   "SUNDAY",
 ] as const;
-const DAILY_CALORIES = [1980, 1600, 1450, 830, 1480, 1240, 1080];
 const MAX_DAILY_CALORIES = 2400;
-
-const NUTRIENTS = [
-  { label: "단백질", value: 60, max: 80, unit: "g" },
-  { label: "탄수화물", value: 60, max: 100, unit: "g" },
-  { label: "당", value: 60, max: 90, unit: "g" },
-  { label: "지방", value: 60, max: 105, unit: "g" },
-  { label: "나트륨", value: 60, max: 90, unit: "mg" },
-];
-
-const PATTERN_TEXTS = [
-  "하루 식사 중 특정 시간대에 섭취가 집중되는 경향",
-  "전체 칼로리 섭취가 한 끼에 치우쳐 있는 패턴",
-  "식사 이후 추가적인 간식 또는 야식 섭취가 이어짐",
-];
 
 function toNumberParam(value: string | string[] | undefined) {
   const rawValue = Array.isArray(value) ? value[0] : value;
@@ -63,6 +48,7 @@ export default function WeeklyReportPage() {
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const lastFetchedWeekRef = useRef<string | null>(null);
 
   const selectedDate = useMemo(() => {
     const year = toNumberParam(params.year);
@@ -104,42 +90,40 @@ export default function WeeklyReportPage() {
     return `${year}년 ${String(month).padStart(2, "0")}월 ${week}주차`;
   }, [selectedDate]);
 
-  const totalCalories = DAILY_CALORIES.reduce(
-    (total, calories) => total + calories,
-    0,
-  );
+  useFocusEffect(
+    useCallback(() => {
+      const controller = new AbortController();
 
-  useEffect(() => {
-    const controller = new AbortController();
-
-    const fetchWeeklyReport = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const response = await getWeeklyReport(weekStart);
-        if (!controller.signal.aborted) {
-          setReport(response.data);
-        }
-      } catch (err) {
-        if (!controller.signal.aborted) {
-          const message =
-            err instanceof Error ? err.message : "오류가 발생했습니다.";
-          if (message.includes("인증 토큰")) {
-            router.replace("/(auth)/SocialLogin");
-            return;
+      const fetchWeeklyReport = async () => {
+        if (lastFetchedWeekRef.current !== weekStart) setLoading(true);
+        setError(null);
+        try {
+          const response = await getWeeklyReport(weekStart);
+          if (!controller.signal.aborted) {
+            lastFetchedWeekRef.current = weekStart;
+            setReport(response.data);
           }
-          setError(message);
+        } catch (err) {
+          if (!controller.signal.aborted) {
+            const message =
+              err instanceof Error ? err.message : "오류가 발생했습니다.";
+            if (message.includes("인증 토큰")) {
+              router.replace("/(auth)/SocialLogin");
+              return;
+            }
+            setError(message);
+          }
+        } finally {
+          if (!controller.signal.aborted) {
+            setLoading(false);
+          }
         }
-      } finally {
-        if (!controller.signal.aborted) {
-          setLoading(false);
-        }
-      }
-    };
+      };
 
-    fetchWeeklyReport();
-    return () => controller.abort();
-  }, [weekStart]);
+      fetchWeeklyReport();
+      return () => controller.abort();
+    }, [weekStart]),
+  );
 
   const dailyCalories = useMemo(() => {
     if (!report) return [];
