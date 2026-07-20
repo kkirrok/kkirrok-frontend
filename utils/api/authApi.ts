@@ -1,14 +1,69 @@
-import { File, Paths } from "expo-file-system/next";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { AuthResponse, SetProfileParams } from "@/utils/types/auth";
+import { File, Paths } from "expo-file-system/next";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
-if (!BASE_URL) throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
+if (!BASE_URL)
+  throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
 
 async function getRequiredToken(): Promise<string> {
   const token = await tokenStore.get();
   if (!token) throw new Error("인증 토큰이 없습니다. 다시 로그인해 주세요.");
   return token;
+}
+
+export async function findEmail(params: {
+  name: string;
+  birth: string;
+  phone: string;
+}): Promise<string> {
+  const res = await fetch(`${BASE_URL}/v1/users/recovery/email`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json;charset=UTF-8" },
+    body: JSON.stringify(params),
+  });
+
+  if (!res.ok) {
+    let message = "일치하는 회원 정보가 없습니다.";
+    try {
+      const json = await res.json();
+      if (json.message) message = json.message;
+    } catch {}
+    throw new Error(message);
+  }
+
+  const json = await res.json();
+  return json.data.email as string;
+}
+
+export async function resetPassword(params: {
+  email: string;
+  name: string;
+  newPassword: string;
+}): Promise<void> {
+  const token = await getRequiredToken();
+
+  const res = await fetch(`${BASE_URL}/v1/users/recovery/password`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json;charset=UTF-8",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({
+      email: params.email,
+      name: params.name,
+      new_password: params.newPassword,
+    }),
+  });
+
+  if (!res.ok) {
+    let message = "비밀번호 재설정에 실패했습니다.";
+    try {
+      const json = await res.json();
+      if (json.message) message = json.message;
+    } catch {}
+    throw new Error(message);
+  }
 }
 
 export async function sendEmailVerification(email: string): Promise<void> {
@@ -22,7 +77,10 @@ export async function sendEmailVerification(email: string): Promise<void> {
   if (!res.ok) throw new Error(json.message ?? "이메일 발송에 실패했습니다.");
 }
 
-export async function verifyEmailCode(email: string, code: string): Promise<boolean> {
+export async function verifyEmailCode(
+  email: string,
+  code: string,
+): Promise<boolean> {
   const res = await fetch(`${BASE_URL}/v1/users/email-verification/verify`, {
     method: "POST",
     headers: { "Content-Type": "application/json;charset=UTF-8" },
@@ -35,7 +93,10 @@ export async function verifyEmailCode(email: string, code: string): Promise<bool
   return json.data.verified;
 }
 
-export async function setProfile(params: SetProfileParams, imageUri?: string): Promise<void> {
+export async function setProfile(
+  params: SetProfileParams,
+  imageUri?: string,
+): Promise<void> {
   const token = await getRequiredToken();
 
   // React Native FormData doesn't serialize Blob correctly at the native layer.
@@ -51,7 +112,11 @@ export async function setProfile(params: SetProfileParams, imageUri?: string): P
   } as any);
 
   if (imageUri) {
-    formData.append("image", { uri: imageUri, type: "image/jpeg", name: "profile.jpg" } as any);
+    formData.append("image", {
+      uri: imageUri,
+      type: "image/jpeg",
+      name: "profile.jpg",
+    } as any);
   }
 
   const res = await fetch(`${BASE_URL}/v1/users/profile`, {
@@ -64,7 +129,10 @@ export async function setProfile(params: SetProfileParams, imageUri?: string): P
   if (!res.ok) throw new Error(json.message ?? "프로필 설정에 실패했습니다.");
 }
 
-export async function signUpLocal(email: string, password: string): Promise<AuthResponse> {
+export async function signUpLocal(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
   const res = await fetch(`${BASE_URL}/v1/users/sign-up/local`, {
     method: "POST",
     headers: { "Content-Type": "application/json;charset=UTF-8" },
@@ -77,22 +145,33 @@ export async function signUpLocal(email: string, password: string): Promise<Auth
   return json;
 }
 
-export async function loginSocial(socialType: "KAKAO" | "NAVER", accessToken: string): Promise<AuthResponse> {
+export async function loginSocial(
+  socialType: "KAKAO" | "NAVER",
+  accessToken: string,
+): Promise<AuthResponse> {
   const res = await fetch(`${BASE_URL}/v1/users/login/social`, {
     method: "POST",
     headers: { "Content-Type": "application/json;charset=UTF-8" },
-    body: JSON.stringify({ social_type: socialType, access_token: accessToken }),
+    body: JSON.stringify({
+      social_type: socialType,
+      access_token: accessToken,
+    }),
   });
 
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
-    throw new Error((json as { message?: string }).message ?? "소셜 로그인에 실패했습니다.");
+    throw new Error(
+      (json as { message?: string }).message ?? "소셜 로그인에 실패했습니다.",
+    );
   }
 
   return res.json();
 }
 
-export async function loginLocal(email: string, password: string): Promise<AuthResponse> {
+export async function loginLocal(
+  email: string,
+  password: string,
+): Promise<AuthResponse> {
   const res = await fetch(`${BASE_URL}/v1/users/login/local`, {
     method: "POST",
     headers: { "Content-Type": "application/json;charset=UTF-8" },
@@ -126,4 +205,21 @@ export async function signOut(): Promise<void> {
 
   const json = await res.json();
   if (!res.ok) throw new Error(json.message ?? "로그아웃에 실패했습니다.");
+}
+
+export async function deleteAccount(): Promise<void> {
+  const token = await getRequiredToken();
+  const res = await fetch(`${BASE_URL}/v1/users`, {
+    method: "DELETE",
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (!res.ok) {
+    let message = "회원 탈퇴에 실패했습니다.";
+    try {
+      const json = await res.json();
+      if (json.message) message = json.message;
+    } catch {}
+    throw new Error(message);
+  }
 }
