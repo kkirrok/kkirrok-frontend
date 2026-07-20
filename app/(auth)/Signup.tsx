@@ -6,7 +6,7 @@ import KkTextBox from "@/components/KkTextBox";
 import { sendEmailVerification, verifyEmailCode } from "@/utils/api/authApi";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Signup() {
@@ -17,6 +17,8 @@ export default function Signup() {
   const [verifying, setVerifying] = useState(false);
   const [isVerified, setIsVerified] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
 
   const handleSendEmail = async () => {
     setSendingEmail(true);
@@ -24,10 +26,10 @@ export default function Signup() {
     try {
       await sendEmailVerification(email);
     } catch (e) {
-      Alert.alert(
-        "발송 실패",
+      setErrorMessage(
         e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
       );
+      setErrorModalVisible(true);
     } finally {
       setSendingEmail(false);
     }
@@ -38,12 +40,15 @@ export default function Signup() {
     try {
       const verified = await verifyEmailCode(email, verificationCode);
       setIsVerified(verified);
-      if (!verified) Alert.alert("인증 실패", "인증번호를 다시 확인해 주세요.");
+      if (!verified) {
+        setErrorMessage("인증번호를 다시 확인해 주세요.");
+        setErrorModalVisible(true);
+      }
     } catch (e) {
-      Alert.alert(
-        "인증 실패",
+      setErrorMessage(
         e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
       );
+      setErrorModalVisible(true);
     } finally {
       setVerifying(false);
     }
@@ -130,6 +135,13 @@ export default function Signup() {
         onCancelPress={() => router.replace("/(auth)/Login")}
         buttonText="계속 작성하기"
         onButtonPress={() => setModalVisible(false)}
+      />
+      <KkModal
+        visible={errorModalVisible}
+        onClose={() => setErrorModalVisible(false)}
+        message={errorMessage}
+        buttonText="확인"
+        onButtonPress={() => setErrorModalVisible(false)}
       />
     </KkBackground>
   );
