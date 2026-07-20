@@ -4,12 +4,7 @@ import { StyleSheet, View } from "react-native";
 
 export type { MealType };
 
-const MEAL_TYPES: Exclude<MealType, "야식">[] = [
-  "아침",
-  "점심",
-  "저녁",
-  "간식",
-];
+const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식", "야식"];
 
 type Props = {
   mealType: MealType;
