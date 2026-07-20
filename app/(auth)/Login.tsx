@@ -1,18 +1,21 @@
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
+import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { loginLocal } from "@/utils/api/authApi";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 
 export default function Login() {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
 
   const handleLogin = async () => {
     setLoading(true);
@@ -26,7 +29,10 @@ export default function Login() {
         router.replace("/(auth)/KkirokStart");
       }
     } catch (e) {
-      Alert.alert("로그인 실패", e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.");
+      setErrorMessage(
+        e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
+      );
+      setErrorModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -76,6 +82,14 @@ export default function Login() {
           </TouchableOpacity>
         </View>
       </View>
+
+      <KkModal
+        visible={errorModalVisible}
+        onClose={() => setErrorModalVisible(false)}
+        message={errorMessage}
+        buttonText="확인"
+        onButtonPress={() => setErrorModalVisible(false)}
+      />
     </KkBackground>
   );
 }
