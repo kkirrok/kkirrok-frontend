@@ -7,7 +7,7 @@ import { signUpLocal } from "@/utils/api/authApi";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
-import { Alert, StyleSheet, View } from "react-native";
+import { StyleSheet, View } from "react-native";
 
 export default function SignupPassword() {
   const router = useRouter();
@@ -15,7 +15,8 @@ export default function SignupPassword() {
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
-
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
   const isMismatch = confirmPassword.length > 0 && password !== confirmPassword;
@@ -23,8 +24,8 @@ export default function SignupPassword() {
 
   const handleSignUp = async () => {
     if (!email) {
-      Alert.alert("오류", "이메일 정보가 없습니다. 처음부터 다시 시도해 주세요.");
-      router.replace("/(auth)/Signup");
+      setErrorMessage("이메일 정보가 없습니다. 처음부터 다시 시도해 주세요.");
+      setErrorModalVisible(true);
       return;
     }
     setLoading(true);
@@ -34,7 +35,10 @@ export default function SignupPassword() {
       await tokenStore.setOnboarding(false);
       router.replace("/(auth)/KkirokStart");
     } catch (e) {
-      Alert.alert("회원가입 실패", e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.");
+      setErrorMessage(
+        e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
+      );
+      setErrorModalVisible(true);
     } finally {
       setLoading(false);
     }
@@ -76,11 +80,26 @@ export default function SignupPassword() {
       <KkModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        message={"아직 가입이 완료되지 않았어요.\n지금 나가면 작성된 정보가 사라져요."}
+        message={
+          "아직 가입이 완료되지 않았어요.\n지금 나가면 작성된 정보가 사라져요."
+        }
         cancelText="홈으로 이동"
         onCancelPress={() => router.replace("/(auth)/Login")}
         buttonText="계속 작성하기"
         onButtonPress={() => setModalVisible(false)}
+      />
+      <KkModal
+        visible={errorModalVisible}
+        onClose={() => {
+          setErrorModalVisible(false);
+          if (!email) router.replace("/(auth)/Signup");
+        }}
+        message={errorMessage}
+        buttonText="확인"
+        onButtonPress={() => {
+          setErrorModalVisible(false);
+          if (!email) router.replace("/(auth)/Signup");
+        }}
       />
     </KkBackground>
   );
