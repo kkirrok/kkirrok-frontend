@@ -11,7 +11,7 @@ import {
   YesterdayPicksResult,
 } from "@/utils/api/mealApi";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -60,6 +60,7 @@ function makeSegments(r: TodayMealRecord): DonutSegment[] | undefined {
 }
 
 export default function MealRecordDetail() {
+  const { mealId } = useLocalSearchParams<{ mealId?: string }>();
   const insets = useSafeAreaInsets();
   const chartListRef = useRef<FlatList<TodayMealRecord>>(null);
   const [records, setRecords] = useState<TodayMealRecord[]>([]);
@@ -83,8 +84,17 @@ export default function MealRecordDetail() {
         if (cancelled) return;
 
         if (mealsResult.status === "fulfilled") {
-          setRecords(mealsResult.value);
-          setCurrentIndex(0);
+          const meals = mealsResult.value;
+          setRecords(meals);
+          const targetIndex = mealId
+            ? Math.max(0, meals.findIndex((m) => m.meal_id === Number(mealId)))
+            : 0;
+          setCurrentIndex(targetIndex);
+          if (targetIndex > 0) {
+            setTimeout(() => {
+              chartListRef.current?.scrollToIndex({ index: targetIndex, animated: false });
+            }, 0);
+          }
         } else {
           setRecords([]);
           const msg =
