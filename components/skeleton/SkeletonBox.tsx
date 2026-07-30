@@ -48,5 +48,5 @@ export default function SkeletonBox({
 }
 
 const styles = StyleSheet.create({
-  box: { backgroundColor: Colors.gray[700] },
+  box: { backgroundColor: "rgba(255,255,255,0.18)" },
 });
