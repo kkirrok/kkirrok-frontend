@@ -445,7 +445,7 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   tlTimeCol: {
-    width: 40,
+    width: 48,
     alignItems: "flex-end",
   },
   tlTime: {
