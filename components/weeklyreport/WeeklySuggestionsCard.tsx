@@ -3,7 +3,7 @@ import { styles } from "./styles";
 import type { WeeklyReportResponse } from "@/utils/types/report";
 
 type Props = {
-  suggestions: WeeklyReportResponse["data"]["nextWeekSuggestions"];
+  suggestions: WeeklyReportResponse["data"]["next_week_suggestions"];
 };
 
 export default function WeeklySuggestionsCard({ suggestions }: Props) {
