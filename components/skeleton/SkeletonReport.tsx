@@ -34,7 +34,13 @@ function SkeletonMealSection() {
         ))}
       </View>
       {[0, 1].map((i) => (
-        <SkeletonBox key={i} width="100%" height={64} borderRadius={12} style={{ marginBottom: 12 }} />
+        <SkeletonBox
+          key={i}
+          width="100%"
+          height={64}
+          borderRadius={12}
+          style={{ marginBottom: 12 }}
+        />
       ))}
     </View>
   );

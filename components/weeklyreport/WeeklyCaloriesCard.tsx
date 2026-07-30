@@ -14,37 +14,31 @@ export default function WeeklyCaloriesCard({
 }: Props) {
   const totalCalories = dailyCalories.reduce(
     (total, calories) => total + calories,
-    0
+    0,
   );
 
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>일주일동안</Text>
       <Text style={styles.summaryText}>
-        평균 <Text style={styles.highlight}>{(totalCalories / dailyCalories.length).toFixed(0)}kcal</Text>를 섭취했어요!
+        평균{" "}
+        <Text style={styles.highlight}>
+          {(totalCalories / dailyCalories.length).toFixed(0)}kcal
+        </Text>
+        를 섭취했어요!
       </Text>
 
       <View style={styles.chart}>
         {dailyCalories.map((calories, index) => {
-          const barHeight = Math.max(
-            32,
-            (calories / maxCalories) * 116
-          );
+          const barHeight = Math.max(32, (calories / maxCalories) * 116);
 
           return (
             <View key={index} style={styles.day}>
               <View style={styles.barTrack}>
-                <View
-                  style={[
-                    styles.barFill,
-                    { height: barHeight },
-                  ]}
-                />
+                <View style={[styles.barFill, { height: barHeight }]} />
               </View>
 
-              <Text style={styles.dayText}>
-                {weekDays[index]}
-              </Text>
+              <Text style={styles.dayText}>{weekDays[index]}</Text>
             </View>
           );
         })}

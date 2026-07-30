@@ -49,7 +49,7 @@ export default function ResetKcal() {
         onClose={() => setModalVisible(false)}
         message="권장 칼로리가 수정되었습니다."
         buttonText="확인"
-        onButtonPress={() => router.push('/(tabs)/mypage')}
+        onButtonPress={() => router.push("/(tabs)/mypage")}
       />
     </KkBackground>
   );
@@ -62,34 +62,34 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   label: {
-    color: '#FDFCFC',
+    color: "#FDFCFC",
     marginBottom: 8,
     fontSize: 18,
-    fontWeight: '500',
-    fontFamily: 'Pretendard-SemiBold',
+    fontWeight: "500",
+    fontFamily: "Pretendard-SemiBold",
   },
   inputBox: {
     borderWidth: 1,
     borderRadius: 16,
     height: 48,
-    backgroundColor: '#FDFCFC1A',
-    justifyContent: 'center',
-    flexDirection: 'row',
-    alignItems: 'center',
-    borderColor: '#F6623B',
+    backgroundColor: "#FDFCFC1A",
+    justifyContent: "center",
+    flexDirection: "row",
+    alignItems: "center",
+    borderColor: "#F6623B",
     paddingHorizontal: 16,
   },
   input: {
     flex: 1,
-    color: '#FDFCFC',
+    color: "#FDFCFC",
     fontSize: 16,
-    fontFamily: 'Pretendard-Regular',
-    textAlign: 'right',
+    fontFamily: "Pretendard-Regular",
+    textAlign: "right",
   },
   suffix: {
-    color: '#FDFCFC',
+    color: "#FDFCFC",
     fontSize: 16,
-    fontFamily: 'Pretendard-Regular',
+    fontFamily: "Pretendard-Regular",
   },
   bottom: {
     flex: 1,

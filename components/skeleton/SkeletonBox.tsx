@@ -1,4 +1,3 @@
-import { Colors } from "@/constants/colors";
 import { useEffect, useRef } from "react";
 import { Animated, StyleProp, StyleSheet, ViewStyle } from "react-native";
 

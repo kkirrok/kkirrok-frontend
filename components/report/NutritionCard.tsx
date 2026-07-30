@@ -27,7 +27,8 @@ function NutrientBar({
       <View style={styles.barLabelRow}>
         <Text style={styles.barLabel}>{label}</Text>
         <Text style={[styles.barValue, isOver && styles.barValueOver]}>
-          {value}/{max}{unit}
+          {value}/{max}
+          {unit}
         </Text>
       </View>
       <View style={styles.barBg}>
@@ -47,12 +48,39 @@ export default function NutritionCard({ dateLabel, nutrition }: Props) {
   const sortedNutrients = useMemo(
     () =>
       [
-        { label: "탄수화물", value: nutrition.carbs,   max: nutrition.maxCarbs,   unit: "g"  },
-        { label: "지방",    value: nutrition.fat,     max: nutrition.maxFat,     unit: "g"  },
-        { label: "단백질",  value: nutrition.protein,  max: nutrition.maxProtein,  unit: "g"  },
-        { label: "당",      value: nutrition.sugar,    max: nutrition.maxSugar,    unit: "g"  },
-        { label: "나트륨",  value: nutrition.sodium,   max: nutrition.maxSodium,   unit: "mg" },
-      ].sort((a, b) => b.value / b.max - a.value / a.max).slice(0, 3),
+        {
+          label: "탄수화물",
+          value: nutrition.carbs,
+          max: nutrition.maxCarbs,
+          unit: "g",
+        },
+        {
+          label: "지방",
+          value: nutrition.fat,
+          max: nutrition.maxFat,
+          unit: "g",
+        },
+        {
+          label: "단백질",
+          value: nutrition.protein,
+          max: nutrition.maxProtein,
+          unit: "g",
+        },
+        {
+          label: "당",
+          value: nutrition.sugar,
+          max: nutrition.maxSugar,
+          unit: "g",
+        },
+        {
+          label: "나트륨",
+          value: nutrition.sodium,
+          max: nutrition.maxSodium,
+          unit: "mg",
+        },
+      ]
+        .sort((a, b) => b.value / b.max - a.value / a.max)
+        .slice(0, 3),
     [nutrition],
   );
 

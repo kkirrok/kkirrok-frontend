@@ -1,11 +1,7 @@
 export type MealType = "아침" | "점심" | "저녁" | "간식" | "야식";
 
 export type MealTimeSlot =
-  | "BREAKFAST"
-  | "LUNCH"
-  | "DINNER"
-  | "SNACK"
-  | "MIDNIGHT_SNACK";
+  "BREAKFAST" | "LUNCH" | "DINNER" | "SNACK" | "MIDNIGHT_SNACK";
 
 export type TodayMealRecord = {
   meal_id: number;

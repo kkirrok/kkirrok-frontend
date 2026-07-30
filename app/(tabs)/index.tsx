@@ -19,7 +19,14 @@ import {
 import type { NutritionSummary, TodayMealRecord } from "@/utils/types/meal";
 import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from "react-native";
+import {
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from "react-native";
 
 function formatTime(isoString: string | null): string {
   if (!isoString) return "";
@@ -210,123 +217,128 @@ export default function Home() {
         {isLoading ? (
           <SkeletonHome />
         ) : (
-        <View style={styles.container}>
-          {/* 프로필 카드 */}
-          <Card style={{ borderWidth: 0.5, borderColor: "#FF8868" }}>
-            <Text style={styles.title}>
-              {home?.member_info?.meal_style_label ?? "식사 유형"}
-            </Text>
-            <Text style={styles.nickname}>
-              {home?.member_info?.nickname
-                ? `${home.member_info.nickname}님`
-                : ""}
-            </Text>
-          </Card>
-
-          {/* 오늘의 끼니 타임라인 */}
-          {showTimeline && (
-            <>
-              <Text style={styles.sectionTitle}>오늘의 끼니</Text>
-              <MealTimeline
-                meals={todayMeals}
-                reminder={home?.reminder ?? null}
-              />
-            </>
-          )}
-
-          {/* 오늘의 영양성분 */}
-          <Text style={styles.sectionTitle}>오늘의 영양성분</Text>
-          <Card>
-            <NutrientBar
-              label="단백질"
-              actual={nutrition?.total_protein_g ?? 0}
-              recommended={nutrition?.recommended_protein_g}
-              unit="g"
-            />
-            <NutrientBar
-              label="탄수화물"
-              actual={nutrition?.total_carbohydrate_g ?? 0}
-              recommended={nutrition?.recommended_carbohydrate_g}
-              unit="g"
-            />
-            <NutrientBar
-              label="지방"
-              actual={nutrition?.total_fat_g ?? 0}
-              recommended={nutrition?.recommended_fat_g}
-              unit="g"
-            />
-            <NutrientBar
-              label="당"
-              actual={nutrition?.total_sugar_g ?? 0}
-              unit="g"
-            />
-            <NutrientBar
-              label="나트륨"
-              actual={nutrition?.total_sodium_mg ?? 0}
-              unit="mg"
-            />
-          </Card>
-
-          {/* 오늘의 피드백 */}
-          <Text style={styles.sectionTitle}>오늘의 피드백</Text>
-
-          {exerciseRecs.length > 0 && (
-            <>
-              <Text style={styles.subTitle}>
-                {recommendations?.target_exercise_kcal ?? 0}kcal에 딱 맞는 운동
+          <View style={styles.container}>
+            {/* 프로필 카드 */}
+            <Card style={{ borderWidth: 0.5, borderColor: "#FF8868" }}>
+              <Text style={styles.title}>
+                {home?.member_info?.meal_style_label ?? "식사 유형"}
               </Text>
-              <View style={[styles.row, { marginBottom: 8 }]}>
-                {exerciseRecs.slice(0, 2).map((ex, i) => (
-                  <Card key={`${ex.exercise_name}-${i}`}>
-                    <Text style={styles.cardTitle}>{ex.exercise_name}</Text>
-                    <Text style={styles.cardDesc}>{ex.description}</Text>
-                    <View style={styles.tagRow}>
-                      <Text style={styles.tag}>{ex.category}</Text>
-                      <Text style={styles.emojiIcon}>{ex.emoji}</Text>
-                    </View>
-                  </Card>
-                ))}
-              </View>
-            </>
-          )}
-
-          {foodRecs.length > 0 && (
-            <>
-              <Text style={styles.subTitle}>
-                남은 {recommendations?.remaining_food_kcal ?? 0}kcal는 이렇게
-                채워봐요!
+              <Text style={styles.nickname}>
+                {home?.member_info?.nickname
+                  ? `${home.member_info.nickname}님`
+                  : ""}
               </Text>
-              <View style={[styles.row, { marginBottom: 16 }]}>
-                {foodRecs.slice(0, 2).map((food, i) => (
-                  <Card key={`${food.food_name}-${i}`}>
-                    <Text style={styles.cardTitle}>{food.food_name}</Text>
-                    <Text style={styles.cardDesc}>{food.description}</Text>
-                    <View style={styles.tagRow}>
-                      {food.target_nutrient_type ? (
-                        <Text style={styles.tag}>
-                          {food.target_nutrient_type}
-                        </Text>
-                      ) : (
-                        <View />
-                      )}
-                      <Text style={styles.emojiIcon}>{food.emoji}</Text>
-                    </View>
-                  </Card>
-                ))}
-              </View>
-            </>
-          )}
-
-          {/* 이전 기록 기반 피드백 */}
-          {home?.feedback?.description ? (
-            <Card>
-              <Text style={styles.cardTitle}>이전 요일들 기록 기반 피드백</Text>
-              <Text style={styles.cardDesc2}>{home.feedback.description}</Text>
             </Card>
-          ) : null}
 
-          <View style={{ height: 98 }} />
-        </View>
+            {/* 오늘의 끼니 타임라인 */}
+            {showTimeline && (
+              <>
+                <Text style={styles.sectionTitle}>오늘의 끼니</Text>
+                <MealTimeline
+                  meals={todayMeals}
+                  reminder={home?.reminder ?? null}
+                />
+              </>
+            )}
+
+            {/* 오늘의 영양성분 */}
+            <Text style={styles.sectionTitle}>오늘의 영양성분</Text>
+            <Card>
+              <NutrientBar
+                label="단백질"
+                actual={nutrition?.total_protein_g ?? 0}
+                recommended={nutrition?.recommended_protein_g}
+                unit="g"
+              />
+              <NutrientBar
+                label="탄수화물"
+                actual={nutrition?.total_carbohydrate_g ?? 0}
+                recommended={nutrition?.recommended_carbohydrate_g}
+                unit="g"
+              />
+              <NutrientBar
+                label="지방"
+                actual={nutrition?.total_fat_g ?? 0}
+                recommended={nutrition?.recommended_fat_g}
+                unit="g"
+              />
+              <NutrientBar
+                label="당"
+                actual={nutrition?.total_sugar_g ?? 0}
+                unit="g"
+              />
+              <NutrientBar
+                label="나트륨"
+                actual={nutrition?.total_sodium_mg ?? 0}
+                unit="mg"
+              />
+            </Card>
+
+            {/* 오늘의 피드백 */}
+            <Text style={styles.sectionTitle}>오늘의 피드백</Text>
+
+            {exerciseRecs.length > 0 && (
+              <>
+                <Text style={styles.subTitle}>
+                  {recommendations?.target_exercise_kcal ?? 0}kcal에 딱 맞는
+                  운동
+                </Text>
+                <View style={[styles.row, { marginBottom: 8 }]}>
+                  {exerciseRecs.slice(0, 2).map((ex, i) => (
+                    <Card key={`${ex.exercise_name}-${i}`}>
+                      <Text style={styles.cardTitle}>{ex.exercise_name}</Text>
+                      <Text style={styles.cardDesc}>{ex.description}</Text>
+                      <View style={styles.tagRow}>
+                        <Text style={styles.tag}>{ex.category}</Text>
+                        <Text style={styles.emojiIcon}>{ex.emoji}</Text>
+                      </View>
+                    </Card>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {foodRecs.length > 0 && (
+              <>
+                <Text style={styles.subTitle}>
+                  남은 {recommendations?.remaining_food_kcal ?? 0}kcal는 이렇게
+                  채워봐요!
+                </Text>
+                <View style={[styles.row, { marginBottom: 16 }]}>
+                  {foodRecs.slice(0, 2).map((food, i) => (
+                    <Card key={`${food.food_name}-${i}`}>
+                      <Text style={styles.cardTitle}>{food.food_name}</Text>
+                      <Text style={styles.cardDesc}>{food.description}</Text>
+                      <View style={styles.tagRow}>
+                        {food.target_nutrient_type ? (
+                          <Text style={styles.tag}>
+                            {food.target_nutrient_type}
+                          </Text>
+                        ) : (
+                          <View />
+                        )}
+                        <Text style={styles.emojiIcon}>{food.emoji}</Text>
+                      </View>
+                    </Card>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* 이전 기록 기반 피드백 */}
+            {home?.feedback?.description ? (
+              <Card>
+                <Text style={styles.cardTitle}>
+                  이전 요일들 기록 기반 피드백
+                </Text>
+                <Text style={styles.cardDesc2}>
+                  {home.feedback.description}
+                </Text>
+              </Card>
+            ) : null}
+
+            <View style={{ height: 98 }} />
+          </View>
         )}
       </ScrollView>
     </KkBackground>

@@ -5,9 +5,15 @@ import MonthCalendar from "@/components/report/MonthCalendar";
 import NutritionCard from "@/components/report/NutritionCard";
 import SkeletonReport from "@/components/skeleton/SkeletonReport";
 import { DayNutrition, MealRecord, MealType } from "@/utils/types/meal";
-import { fetchCalendar, fetchDailyCalendar, MealItem } from "@/utils/api/calendarApi";
+import {
+  fetchCalendar,
+  fetchDailyCalendar,
+  MealItem,
+} from "@/utils/api/calendarApi";
 import { recordMealManual } from "@/utils/api/mealApi";
-import QuickAddFoodSheet, { QuickAddFormData } from "@/components/quickAdd/QuickAddFoodSheet";
+import QuickAddFoodSheet, {
+  QuickAddFormData,
+} from "@/components/quickAdd/QuickAddFoodSheet";
 import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
@@ -28,7 +34,10 @@ function toDateLabel(month: number, day: number) {
   return `${month}월 ${day}일`;
 }
 
-function mapMealItem(item: MealItem, mealType: MealRecord["mealType"]): MealRecord {
+function mapMealItem(
+  item: MealItem,
+  mealType: MealRecord["mealType"],
+): MealRecord {
   return {
     id: String(item.meal_id),
     name: item.food_name,
@@ -116,7 +125,7 @@ export default function ReportPage() {
         })
         .finally(() => setIsLoadingDaily(false));
       return () => controller.abort();
-    }, [year, month, selectedDay, refreshKey]),
+    }, [year, month, selectedDay]),
   );
 
   const todayDay = useMemo(() => {
@@ -127,7 +136,10 @@ export default function ReportPage() {
   }, [year, month]);
 
   const dateLabel = toDateLabel(month, selectedDay);
-  const nutritionDateLabel = formatDate(year, month, selectedDay).replace(/-/g, ".");
+  const nutritionDateLabel = formatDate(year, month, selectedDay).replace(
+    /-/g,
+    ".",
+  );
 
   const handleAddMeal = useCallback((mealType: MealType) => {
     setQuickAddMealType(mealType);
@@ -191,7 +203,10 @@ export default function ReportPage() {
         ) : (
           <>
             {nutrition && (
-              <NutritionCard dateLabel={nutritionDateLabel} nutrition={nutrition} />
+              <NutritionCard
+                dateLabel={nutritionDateLabel}
+                nutrition={nutrition}
+              />
             )}
             <MealSection
               key={`${year}-${month}-${selectedDay}`}

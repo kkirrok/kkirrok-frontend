@@ -87,12 +87,18 @@ export default function MealRecordDetail() {
           const meals = mealsResult.value;
           setRecords(meals);
           const targetIndex = mealId
-            ? Math.max(0, meals.findIndex((m) => m.meal_id === Number(mealId)))
+            ? Math.max(
+                0,
+                meals.findIndex((m) => m.meal_id === Number(mealId)),
+              )
             : 0;
           setCurrentIndex(targetIndex);
           if (targetIndex > 0) {
             setTimeout(() => {
-              chartListRef.current?.scrollToIndex({ index: targetIndex, animated: false });
+              chartListRef.current?.scrollToIndex({
+                index: targetIndex,
+                animated: false,
+              });
             }, 0);
           }
         } else {
@@ -119,7 +125,7 @@ export default function MealRecordDetail() {
       return () => {
         cancelled = true;
       };
-    }, []),
+    }, [mealId]),
   );
 
   const record = records[currentIndex];
@@ -272,14 +278,12 @@ export default function MealRecordDetail() {
                       yesterdayPicks.time_slot as keyof typeof MEAL_TIME_SLOT_TO_TYPE
                     ] ?? yesterdayPicks.time_slot
                   }
-                  foods={yesterdayPicks.picks.map(
-                    (p): FoodItem => ({
-                      id: String(p.meal_id),
-                      name: p.food_name,
-                      calories: String(p.kcal),
-                      image: p.image_url ?? null,
-                    }),
-                  )}
+                  foods={yesterdayPicks.picks.map((p): FoodItem => ({
+                    id: String(p.meal_id),
+                    name: p.food_name,
+                    calories: String(p.kcal),
+                    image: p.image_url ?? null,
+                  }))}
                 />
               )}
 
