@@ -23,6 +23,11 @@ const naverScheme = process.env.EXPO_PUBLIC_NAVER_URL_SCHEME;
 if (!naverId || !naverSecret) {
   console.warn("Naver login env vars are missing");
 } else {
+  if (!naverScheme) {
+    console.warn(
+      "EXPO_PUBLIC_NAVER_URL_SCHEME is missing; iOS Naver login may not work",
+    );
+  }
   try {
     NaverLogin.initialize({
       appName: "끼록",
