@@ -13,6 +13,7 @@ async function getRequiredToken(): Promise<string> {
 
 export async function getWeeklyReport(
   weekStart: string,
+  signal?: AbortSignal,
 ): Promise<WeeklyReportResponse> {
   const token = await getRequiredToken();
 
@@ -20,6 +21,7 @@ export async function getWeeklyReport(
     `${BASE_URL}/v1/reports/weekly-report?weekStart=${weekStart}`,
     {
       method: "GET",
+      signal,
       headers: {
         Authorization: `Bearer ${token}`,
       },

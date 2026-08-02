@@ -98,7 +98,7 @@ export default function WeeklyReportPage() {
         if (lastFetchedWeekRef.current !== weekStart) setLoading(true);
         setError(null);
         try {
-          const response = await getWeeklyReport(weekStart);
+          const response = await getWeeklyReport(weekStart, controller.signal);
           if (!controller.signal.aborted) {
             lastFetchedWeekRef.current = weekStart;
             setReport(response.data);
@@ -157,7 +157,16 @@ export default function WeeklyReportPage() {
   }
 
   if (!report) {
-    return null;
+    return (
+      <KkBackground>
+        <KkHeader title="주간 리포트" />
+        <View style={errorStyles.container}>
+          <Text style={errorStyles.message}>
+            이번 주 기록이 없어요.{"\n"}식사를 기록하면 리포트가 생성돼요!
+          </Text>
+        </View>
+      </KkBackground>
+    );
   }
 
   return (
