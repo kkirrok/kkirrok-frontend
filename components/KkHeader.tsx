@@ -1,5 +1,6 @@
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
+import { ReactNode } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -8,6 +9,7 @@ interface KkHeaderProps {
   variant?: "back" | "close";
   onBackPress?: () => void;
   onClose?: () => void;
+  rightAction?: ReactNode;
 }
 
 export default function KkHeader({
@@ -15,6 +17,7 @@ export default function KkHeader({
   variant = "back",
   onBackPress,
   onClose,
+  rightAction,
 }: KkHeaderProps) {
   const router = useRouter();
   const insets = useSafeAreaInsets();
@@ -54,6 +57,8 @@ export default function KkHeader({
           <TouchableOpacity onPress={handleClosePress} style={styles.button}>
             <Ionicons name="close" size={28} color="white" />
           </TouchableOpacity>
+        ) : rightAction ? (
+          <View style={styles.rightAction}>{rightAction}</View>
         ) : (
           <View style={styles.button} />
         )}
@@ -76,6 +81,11 @@ const styles = StyleSheet.create({
   button: {
     width: 40,
     alignItems: "center",
+    justifyContent: "center",
+  },
+  rightAction: {
+    minWidth: 40,
+    alignItems: "flex-end",
     justifyContent: "center",
   },
   title: {
