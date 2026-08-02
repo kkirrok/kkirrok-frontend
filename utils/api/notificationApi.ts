@@ -1,7 +1,10 @@
 import { tokenStore } from "@/utils/store/tokenStore";
 import type {
+  NotificationAgree,
+  NotificationAgreeType,
   NotificationItem,
   NotificationListData,
+  NotificationSettings,
 } from "@/utils/types/notification";
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
@@ -103,22 +106,6 @@ export async function markAllNotificationsRead(): Promise<void> {
     );
 }
 
-export type NotificationAgreeType =
-  | "KKIROK"
-  | "GROUP_JOIN_AND_QUIT"
-  | "KKINIPOP"
-  | "REACTION";
-
-export type NotificationAgree = {
-  type: NotificationAgreeType;
-  is_agree: boolean;
-};
-
-export type NotificationSettings = {
-  is_all: boolean;
-  agrees: NotificationAgree[];
-};
-
 const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
   is_all: false,
   agrees: [
@@ -133,11 +120,13 @@ export async function fetchNotificationSettings(
   signal?: AbortSignal,
 ): Promise<NotificationSettings> {
   const res = await authFetch("/v1/users/notifications", { signal });
-  const json = await res.json();
   if (res.status === 404) return DEFAULT_NOTIFICATION_SETTINGS;
+  const json = await res.json().catch(() => ({}));
   if (!res.ok)
-    throw new Error(json.message ?? "알림 설정 조회에 실패했습니다.");
-  return json.data as NotificationSettings;
+    throw new Error(
+      (json as { message?: string }).message ?? "알림 설정 조회에 실패했습니다.",
+    );
+  return (json as { data: NotificationSettings }).data;
 }
 
 export async function updateNotificationSettings(
@@ -155,4 +144,4 @@ export async function updateNotificationSettings(
   return json.data as NotificationSettings;
 }
 
-export type { NotificationItem };
+export type { NotificationAgree, NotificationAgreeType, NotificationItem, NotificationSettings };

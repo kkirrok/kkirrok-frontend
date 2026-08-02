@@ -1,3 +1,19 @@
+export type NotificationAgreeType =
+  | "KKIROK"
+  | "GROUP_JOIN_AND_QUIT"
+  | "KKINIPOP"
+  | "REACTION";
+
+export type NotificationAgree = {
+  type: NotificationAgreeType;
+  is_agree: boolean;
+};
+
+export type NotificationSettings = {
+  is_all: boolean;
+  agrees: NotificationAgree[];
+};
+
 export type NotificationType =
   | "RECORD"
   | "KKINIPOP"

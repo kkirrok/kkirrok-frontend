@@ -8,8 +8,9 @@ import {
   type NotificationAgreeType,
   type NotificationSettings,
 } from "@/utils/api/notificationApi";
+import { tokenStore } from "@/utils/store/tokenStore";
 import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -70,6 +71,12 @@ export default function NotificationSettingsPage() {
   const [errorMessage, setErrorMessage] = useState("");
   const [errorModalVisible, setErrorModalVisible] = useState(false);
 
+  useEffect(() => {
+    tokenStore.get().then((token) => {
+      if (!token) router.replace("/(auth)/Login");
+    });
+  }, [router]);
+
   useFocusEffect(
     useCallback(() => {
       const controller = new AbortController();
@@ -110,18 +117,10 @@ export default function NotificationSettingsPage() {
   const handleSave = async () => {
     setSaving(true);
     try {
-      const allSame = ALL_TYPES.every((t) => agreeMap[t] === isAll);
-      if (allSame) {
-        await updateNotificationSettings(
-          true,
-          ALL_TYPES.map((t) => ({ type: t, is_agree: isAll })),
-        );
-      } else {
-        await updateNotificationSettings(
-          false,
-          ALL_TYPES.map((t) => ({ type: t, is_agree: agreeMap[t] })),
-        );
-      }
+      await updateNotificationSettings(
+        isAll,
+        ALL_TYPES.map((t) => ({ type: t, is_agree: agreeMap[t] })),
+      );
       router.back();
     } catch (e) {
       setErrorMessage(

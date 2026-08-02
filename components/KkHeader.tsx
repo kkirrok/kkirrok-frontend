@@ -51,7 +51,7 @@ export default function KkHeader({
           <View style={styles.button} />
         )}
 
-        <Text style={styles.title}>{title}</Text>
+        <Text style={styles.title} numberOfLines={1}>{title}</Text>
 
         {variant === "close" ? (
           <TouchableOpacity onPress={handleClosePress} style={styles.button}>
@@ -75,7 +75,6 @@ const styles = StyleSheet.create({
     height: 56,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
     paddingHorizontal: 16,
   },
   button: {
@@ -84,11 +83,12 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   rightAction: {
-    minWidth: 40,
+    width: 40,
     alignItems: "flex-end",
     justifyContent: "center",
   },
   title: {
+    flex: 1,
     color: "#FFFFFF",
     fontSize: 20,
     fontFamily: "Pretendard-SemiBold",

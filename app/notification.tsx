@@ -121,11 +121,15 @@ export default function NotificationPage() {
   const [isLoadingMore, setIsLoadingMore] = useState(false);
   const pageRef = useRef(0);
   const isLoadingMoreRef = useRef(false);
+  const loadMoreControllerRef = useRef<AbortController | null>(null);
 
   useFocusEffect(
     useCallback(() => {
       const controller = new AbortController();
       pageRef.current = 0;
+      loadMoreControllerRef.current?.abort();
+      loadMoreControllerRef.current = null;
+      isLoadingMoreRef.current = false;
       fetchNotifications(0, PAGE_SIZE, controller.signal)
         .then((res) => {
           setNotifications(res.notifications ?? []);
@@ -145,13 +149,17 @@ export default function NotificationPage() {
     isLoadingMoreRef.current = true;
     setIsLoadingMore(true);
     const nextPage = pageRef.current + 1;
-    fetchNotifications(nextPage, PAGE_SIZE)
+    const controller = new AbortController();
+    loadMoreControllerRef.current = controller;
+    fetchNotifications(nextPage, PAGE_SIZE, controller.signal)
       .then((res) => {
         setNotifications((prev) => [...prev, ...(res.notifications ?? [])]);
         setHasNext(res.page_info.has_next);
         pageRef.current = nextPage;
       })
-      .catch(() => {})
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+      })
       .finally(() => {
         isLoadingMoreRef.current = false;
         setIsLoadingMore(false);

@@ -156,6 +156,11 @@ export default function KkProfileForm({
 
   const handleEdit = async () => {
     if (!gender || !goal) return;
+    if (birthdateRaw.length > 0 && birthdateRaw.length < 8) {
+      setErrorMessage("생년월일 8자리를 모두 입력해 주세요.");
+      setErrorModalVisible(true);
+      return;
+    }
     setSubmitting(true);
     try {
       await setProfile(

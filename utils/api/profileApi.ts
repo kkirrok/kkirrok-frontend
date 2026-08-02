@@ -18,6 +18,9 @@ async function getRequiredToken(): Promise<string> {
 }
 
 export async function updateKcal(kcal: number): Promise<void> {
+  if (!Number.isInteger(kcal) || kcal <= 0) {
+    throw new Error("올바른 칼로리 값을 입력해 주세요.");
+  }
   const token = await getRequiredToken();
 
   const res = await fetch(`${BASE_URL}/v1/users/kcal`, {
