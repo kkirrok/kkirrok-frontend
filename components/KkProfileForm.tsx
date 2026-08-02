@@ -13,7 +13,6 @@ import {
   ScrollView,
   StyleSheet,
   Text,
-  TextInput,
   TouchableOpacity,
   View,
 } from "react-native";
@@ -31,6 +30,12 @@ interface ProfileFormProps {
   initialGoal?: "lose" | "maintain" | "gain" | "habit";
   initialHabits?: string[];
   initialImageUrl?: string;
+}
+
+function formatBirthdate(digits: string): string {
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}.${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6)}`;
 }
 
 const PURPOSE_MAP: Record<string, string> = {
@@ -79,7 +84,9 @@ export default function KkProfileForm({
   const [goal, setGoal] = useState<
     "lose" | "maintain" | "gain" | "habit" | null
   >(initialGoal ?? null);
-  const [age, setAge] = useState<string>("");
+  const [birthdateRaw, setBirthdateRaw] = useState(() =>
+    birthdate ? birthdate.replace(/-/g, "") : "",
+  );
   const [selectedHabits, setSelectedHabits] = useState<string[]>(
     initialHabits ?? [],
   );
@@ -89,6 +96,16 @@ export default function KkProfileForm({
   const [errorMessage, setErrorMessage] = useState("");
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const router = useRouter();
+
+  const handleBirthdateChange = (text: string) => {
+    const digits = text.replace(/\D/g, "").slice(0, 8);
+    setBirthdateRaw(digits);
+  };
+
+  const birthdateForApi =
+    birthdateRaw.length === 8
+      ? `${birthdateRaw.slice(0, 4)}-${birthdateRaw.slice(4, 6)}-${birthdateRaw.slice(6)}`
+      : birthdate ?? "";
 
   const handlePickImage = async () => {
     const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
@@ -125,7 +142,8 @@ export default function KkProfileForm({
         imageUri ?? undefined,
       );
       await tokenStore.setOnboarding(true);
-      router.replace("/(tabs)");
+      await tokenStore.remove();
+      router.replace("/(auth)/Login");
     } catch (e) {
       setErrorMessage(
         e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
@@ -143,7 +161,7 @@ export default function KkProfileForm({
       await setProfile(
         {
           name: name ?? "",
-          birth: birthdate ?? "",
+          birth: birthdateForApi,
           phone: phone ?? "",
           nickname,
           gender: gender === "female" ? "FEMALE" : "MALE",
@@ -219,25 +237,14 @@ export default function KkProfileForm({
             </View>
 
             {isEdit && (
-              <View style={{ width: 80, marginBottom: 24 }}>
-                <Text style={styles.title}>나이</Text>
-                <View
-                  style={[
-                    styles.inputBox,
-                    { borderColor: age ? "#F6623B" : "#A49289" },
-                  ]}
-                >
-                  <Text style={styles.suffix}>만</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={age}
-                    onChangeText={setAge}
-                    keyboardType="numeric"
-                    placeholder="0"
-                    placeholderTextColor="#aaa"
-                  />
-                  <Text style={styles.suffix}>세</Text>
-                </View>
+              <View style={{ marginBottom: 24 }}>
+                <KkTextBox
+                  label="생년월일"
+                  value={formatBirthdate(birthdateRaw)}
+                  onChangeText={handleBirthdateChange}
+                  placeholder="생년월일 8자리를 입력해 주세요."
+                  keyboardType="numeric"
+                />
               </View>
             )}
             <View style={styles.container}>
@@ -363,28 +370,5 @@ const styles = StyleSheet.create({
     right: 0,
     bottom: 0,
     padding: 0,
-  },
-  inputBox: {
-    borderWidth: 1,
-    borderRadius: 16,
-    height: 48,
-    backgroundColor: "#FDFCFC1A",
-    justifyContent: "center",
-    flexDirection: "row",
-    alignItems: "center",
-    borderColor: "#F6623B",
-    paddingHorizontal: 16,
-  },
-  input: {
-    color: "#FDFCFC",
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
-    textAlign: "right",
-    paddingHorizontal: 8,
-  },
-  suffix: {
-    color: "#FDFCFC",
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
   },
 });
