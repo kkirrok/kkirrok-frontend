@@ -17,6 +17,26 @@ async function getRequiredToken(): Promise<string> {
   return token;
 }
 
+export async function updateKcal(kcal: number): Promise<void> {
+  const token = await getRequiredToken();
+
+  const res = await fetch(`${BASE_URL}/v1/users/kcal`, {
+    method: "PATCH",
+    headers: {
+      Authorization: `Bearer ${token}`,
+      "Content-Type": "application/json;charset=UTF-8",
+    },
+    body: JSON.stringify({ kcal }),
+  });
+
+  const json = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error(
+      (json as { message?: string }).message ?? "권장 칼로리 수정에 실패했습니다.",
+    );
+  }
+}
+
 export async function getProfile(): Promise<UserProfile> {
   const token = await getRequiredToken();
 
