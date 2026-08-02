@@ -1,7 +1,8 @@
+import KkirokWhiteLogo from "@/assets/logo/kkirok_white_logo.svg";
+import BellIcon from "@/assets/icons/bell.svg";
 import { useRouter } from "expo-router";
 import { StyleSheet, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import BellIcon from "@/assets/icons/bell.svg";
 
 export default function KkLogoHeader() {
   const router = useRouter();
@@ -9,8 +10,7 @@ export default function KkLogoHeader() {
   return (
     <SafeAreaView>
       <View style={styles.header}>
-        {/* 임시 로고 이미지 */}
-        <BellIcon width={24} height={24} />
+        <KkirokWhiteLogo width={100} height={19} />
 
         <TouchableOpacity
           onPress={() => router.push("/notification")}
