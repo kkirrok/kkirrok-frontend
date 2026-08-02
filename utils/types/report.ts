@@ -1,6 +1,6 @@
 type NutrientFeedback = {
   nutrient: string;
-  avgAmount: number;
+  avg_amount: number;
   unit: string;
   status: "UNDER" | "NORMAL" | "OVER";
   feedback: string;
@@ -25,20 +25,14 @@ export interface WeeklyReportResponse {
   status: number;
   message: string;
   data: {
-    avgDailyKcal: number;
-    totalWeeklyKcal: number;
-
-    dailyKcals: Record<DayOfWeek,number>;
-
-    kcalFeedback: string;
-    kcalStatus: "UNDER" | "NORMAL" | "OVER";
-
-    nutrientFeedbacks: NutrientFeedback[];
-
-    slotCounts: Record<string, number>;
-
-    mealPatternDescription: string;
-
-    nextWeekSuggestions: Suggestion[];
+    avg_daily_kcal: number;
+    total_weekly_kcal: number;
+    daily_kcals: Record<DayOfWeek, number>;
+    kcal_feedback: string;
+    kcal_status: "UNDER" | "NORMAL" | "OVER";
+    nutrient_feedbacks: NutrientFeedback[];
+    slot_counts: Record<string, number>;
+    meal_pattern_description: string;
+    next_week_suggestions: Suggestion[];
   };
 }

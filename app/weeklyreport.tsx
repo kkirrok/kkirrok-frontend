@@ -128,7 +128,7 @@ export default function WeeklyReportPage() {
   const dailyCalories = useMemo(() => {
     if (!report) return [];
 
-    return DAY_OF_WEEK_ORDER.map((day) => report.dailyKcals[day] ?? 0);
+    return DAY_OF_WEEK_ORDER.map((day) => report.daily_kcals[day] ?? 0);
   }, [report]);
 
   if (loading) {
@@ -178,9 +178,9 @@ export default function WeeklyReportPage() {
           weekDays={WEEK_DAYS}
           maxCalories={MAX_DAILY_CALORIES}
         />
-        <WeeklyNutrientsCard nutrients={report.nutrientFeedbacks} />
-        <WeeklyPatternCard description={report.mealPatternDescription} />
-        <WeeklySuggestionsCard suggestions={report.nextWeekSuggestions} />
+        <WeeklyNutrientsCard nutrients={report.nutrient_feedbacks} />
+        <WeeklyPatternCard description={report.meal_pattern_description} />
+        <WeeklySuggestionsCard suggestions={report.next_week_suggestions} />
       </ScrollView>
     </KkBackground>
   );

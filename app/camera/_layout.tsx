@@ -7,12 +7,15 @@ export default function CameraLayout() {
   const [checked, setChecked] = useState(false);
 
   useEffect(() => {
-    tokenStore.get().then((token) => {
-      if (!token) router.replace("/(auth)/Login");
-      else setChecked(true);
-    }).catch(() => {
-      router.replace("/(auth)/Login");
-    });
+    tokenStore
+      .get()
+      .then((token) => {
+        if (!token) router.replace("/(auth)/Login");
+        else setChecked(true);
+      })
+      .catch(() => {
+        router.replace("/(auth)/Login");
+      });
   }, []);
 
   if (!checked) return <View style={{ flex: 1 }} />;

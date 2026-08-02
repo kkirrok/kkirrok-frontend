@@ -17,7 +17,7 @@ const STATUS_COLOR: Record<NutrientStatus, string> = {
 };
 
 type Props = {
-  nutrients: WeeklyReportResponse["data"]["nutrientFeedbacks"];
+  nutrients: WeeklyReportResponse["data"]["nutrient_feedbacks"];
 };
 
 export default function WeeklyNutrientsCard({ nutrients }: Props) {
@@ -31,7 +31,7 @@ export default function WeeklyNutrientsCard({ nutrients }: Props) {
             <Text style={styles.nutrientLabel}>{nutrient.nutrient}</Text>
 
             <Text style={styles.nutrientValue}>
-              {nutrient.avgAmount}
+              {nutrient.avg_amount}
               {nutrient.unit}
             </Text>
 

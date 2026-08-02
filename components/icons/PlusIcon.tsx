@@ -1,4 +1,4 @@
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path } from "react-native-svg";
 
 export const PlusIcon = () => (
   <Svg width={10} height={10} viewBox="0 0 10 10" fill="none">

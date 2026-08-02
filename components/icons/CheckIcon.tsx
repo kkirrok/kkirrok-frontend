@@ -1,4 +1,4 @@
-import Svg, { Path } from 'react-native-svg';
+import Svg, { Path } from "react-native-svg";
 
 export const CheckIcon = () => (
   <Svg width={12} height={9} viewBox="0 0 12 9" fill="none">

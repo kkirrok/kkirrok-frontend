@@ -26,7 +26,8 @@ export default function KkirokStart() {
   const [name, setName] = useState("");
 
   useEffect(() => {
-    tokenStore.get()
+    tokenStore
+      .get()
       .then((token) => {
         if (!token) router.replace("/(auth)/Login");
       })
@@ -53,7 +54,11 @@ export default function KkirokStart() {
 
   return (
     <KkBackground>
-      <KkHeader title="끼록 시작하기" variant="back" onBackPress={() => setModalVisible(true)} />
+      <KkHeader
+        title="끼록 시작하기"
+        variant="back"
+        onBackPress={() => setModalVisible(true)}
+      />
       <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
         <View style={styles.content}>
           <View style={styles.fields}>
@@ -82,7 +87,9 @@ export default function KkirokStart() {
           <View style={styles.bottom}>
             <KkButton
               title="다음"
-              disabled={!name || birthdateRaw.length !== 8 || phoneRaw.length < 10}
+              disabled={
+                !name || birthdateRaw.length !== 8 || phoneRaw.length < 10
+              }
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/ProfileSetting",
@@ -97,7 +104,9 @@ export default function KkirokStart() {
       <KkModal
         visible={modalVisible}
         onClose={() => setModalVisible(false)}
-        message={"아직 가입이 완료되지 않았어요.\n지금 나가면 작성된 정보가 사라져요."}
+        message={
+          "아직 가입이 완료되지 않았어요.\n지금 나가면 작성된 정보가 사라져요."
+        }
         cancelText="홈으로 이동"
         onCancelPress={() => router.replace("/(auth)/Login")}
         buttonText="계속 작성하기"

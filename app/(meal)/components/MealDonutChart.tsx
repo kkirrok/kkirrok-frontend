@@ -29,11 +29,12 @@ function arcPath(
   startDeg: number,
   endDeg: number,
 ) {
+  const end = endDeg - startDeg >= 360 ? startDeg + 359.9999 : endDeg;
   const o1 = polarToCartesian(CX, CY, outerR, startDeg);
-  const o2 = polarToCartesian(CX, CY, outerR, endDeg);
-  const i1 = polarToCartesian(CX, CY, innerR, endDeg);
+  const o2 = polarToCartesian(CX, CY, outerR, end);
+  const i1 = polarToCartesian(CX, CY, innerR, end);
   const i2 = polarToCartesian(CX, CY, innerR, startDeg);
-  const large = endDeg - startDeg > 180 ? 1 : 0;
+  const large = end - startDeg > 180 ? 1 : 0;
   return `M ${o1.x} ${o1.y} A ${outerR} ${outerR} 0 ${large} 1 ${o2.x} ${o2.y} L ${i1.x} ${i1.y} A ${innerR} ${innerR} 0 ${large} 0 ${i2.x} ${i2.y} Z`;
 }
 

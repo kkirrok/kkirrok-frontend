@@ -11,7 +11,7 @@ import {
   YesterdayPicksResult,
 } from "@/utils/api/mealApi";
 import { Ionicons } from "@expo/vector-icons";
-import { router, useFocusEffect } from "expo-router";
+import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -60,6 +60,7 @@ function makeSegments(r: TodayMealRecord): DonutSegment[] | undefined {
 }
 
 export default function MealRecordDetail() {
+  const { mealId } = useLocalSearchParams<{ mealId?: string }>();
   const insets = useSafeAreaInsets();
   const chartListRef = useRef<FlatList<TodayMealRecord>>(null);
   const [records, setRecords] = useState<TodayMealRecord[]>([]);
@@ -83,8 +84,23 @@ export default function MealRecordDetail() {
         if (cancelled) return;
 
         if (mealsResult.status === "fulfilled") {
-          setRecords(mealsResult.value);
-          setCurrentIndex(0);
+          const meals = mealsResult.value;
+          setRecords(meals);
+          const targetIndex = mealId
+            ? Math.max(
+                0,
+                meals.findIndex((m) => m.meal_id === Number(mealId)),
+              )
+            : 0;
+          setCurrentIndex(targetIndex);
+          if (targetIndex > 0) {
+            setTimeout(() => {
+              chartListRef.current?.scrollToIndex({
+                index: targetIndex,
+                animated: false,
+              });
+            }, 0);
+          }
         } else {
           setRecords([]);
           const msg =
@@ -109,7 +125,7 @@ export default function MealRecordDetail() {
       return () => {
         cancelled = true;
       };
-    }, []),
+    }, [mealId]),
   );
 
   const record = records[currentIndex];
@@ -173,6 +189,19 @@ export default function MealRecordDetail() {
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={handleChartSwipe}
+              getItemLayout={(_data, index) => ({
+                length: CHART_AREA_WIDTH,
+                offset: CHART_AREA_WIDTH * index,
+                index,
+              })}
+              onScrollToIndexFailed={(info) => {
+                setTimeout(() => {
+                  chartListRef.current?.scrollToIndex({
+                    index: info.index,
+                    animated: false,
+                  });
+                }, 100);
+              }}
               renderItem={({ item }) => (
                 <View style={styles.chartPage}>
                   <MealDonutChart
@@ -262,14 +291,12 @@ export default function MealRecordDetail() {
                       yesterdayPicks.time_slot as keyof typeof MEAL_TIME_SLOT_TO_TYPE
                     ] ?? yesterdayPicks.time_slot
                   }
-                  foods={yesterdayPicks.picks.map(
-                    (p): FoodItem => ({
-                      id: String(p.meal_id),
-                      name: p.food_name,
-                      calories: String(p.kcal),
-                      image: p.image_url ?? null,
-                    }),
-                  )}
+                  foods={yesterdayPicks.picks.map((p): FoodItem => ({
+                    id: String(p.meal_id),
+                    name: p.food_name,
+                    calories: String(p.kcal),
+                    image: p.image_url ?? null,
+                  }))}
                 />
               )}
 

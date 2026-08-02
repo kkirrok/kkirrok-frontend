@@ -3,10 +3,18 @@ import KkLogoHeader from "@/components/KkLogoHeader";
 import MealSection from "@/components/report/MealSection";
 import MonthCalendar from "@/components/report/MonthCalendar";
 import NutritionCard from "@/components/report/NutritionCard";
+import SkeletonReport from "@/components/skeleton/SkeletonReport";
 import { DayNutrition, MealRecord, MealType } from "@/utils/types/meal";
-import { fetchCalendar, fetchDailyCalendar, MealItem } from "@/utils/api/calendarApi";
+import {
+  fetchCalendar,
+  fetchDailyCalendar,
+  MealItem,
+} from "@/utils/api/calendarApi";
 import { recordMealManual } from "@/utils/api/mealApi";
-import QuickAddFoodSheet, { QuickAddFormData } from "@/components/quickAdd/QuickAddFoodSheet";
+import QuickAddFoodSheet, {
+  QuickAddFormData,
+} from "@/components/quickAdd/QuickAddFoodSheet";
+import { useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -26,7 +34,10 @@ function toDateLabel(month: number, day: number) {
   return `${month}월 ${day}일`;
 }
 
-function mapMealItem(item: MealItem, mealType: MealRecord["mealType"]): MealRecord {
+function mapMealItem(
+  item: MealItem,
+  mealType: MealRecord["mealType"],
+): MealRecord {
   return {
     id: String(item.meal_id),
     name: item.food_name,
@@ -50,6 +61,7 @@ export default function ReportPage() {
   const [markedDays, setMarkedDays] = useState<number[]>([]);
   const [meals, setMeals] = useState<MealRecord[]>([]);
   const [nutrition, setNutrition] = useState<DayNutrition | null>(null);
+  const [isLoadingDaily, setIsLoadingDaily] = useState(true);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [quickAddMealType, setQuickAddMealType] = useState<MealType>("아침");
   const [refreshKey, setRefreshKey] = useState(0);
@@ -70,9 +82,10 @@ export default function ReportPage() {
     return () => controller.abort();
   }, [year, month, refreshKey]);
 
-  useEffect(() => {
+  const loadDailyData = useCallback(() => {
     setMeals([]);
     setNutrition(null);
+    setIsLoadingDaily(true);
     const controller = new AbortController();
     const dateStr = formatDate(year, month, selectedDay);
     fetchDailyCalendar(dateStr, controller.signal)
@@ -108,9 +121,17 @@ export default function ReportPage() {
         if (err instanceof Error && err.name === "AbortError") return;
         setMeals([]);
         setNutrition(null);
-      });
-    return () => controller.abort();
-  }, [year, month, selectedDay, refreshKey]);
+      })
+      .finally(() => setIsLoadingDaily(false));
+    return controller;
+  }, [year, month, selectedDay]);
+
+  useFocusEffect(
+    useCallback(() => {
+      const controller = loadDailyData();
+      return () => controller.abort();
+    }, [loadDailyData]),
+  );
 
   const todayDay = useMemo(() => {
     const now = new Date();
@@ -120,7 +141,10 @@ export default function ReportPage() {
   }, [year, month]);
 
   const dateLabel = toDateLabel(month, selectedDay);
-  const nutritionDateLabel = formatDate(year, month, selectedDay).replace(/-/g, ".");
+  const nutritionDateLabel = formatDate(year, month, selectedDay).replace(
+    /-/g,
+    ".",
+  );
 
   const handleAddMeal = useCallback((mealType: MealType) => {
     setQuickAddMealType(mealType);
@@ -141,13 +165,14 @@ export default function ReportPage() {
           sugarG: Number(data.sugar),
           sodiumMg: Number(data.sodium),
         });
+        loadDailyData();
         setRefreshKey((k) => k + 1);
       } catch (err) {
         // TODO: 토스트 등 사용자 피드백 추가
         console.error(err);
       }
     },
-    [year, month, selectedDay],
+    [year, month, selectedDay, loadDailyData],
   );
 
   const handlePrevMonth = useCallback(() => {
@@ -179,16 +204,24 @@ export default function ReportPage() {
           onNextMonth={handleNextMonth}
         />
 
-        {nutrition && (
-          <NutritionCard dateLabel={nutritionDateLabel} nutrition={nutrition} />
+        {isLoadingDaily ? (
+          <SkeletonReport />
+        ) : (
+          <>
+            {nutrition && (
+              <NutritionCard
+                dateLabel={nutritionDateLabel}
+                nutrition={nutrition}
+              />
+            )}
+            <MealSection
+              key={`${year}-${month}-${selectedDay}`}
+              dateLabel={dateLabel}
+              meals={meals}
+              onAdd={handleAddMeal}
+            />
+          </>
         )}
-
-        <MealSection
-          key={`${year}-${month}-${selectedDay}`}
-          dateLabel={dateLabel}
-          meals={meals}
-          onAdd={handleAddMeal}
-        />
       </ScrollView>
       <QuickAddFoodSheet
         visible={quickAddVisible}

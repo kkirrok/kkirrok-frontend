@@ -1,4 +1,3 @@
-import { Colors } from "@/constants/colors";
 import { useEffect, useRef } from "react";
 import { Animated, StyleProp, StyleSheet, ViewStyle } from "react-native";
 
@@ -48,5 +47,5 @@ export default function SkeletonBox({
 }
 
 const styles = StyleSheet.create({
-  box: { backgroundColor: Colors.gray[700] },
+  box: { backgroundColor: "rgba(255,255,255,0.18)" },
 });

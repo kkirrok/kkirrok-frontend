@@ -1,20 +1,38 @@
-import BellIcon from "@/assets/icons/bell.svg";
 import KkBackground from "@/components/KkBackground";
 import KkLogoHeader from "@/components/KkLogoHeader";
+import SkeletonHome from "@/components/skeleton/SkeletonHome";
+import { Colors } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import KkirokSimpleLogo from "@/assets/logo/kkirok_white_simple_logo.svg";
 import {
+  fetchHome,
+  fetchRecommendations,
+  type HomeData,
+  type HomeReminder,
+  type RecommendationsData,
+} from "@/utils/api/homeApi";
+import {
+  fetchTodayMeals,
   fetchTodayNutritionSummary,
-  NutritionSummary,
+  MEAL_TIME_SLOT_TO_TYPE,
 } from "@/utils/api/mealApi";
-import { useFocusEffect } from "expo-router";
+import type { NutritionSummary, TodayMealRecord } from "@/utils/types/meal";
+import { useFocusEffect, useRouter } from "expo-router";
 import React, { useCallback, useState } from "react";
 import {
-  Image,
   ScrollView,
   StyleSheet,
   Text,
+  TouchableOpacity,
   View,
   ViewStyle,
 } from "react-native";
+
+function formatTime(isoString: string | null): string {
+  if (!isoString) return "";
+  const d = new Date(isoString);
+  return `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
+}
 
 type CardProps = {
   children: React.ReactNode;
@@ -48,140 +66,300 @@ function NutrientBar({ label, actual, recommended, unit }: NutrientBarProps) {
   );
 }
 
+type TimelineItem =
+  | { type: "meal"; data: TodayMealRecord }
+  | { type: "reminder"; data: HomeReminder };
+
+function MealTimeline({
+  meals,
+  reminder,
+}: {
+  meals: TodayMealRecord[];
+  reminder: HomeReminder | null;
+}) {
+  const router = useRouter();
+  const items: TimelineItem[] = [
+    ...meals
+      .slice()
+      .sort((a, b) => {
+        const ta = a.recorded_at ? new Date(a.recorded_at).getTime() : 0;
+        const tb = b.recorded_at ? new Date(b.recorded_at).getTime() : 0;
+        return ta - tb;
+      })
+      .map((m) => ({ type: "meal" as const, data: m })),
+    ...(reminder?.is_time_to_kkirok
+      ? [{ type: "reminder" as const, data: reminder }]
+      : []),
+  ];
+
+  if (items.length === 0) return null;
+
+  return (
+    <View>
+      {items.map((item, i) => {
+        const isFirst = i === 0;
+        const isLast = i === items.length - 1;
+        const time =
+          item.type === "meal"
+            ? formatTime(item.data.recorded_at)
+            : formatTime(new Date().toISOString());
+
+        return (
+          <View key={i} style={styles.tlRow}>
+            <View style={styles.tlSpine}>
+              <View
+                style={isFirst ? styles.tlLineSpacer : styles.tlLineSegment}
+              />
+              <View style={styles.tlDot} />
+              <View
+                style={isLast ? styles.tlLineSpacer : styles.tlLineSegment}
+              />
+            </View>
+            <View style={styles.tlTimeCol}>
+              <Text style={styles.tlTime}>{time}</Text>
+            </View>
+            <View style={styles.tlCardCol}>
+              {item.type === "meal" ? (
+                <TouchableOpacity
+                  activeOpacity={0.75}
+                  onPress={() =>
+                    router.push({
+                      pathname: "/(meal)/MealRecordDetail",
+                      params: { mealId: item.data.meal_id },
+                    })
+                  }
+                  style={styles.tlCard}
+                >
+                  <View style={styles.tlCardInner}>
+                    <View style={styles.tlImageCircle}>
+                      <KkirokSimpleLogo width={72} height={72} />
+                    </View>
+                    <View style={{ flex: 1 }}>
+                      <View style={styles.tlTitleRow}>
+                        <Text style={styles.tlFoodName}>
+                          {item.data.food_name}
+                        </Text>
+                        <View style={styles.tlMealTag}>
+                          <Text style={styles.tlMealTagText}>
+                            {MEAL_TIME_SLOT_TO_TYPE[item.data.meal_time_slot]}
+                          </Text>
+                        </View>
+                      </View>
+                      <Text style={styles.tlKcal}>{item.data.kcal}kcal</Text>
+                      <Text style={styles.tlNutrients}>
+                        단백질 {item.data.protein_g}g 탄수화물{" "}
+                        {item.data.carbohydrate_g}g{"\n"}지방 {item.data.fat_g}g{" "}
+                        당 {item.data.sugar_g}g 나트륨 {item.data.sodium_mg}
+                        mg
+                      </Text>
+                    </View>
+                  </View>
+                </TouchableOpacity>
+              ) : (
+                <View style={[styles.tlCard, styles.tlReminderCard]}>
+                  <Text style={styles.tlReminderTitle}>끼록할 시간이에요!</Text>
+                  <Text style={styles.tlReminderSub}>
+                    {item.data.description}
+                  </Text>
+                </View>
+              )}
+            </View>
+          </View>
+        );
+      })}
+    </View>
+  );
+}
+
 export default function Home() {
+  const router = useRouter();
+  const [home, setHome] = useState<HomeData | null>(null);
   const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
+  const [recommendations, setRecommendations] =
+    useState<RecommendationsData | null>(null);
+  const [todayMeals, setTodayMeals] = useState<TodayMealRecord[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
 
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
+
+      const handleError = (err: unknown) => {
+        if (
+          !cancelled &&
+          err instanceof Error &&
+          err.message.includes("인증 토큰")
+        ) {
+          cancelled = true;
+          router.replace("/(auth)/SocialLogin");
+        }
+      };
+
+      setIsLoading(true);
+      fetchHome()
+        .then((data) => {
+          if (!cancelled) setHome(data);
+        })
+        .catch(handleError)
+        .finally(() => {
+          if (!cancelled) setIsLoading(false);
+        });
       fetchTodayNutritionSummary()
         .then((data) => {
           if (!cancelled) setNutrition(data);
         })
-        .catch(() => {});
+        .catch(handleError);
+      fetchRecommendations()
+        .then((data) => {
+          if (!cancelled) setRecommendations(data);
+        })
+        .catch(handleError);
+      fetchTodayMeals()
+        .then((data) => {
+          if (!cancelled) setTodayMeals(data);
+        })
+        .catch(handleError);
       return () => {
         cancelled = true;
       };
-    }, []),
+    }, [router]),
   );
+
+  const exerciseRecs = recommendations?.exercise_recommend ?? [];
+  const foodRecs = recommendations?.food_recommend ?? [];
+  const showTimeline =
+    todayMeals.length > 0 || home?.reminder?.is_time_to_kkirok === true;
 
   return (
     <KkBackground>
       <ScrollView>
         <KkLogoHeader />
-        <View style={styles.container}>
-          {/* 프로필 카드 */}
-          <Card style={{ borderWidth: 0.5, borderColor: "#FF8868" }}>
-            <Text style={styles.title}>디저트 집착 유형</Text>
-            <Text style={styles.nickname}>뀨뀨뀨님</Text>
-            <Image
-              source={{ uri: "https://via.placeholder.com/100" }}
-              style={styles.character}
-            />
-            <Text style={styles.level}>LV4</Text>
-            <Text style={styles.exp}>EXP 120/1500</Text>
-          </Card>
-
-          {/* 기록 안내 */}
-          <Card
-            style={{
-              alignItems: "center",
-              marginTop: 16,
-              borderWidth: 0.5,
-              borderColor: "#FF8868",
-            }}
-          >
-            <Text style={styles.notice}>끼록할 시간이에요!</Text>
-            <Text style={styles.subNotice}>현재 먹고 있는 메뉴는?</Text>
-          </Card>
-
-          {/* 영양 성분 */}
-          <Text style={styles.sectionTitle}>오늘의 영양성분</Text>
-          <Card>
-            <NutrientBar
-              label="단백질"
-              actual={nutrition?.total_protein_g ?? 0}
-              recommended={nutrition?.recommended_protein_g}
-              unit="g"
-            />
-            <NutrientBar
-              label="탄수화물"
-              actual={nutrition?.total_carbohydrate_g ?? 0}
-              recommended={nutrition?.recommended_carbohydrate_g}
-              unit="g"
-            />
-            <NutrientBar
-              label="지방"
-              actual={nutrition?.total_fat_g ?? 0}
-              recommended={nutrition?.recommended_fat_g}
-              unit="g"
-            />
-            <NutrientBar
-              label="당"
-              actual={nutrition?.total_sugar_g ?? 0}
-              unit="g"
-            />
-            <NutrientBar
-              label="나트륨"
-              actual={nutrition?.total_sodium_mg ?? 0}
-              unit="mg"
-            />
-          </Card>
-
-          {/* 피드백 */}
-          <Text style={styles.sectionTitle}>오늘의 피드백</Text>
-          <Text style={styles.subTitle}>152kcal에 딱 맞는 운동</Text>
-
-          <View style={[styles.row, { marginBottom: 8 }]}>
-            <Card>
-              <Text style={styles.cardTitle}>자전거</Text>
-              <Text style={styles.cardDesc}>
-                1시간 타면 200kcal가 소모되어요!
+        {isLoading ? (
+          <SkeletonHome />
+        ) : (
+          <View style={styles.container}>
+            {/* 프로필 카드 */}
+            <Card style={{ borderWidth: 0.5, borderColor: "#FF8868" }}>
+              <Text style={styles.title}>
+                {home?.member_info?.meal_style_label ?? "식사 유형"}
               </Text>
-              <View style={styles.tagRow}>
-                <Text style={styles.tag}>유산소</Text>
-                <BellIcon width={40} height={40} />
-              </View>
-            </Card>
-            <Card>
-              <Text style={styles.cardTitle}>자전거</Text>
-              <Text style={styles.cardDesc}>
-                1시간 타면 200kcal가 소모되어요!
+              <Text style={styles.nickname}>
+                {home?.member_info?.nickname
+                  ? `${home.member_info.nickname}님`
+                  : ""}
               </Text>
-              <View style={styles.tagRow}>
-                <Text style={styles.tag}>유산소</Text>
-                <BellIcon width={40} height={40} />
-              </View>
             </Card>
+
+            {/* 오늘의 끼니 타임라인 */}
+            {showTimeline && (
+              <>
+                <Text style={styles.sectionTitle}>오늘의 끼니</Text>
+                <MealTimeline
+                  meals={todayMeals}
+                  reminder={home?.reminder ?? null}
+                />
+              </>
+            )}
+
+            {/* 오늘의 영양성분 */}
+            <Text style={styles.sectionTitle}>오늘의 영양성분</Text>
+            <Card>
+              <NutrientBar
+                label="단백질"
+                actual={nutrition?.total_protein_g ?? 0}
+                recommended={nutrition?.recommended_protein_g}
+                unit="g"
+              />
+              <NutrientBar
+                label="탄수화물"
+                actual={nutrition?.total_carbohydrate_g ?? 0}
+                recommended={nutrition?.recommended_carbohydrate_g}
+                unit="g"
+              />
+              <NutrientBar
+                label="지방"
+                actual={nutrition?.total_fat_g ?? 0}
+                recommended={nutrition?.recommended_fat_g}
+                unit="g"
+              />
+              <NutrientBar
+                label="당"
+                actual={nutrition?.total_sugar_g ?? 0}
+                unit="g"
+              />
+              <NutrientBar
+                label="나트륨"
+                actual={nutrition?.total_sodium_mg ?? 0}
+                unit="mg"
+              />
+            </Card>
+
+            {/* 오늘의 피드백 */}
+            <Text style={styles.sectionTitle}>오늘의 피드백</Text>
+
+            {exerciseRecs.length > 0 && (
+              <>
+                <Text style={styles.subTitle}>
+                  {recommendations?.target_exercise_kcal ?? 0}kcal에 딱 맞는
+                  운동
+                </Text>
+                <View style={[styles.row, { marginBottom: 8 }]}>
+                  {exerciseRecs.slice(0, 2).map((ex, i) => (
+                    <Card key={`${ex.exercise_name}-${i}`}>
+                      <Text style={styles.cardTitle}>{ex.exercise_name}</Text>
+                      <Text style={styles.cardDesc}>{ex.description}</Text>
+                      <View style={styles.tagRow}>
+                        <Text style={styles.tag}>{ex.category}</Text>
+                        <Text style={styles.emojiIcon}>{ex.emoji}</Text>
+                      </View>
+                    </Card>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {foodRecs.length > 0 && (
+              <>
+                <Text style={styles.subTitle}>
+                  남은 {recommendations?.remaining_food_kcal ?? 0}kcal는 이렇게
+                  채워봐요!
+                </Text>
+                <View style={[styles.row, { marginBottom: 16 }]}>
+                  {foodRecs.slice(0, 2).map((food, i) => (
+                    <Card key={`${food.food_name}-${i}`}>
+                      <Text style={styles.cardTitle}>{food.food_name}</Text>
+                      <Text style={styles.cardDesc}>{food.description}</Text>
+                      <View style={styles.tagRow}>
+                        {food.target_nutrient_type ? (
+                          <Text style={styles.tag}>
+                            {food.target_nutrient_type}
+                          </Text>
+                        ) : (
+                          <View />
+                        )}
+                        <Text style={styles.emojiIcon}>{food.emoji}</Text>
+                      </View>
+                    </Card>
+                  ))}
+                </View>
+              </>
+            )}
+
+            {/* 이전 기록 기반 피드백 */}
+            {home?.feedback?.description ? (
+              <Card>
+                <Text style={styles.cardTitle}>
+                  이전 요일들 기록 기반 피드백
+                </Text>
+                <Text style={styles.cardDesc2}>
+                  {home.feedback.description}
+                </Text>
+              </Card>
+            ) : null}
+
+            <View style={{ height: 98 }} />
           </View>
-
-          <Text style={styles.subTitle}>남은 1848kcal는 이렇게 채워봐요!</Text>
-          <View style={[styles.row, { marginBottom: 16 }]}>
-            <Card>
-              <Text style={styles.cardTitle}>샐러드</Text>
-              <Text style={styles.cardDesc}>
-                302kcal로 00을 채우기 효과적이에요.
-              </Text>
-            </Card>
-            <Card>
-              <Text style={styles.cardTitle}>치즈</Text>
-              <Text style={styles.cardDesc}>
-                302kcal로 00을 채우기 효과적이에요.
-              </Text>
-            </Card>
-          </View>
-
-          {/* 이전 기록 */}
-          <View style={[styles.row, { marginBottom: 98 }]}>
-            <Card>
-              <Text style={styles.cardTitle}>이전 요일들 기록 기반 피드백</Text>
-              <Text style={styles.cardDesc2}>
-                나트륨을 많이 먹으셨네요 줄이세요
-              </Text>
-            </Card>
-            <BellIcon width={24} height={24} />
-          </View>
-        </View>
+        )}
       </ScrollView>
     </KkBackground>
   );
@@ -211,30 +389,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     color: "#FDFCFC",
   },
-  character: {
-    width: 100,
-    height: 100,
-    alignSelf: "center",
-  },
-  level: {
-    textAlign: "center",
-    color: "white",
-    marginTop: 8,
-  },
-  exp: {
-    textAlign: "center",
-    color: "gray",
-  },
-  notice: {
-    fontSize: 18,
-    color: "#FDFCFC",
-    fontFamily: "Pretendard-SemiBold",
-  },
-  subNotice: {
-    fontSize: 14,
-    color: "#E7E2DF",
-    fontFamily: "Pretendard-SemiBold",
-  },
   sectionTitle: {
     fontFamily: "Pretendard-SemiBold",
     fontSize: 20,
@@ -262,9 +416,9 @@ const styles = StyleSheet.create({
     height: 20,
     borderRadius: 8,
     marginHorizontal: 8,
+    backgroundColor: "rgba(255,255,255,0.1)",
   },
   barFill: {
-    width: "20%",
     height: 20,
     backgroundColor: "#FF8868",
     borderRadius: 8,
@@ -273,6 +427,8 @@ const styles = StyleSheet.create({
     color: "#E7E2DF",
     fontSize: 14,
     fontFamily: "Pretendard-Regular",
+    width: 90,
+    textAlign: "right",
   },
   row: {
     flexDirection: "row",
@@ -282,8 +438,8 @@ const styles = StyleSheet.create({
   tagRow: {
     flexDirection: "row",
     justifyContent: "space-between",
-    gap: 8,
     alignItems: "flex-end",
+    marginTop: 8,
   },
   tag: {
     borderRadius: 16,
@@ -291,6 +447,11 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
     backgroundColor: "#372E2A",
     color: "#E7E2DF",
+    fontSize: 12,
+    alignSelf: "flex-start",
+  },
+  emojiIcon: {
+    fontSize: 32,
   },
   cardTitle: {
     color: "#E7E2DF",
@@ -301,10 +462,113 @@ const styles = StyleSheet.create({
     color: "#E7E2DF",
     fontSize: 12,
     fontFamily: "Pretendard-Regular",
+    marginTop: 4,
   },
   cardDesc2: {
     color: "#E7E2DF",
     fontSize: 14,
     fontFamily: "Pretendard-Regular",
+    marginTop: 4,
+  },
+  // 타임라인
+  tlRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+  },
+  tlTimeCol: {
+    width: 48,
+    alignItems: "flex-end",
+  },
+  tlTime: {
+    color: Colors.gray[100],
+    ...Typography.title.xs,
+  },
+  tlSpine: {
+    width: 16,
+    alignItems: "center",
+    alignSelf: "stretch",
+  },
+  tlDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    backgroundColor: "#FF8868",
+  },
+  tlLineSegment: {
+    flex: 1,
+    width: 2,
+    backgroundColor: "#FF8868",
+  },
+  tlLineSpacer: {
+    flex: 1,
+  },
+  tlCardCol: {
+    flex: 1,
+  },
+  tlCard: {
+    backgroundColor: "rgba(255,255,255,0.08)",
+    borderRadius: 100,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    marginVertical: 8,
+  },
+  tlCardInner: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 16,
+  },
+  tlImageCircle: {
+    width: 72,
+    height: 72,
+    borderRadius: 40,
+    backgroundColor: "rgba(255,255,255,0.12)",
+    flexShrink: 0,
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  },
+  tlTitleRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  },
+  tlFoodName: {
+    color: Colors.main[100],
+    ...Typography.title.xs,
+  },
+  tlMealTag: {
+    backgroundColor: Colors.main[500],
+    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 3,
+  },
+  tlMealTagText: {
+    color: Colors.main[100],
+    fontSize: 12,
+    fontFamily: "Pretendard-Regular",
+  },
+  tlKcal: {
+    color: Colors.gray[200],
+    ...Typography.body.m,
+  },
+  tlNutrients: {
+    color: Colors.gray[300],
+    ...Typography.caption[1],
+    lineHeight: 17,
+  },
+  tlReminderCard: {
+    alignItems: "center",
+    justifyContent: "center",
+    minHeight: 70,
+  },
+  tlReminderTitle: {
+    color: Colors.main[100],
+    ...Typography.title.xs,
+  },
+  tlReminderSub: {
+    color: Colors.gray[200],
+    ...Typography.body.m,
   },
 });

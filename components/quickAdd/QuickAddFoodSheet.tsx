@@ -57,7 +57,10 @@ export default function QuickAddFoodSheet({
 }: Props) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(600)).current;
-  const [form, setForm] = useState<QuickAddFormData>({ ...INITIAL_FORM, mealType: initialMealType });
+  const [form, setForm] = useState<QuickAddFormData>({
+    ...INITIAL_FORM,
+    mealType: initialMealType,
+  });
   const [showExitModal, setShowExitModal] = useState(false);
 
   const isAllFilled = (Object.keys(INITIAL_FORM) as (keyof QuickAddFormData)[])
