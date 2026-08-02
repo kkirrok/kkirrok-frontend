@@ -49,7 +49,7 @@ export default function ResetKcal() {
         onClose={() => setModalVisible(false)}
         message="권장 칼로리가 수정되었습니다."
         buttonText="확인"
-        onButtonPress={() => router.push("/(tabs)/mypage")}
+        onButtonPress={() => router.replace("/(tabs)/mypage")}
       />
     </KkBackground>
   );
