@@ -41,14 +41,9 @@ export async function resetPassword(params: {
   name: string;
   newPassword: string;
 }): Promise<void> {
-  const token = await getRequiredToken();
-
   const res = await fetch(`${BASE_URL}/v1/users/recovery/password`, {
     method: "POST",
-    headers: {
-      "Content-Type": "application/json;charset=UTF-8",
-      Authorization: `Bearer ${token}`,
-    },
+    headers: { "Content-Type": "application/json;charset=UTF-8" },
     body: JSON.stringify({
       email: params.email,
       name: params.name,
