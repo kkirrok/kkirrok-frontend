@@ -103,4 +103,56 @@ export async function markAllNotificationsRead(): Promise<void> {
     );
 }
 
+export type NotificationAgreeType =
+  | "KKIROK"
+  | "GROUP_JOIN_AND_QUIT"
+  | "KKINIPOP"
+  | "REACTION";
+
+export type NotificationAgree = {
+  type: NotificationAgreeType;
+  is_agree: boolean;
+};
+
+export type NotificationSettings = {
+  is_all: boolean;
+  agrees: NotificationAgree[];
+};
+
+const DEFAULT_NOTIFICATION_SETTINGS: NotificationSettings = {
+  is_all: false,
+  agrees: [
+    { type: "KKIROK", is_agree: false },
+    { type: "KKINIPOP", is_agree: false },
+    { type: "GROUP_JOIN_AND_QUIT", is_agree: false },
+    { type: "REACTION", is_agree: false },
+  ],
+};
+
+export async function fetchNotificationSettings(
+  signal?: AbortSignal,
+): Promise<NotificationSettings> {
+  const res = await authFetch("/v1/users/notifications", { signal });
+  const json = await res.json();
+  if (res.status === 404) return DEFAULT_NOTIFICATION_SETTINGS;
+  if (!res.ok)
+    throw new Error(json.message ?? "알림 설정 조회에 실패했습니다.");
+  return json.data as NotificationSettings;
+}
+
+export async function updateNotificationSettings(
+  isAll: boolean,
+  agrees: NotificationAgree[],
+): Promise<NotificationSettings> {
+  const res = await authFetch("/v1/users/notifications", {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json;charset=UTF-8" },
+    body: JSON.stringify({ is_all: isAll, agrees }),
+  });
+  const json = await res.json();
+  if (!res.ok)
+    throw new Error(json.message ?? "알림 설정 변경에 실패했습니다.");
+  return json.data as NotificationSettings;
+}
+
 export type { NotificationItem };
