@@ -79,7 +79,14 @@ function MealTimeline({
 }) {
   const router = useRouter();
   const items: TimelineItem[] = [
-    ...meals.map((m) => ({ type: "meal" as const, data: m })),
+    ...meals
+      .slice()
+      .sort((a, b) => {
+        const ta = a.recorded_at ? new Date(a.recorded_at).getTime() : 0;
+        const tb = b.recorded_at ? new Date(b.recorded_at).getTime() : 0;
+        return ta - tb;
+      })
+      .map((m) => ({ type: "meal" as const, data: m })),
     ...(reminder?.is_time_to_kkirok
       ? [{ type: "reminder" as const, data: reminder }]
       : []),
@@ -165,6 +172,7 @@ function MealTimeline({
 }
 
 export default function Home() {
+  const router = useRouter();
   const [home, setHome] = useState<HomeData | null>(null);
   const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
   const [recommendations, setRecommendations] =
@@ -175,12 +183,24 @@ export default function Home() {
   useFocusEffect(
     useCallback(() => {
       let cancelled = false;
+
+      const handleError = (err: unknown) => {
+        if (
+          !cancelled &&
+          err instanceof Error &&
+          err.message.includes("인증 토큰")
+        ) {
+          cancelled = true;
+          router.replace("/(auth)/SocialLogin");
+        }
+      };
+
       setIsLoading(true);
       fetchHome()
         .then((data) => {
           if (!cancelled) setHome(data);
         })
-        .catch(() => {})
+        .catch(handleError)
         .finally(() => {
           if (!cancelled) setIsLoading(false);
         });
@@ -188,21 +208,21 @@ export default function Home() {
         .then((data) => {
           if (!cancelled) setNutrition(data);
         })
-        .catch(() => {});
+        .catch(handleError);
       fetchRecommendations()
         .then((data) => {
           if (!cancelled) setRecommendations(data);
         })
-        .catch(() => {});
+        .catch(handleError);
       fetchTodayMeals()
         .then((data) => {
           if (!cancelled) setTodayMeals(data);
         })
-        .catch(() => {});
+        .catch(handleError);
       return () => {
         cancelled = true;
       };
-    }, []),
+    }, [router]),
   );
 
   const exerciseRecs = recommendations?.exercise_recommend ?? [];
