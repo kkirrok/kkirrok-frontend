@@ -28,7 +28,8 @@
       },
       "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.kkirrok"
+      "package": "com.kkirok.android",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -54,7 +55,13 @@
           }
         }
       ],
-      "expo-secure-store"
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default"
+        }
+      ]
     ],
     "experiments": {
       "typedRoutes": true,

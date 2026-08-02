@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "129580478445",
+    "project_id": "kkirok-76383",
+    "storage_bucket": "kkirok-76383.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:129580478445:android:8dcd5fdad1d79918bb01e4",
+        "android_client_info": {
+          "package_name": "com.kkirok.android"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyAcBRGdpVzSYc-AUs74BamuhvCXPnsZMbM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
