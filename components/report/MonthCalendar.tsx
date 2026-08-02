@@ -11,6 +11,7 @@ type Props = {
   month: number;
   markedDays: number[];
   todayDay: number;
+  selectedDay: number;
   onSelectDay: (day: number) => void;
   onPrevMonth: () => void;
   onNextMonth: () => void;
@@ -21,6 +22,7 @@ export default function MonthCalendar({
   month,
   markedDays,
   todayDay,
+  selectedDay,
   onSelectDay,
   onPrevMonth,
   onNextMonth,
@@ -82,6 +84,7 @@ export default function MonthCalendar({
           {row.map((day, ci) => {
             const isToday = !!day && day === todayDay;
             const isMarked = !!day && markedDays.includes(day);
+            const isSelected = !!day && day === selectedDay;
             const isSunday = ci === 0;
 
             return (
@@ -96,21 +99,28 @@ export default function MonthCalendar({
                   <View
                     style={[
                       styles.dayCircle,
-                      isMarked && styles.selectedCircle,
+                      isMarked && styles.markedCircle,
                     ]}
                   >
                     <Text
                       style={[
                         styles.dayText,
-                        isSunday && !isMarked && styles.sundayText,
-                        isMarked && styles.selectedDayText,
-                        isToday && !isMarked && styles.todayDayText,
+                        isSunday &&
+                          !isMarked &&
+                          !isToday &&
+                          !isSelected &&
+                          styles.sundayText,
                       ]}
                     >
                       {day ?? ""}
                     </Text>
                   </View>
-                  {isToday && !isMarked && <View style={styles.todayBorder} />}
+                  {!isMarked && isToday && (
+                    <View style={styles.todayBorder} />
+                  )}
+                  {!isMarked && !isToday && isSelected && (
+                    <View style={styles.selectedBorder} />
+                  )}
                 </View>
               </TouchableOpacity>
             );
@@ -172,8 +182,18 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "center",
   },
-  selectedCircle: {
+  markedCircle: {
     backgroundColor: Colors.main[500],
+  },
+  selectedBorder: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    borderRadius: 17,
+    borderWidth: 1.5,
+    borderColor: "#FFFFFF",
   },
   todayBorder: {
     position: "absolute",
@@ -191,11 +211,5 @@ const styles = StyleSheet.create({
   },
   sundayText: {
     color: Colors.main[400],
-  },
-  selectedDayText: {
-    color: Colors.gray[100],
-  },
-  todayDayText: {
-    color: Colors.main[500],
   },
 });

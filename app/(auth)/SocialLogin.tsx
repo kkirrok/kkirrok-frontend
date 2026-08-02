@@ -5,6 +5,7 @@ import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { loginSocial } from "@/utils/api/authApi";
+import { requestAndRegisterPushToken } from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { login as kakaoLogin } from "@react-native-kakao/user";
 import NaverLogin from "@react-native-seoul/naver-login";
@@ -25,6 +26,7 @@ export default function SocialLogin() {
   ) => {
     await tokenStore.save(accessToken);
     await tokenStore.setOnboarding(onboardingCompleted);
+    requestAndRegisterPushToken().catch(() => {});
     if (onboardingCompleted) {
       router.replace("/(tabs)");
     } else {

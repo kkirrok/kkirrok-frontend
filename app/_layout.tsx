@@ -1,10 +1,20 @@
 import { useFonts } from "expo-font";
+import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { Text } from "react-native";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import NaverLogin from "@react-native-seoul/naver-login";
 import { initializeKakaoSDK } from "@react-native-kakao/core";
+
+Notifications.setNotificationHandler({
+  handleNotification: async () => ({
+    shouldShowAlert: true,
+    shouldPlaySound: true,
+    shouldSetBadge: true,
+    shouldPlayAnnouncement: false,
+  }),
+});
 
 const kakaoKey = process.env.EXPO_PUBLIC_KAKAO_NATIVE_APP_KEY;
 if (!kakaoKey) {

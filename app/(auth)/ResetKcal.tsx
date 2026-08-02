@@ -2,6 +2,7 @@ import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
+import { updateKcal } from "@/utils/api/profileApi";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View, Text, TextInput } from "react-native";
@@ -9,7 +10,25 @@ import { StyleSheet, View, Text, TextInput } from "react-native";
 export default function ResetKcal() {
   const router = useRouter();
   const [kcal, setKcal] = useState("");
+  const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      await updateKcal(Number(kcal));
+      setModalVisible(true);
+    } catch (e) {
+      setErrorMessage(
+        e instanceof Error ? e.message : "권장 칼로리 수정에 실패했습니다.",
+      );
+      setErrorModalVisible(true);
+    } finally {
+      setLoading(false);
+    }
+  };
 
   return (
     <KkBackground>
@@ -36,10 +55,8 @@ export default function ResetKcal() {
         <View style={styles.bottom}>
           <KkButton
             title="변경하기"
-            disabled={!kcal}
-            onPress={() => {
-              setModalVisible(true);
-            }}
+            disabled={!kcal || loading}
+            onPress={handleSubmit}
           />
         </View>
       </View>
@@ -50,6 +67,13 @@ export default function ResetKcal() {
         message="권장 칼로리가 수정되었습니다."
         buttonText="확인"
         onButtonPress={() => router.replace("/(tabs)/mypage")}
+      />
+      <KkModal
+        visible={errorModalVisible}
+        onClose={() => setErrorModalVisible(false)}
+        message={errorMessage}
+        buttonText="확인"
+        onButtonPress={() => setErrorModalVisible(false)}
       />
     </KkBackground>
   );

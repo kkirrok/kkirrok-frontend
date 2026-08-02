@@ -5,6 +5,7 @@ import KkModal from "@/components/KkModal";
 import { useProfile } from "@/hooks/useProfile";
 import { useProfileImage } from "@/hooks/useProfileImage";
 import { deleteAccount, signOut } from "@/utils/api/authApi";
+import { unregisterPushToken } from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -28,6 +29,9 @@ export default function MyPage() {
   const { data: imageUrl } = useProfileImage(profile?.profile_image);
 
   const handleLogout = async () => {
+    try {
+      await unregisterPushToken();
+    } catch {}
     try {
       await signOut();
     } catch {
@@ -71,8 +75,14 @@ export default function MyPage() {
                   ? `${profile.nickname}님`
                   : "guest님"}
             </Text>
-            <Text style={styles.sub}>#디저트집착유형</Text>
-            <Text style={styles.sub2}>권장 칼로리: 2500kcal</Text>
+            {profile?.meal_style_label ? (
+              <Text style={styles.sub}>#{profile.meal_style_label}</Text>
+            ) : null}
+            {profile?.recommended_kcal ? (
+              <Text style={styles.sub2}>
+                권장 칼로리: {profile.recommended_kcal}kcal
+              </Text>
+            ) : null}
           </View>
         </View>
 
@@ -94,6 +104,12 @@ export default function MyPage() {
           title="권장 칼로리 변경"
           onPress={() => {
             router.push("/(auth)/ResetKcal");
+          }}
+        />
+        <MenuItem
+          title="알림 설정"
+          onPress={() => {
+            router.push("/notification-settings");
           }}
         />
 

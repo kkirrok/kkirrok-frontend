@@ -4,6 +4,7 @@ import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { loginLocal } from "@/utils/api/authApi";
+import { requestAndRegisterPushToken } from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { useRouter } from "expo-router";
 import { useState } from "react";
@@ -23,6 +24,7 @@ export default function Login() {
       const res = await loginLocal(email, password);
       await tokenStore.save(res.data.access_token);
       await tokenStore.setOnboarding(res.data.onboarding_completed);
+      requestAndRegisterPushToken().catch(() => {});
       if (res.data.onboarding_completed) {
         router.replace("/(tabs)");
       } else {

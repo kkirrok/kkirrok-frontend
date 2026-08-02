@@ -14,6 +14,10 @@ config.resolver = {
   ...config.resolver,
   assetExts: config.resolver.assetExts.filter((ext) => ext !== "svg"),
   sourceExts: [...config.resolver.sourceExts, "svg"],
+  extraNodeModules: {
+    ...config.resolver.extraNodeModules,
+    assert: require.resolve("assert/"),
+  },
   resolveRequest: (context, moduleName, platform) => {
     if (kakaoPackages.includes(moduleName)) {
       const pkg = require(

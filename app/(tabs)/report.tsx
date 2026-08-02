@@ -199,6 +199,7 @@ export default function ReportPage() {
           month={month}
           markedDays={markedDays}
           todayDay={todayDay}
+          selectedDay={selectedDay}
           onSelectDay={setSelectedDay}
           onPrevMonth={handlePrevMonth}
           onNextMonth={handleNextMonth}

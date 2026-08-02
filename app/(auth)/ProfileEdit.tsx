@@ -98,6 +98,9 @@ export default function ProfileEdit() {
       <KkHeader title="프로필 변경" />
       <ProfileForm
         mode="edit"
+        name={profile?.name}
+        birthdate={profile?.birth}
+        phone={profile?.phone}
         initialNickname={profile?.nickname}
         initialGender={initialGender}
         initialGoal={initialGoal}
