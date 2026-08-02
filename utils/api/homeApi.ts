@@ -97,5 +97,6 @@ export async function fetchRecommendations(
   if (!res.ok)
     throw new Error(json.message ?? "추천 정보 조회에 실패했습니다.");
 
+  if (!json.data) throw new Error("추천 정보 응답 데이터가 없습니다.");
   return json.data as RecommendationsData;
 }
