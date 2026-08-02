@@ -189,6 +189,19 @@ export default function MealRecordDetail() {
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={handleChartSwipe}
+              getItemLayout={(_data, index) => ({
+                length: CHART_AREA_WIDTH,
+                offset: CHART_AREA_WIDTH * index,
+                index,
+              })}
+              onScrollToIndexFailed={(info) => {
+                setTimeout(() => {
+                  chartListRef.current?.scrollToIndex({
+                    index: info.index,
+                    animated: false,
+                  });
+                }, 100);
+              }}
               renderItem={({ item }) => (
                 <View style={styles.chartPage}>
                   <MealDonutChart
