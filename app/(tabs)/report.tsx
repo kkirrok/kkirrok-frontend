@@ -82,50 +82,55 @@ export default function ReportPage() {
     return () => controller.abort();
   }, [year, month, refreshKey]);
 
+  const loadDailyData = useCallback(() => {
+    setMeals([]);
+    setNutrition(null);
+    setIsLoadingDaily(true);
+    const controller = new AbortController();
+    const dateStr = formatDate(year, month, selectedDay);
+    fetchDailyCalendar(dateStr, controller.signal)
+      .then((data) => {
+        const allMeals: MealRecord[] = [
+          ...data.breakfast_meals.map((m) => mapMealItem(m, "아침")),
+          ...data.lunch_meals.map((m) => mapMealItem(m, "점심")),
+          ...data.dinner_meals.map((m) => mapMealItem(m, "저녁")),
+          ...data.snack_meals.map((m) => mapMealItem(m, "간식")),
+          ...data.midnight_snack_meals.map((m) => mapMealItem(m, "야식")),
+        ];
+        setMeals(allMeals);
+        setNutrition(
+          data.total_kcal > 0
+            ? {
+                calories: data.total_kcal,
+                maxCalories: MAX_CALORIES,
+                carbs: data.total_carbohydrate_g,
+                maxCarbs: MAX_CARBS,
+                protein: data.total_protein_g,
+                maxProtein: MAX_PROTEIN,
+                fat: data.total_fat_g,
+                maxFat: MAX_FAT,
+                sugar: data.total_sugar_g,
+                maxSugar: MAX_SUGAR,
+                sodium: data.total_sodium_mg,
+                maxSodium: MAX_SODIUM,
+              }
+            : null,
+        );
+      })
+      .catch((err: unknown) => {
+        if (err instanceof Error && err.name === "AbortError") return;
+        setMeals([]);
+        setNutrition(null);
+      })
+      .finally(() => setIsLoadingDaily(false));
+    return controller;
+  }, [year, month, selectedDay]);
+
   useFocusEffect(
     useCallback(() => {
-      setMeals([]);
-      setNutrition(null);
-      setIsLoadingDaily(true);
-      const controller = new AbortController();
-      const dateStr = formatDate(year, month, selectedDay);
-      fetchDailyCalendar(dateStr, controller.signal)
-        .then((data) => {
-          const allMeals: MealRecord[] = [
-            ...data.breakfast_meals.map((m) => mapMealItem(m, "아침")),
-            ...data.lunch_meals.map((m) => mapMealItem(m, "점심")),
-            ...data.dinner_meals.map((m) => mapMealItem(m, "저녁")),
-            ...data.snack_meals.map((m) => mapMealItem(m, "간식")),
-            ...data.midnight_snack_meals.map((m) => mapMealItem(m, "야식")),
-          ];
-          setMeals(allMeals);
-          setNutrition(
-            data.total_kcal > 0
-              ? {
-                  calories: data.total_kcal,
-                  maxCalories: MAX_CALORIES,
-                  carbs: data.total_carbohydrate_g,
-                  maxCarbs: MAX_CARBS,
-                  protein: data.total_protein_g,
-                  maxProtein: MAX_PROTEIN,
-                  fat: data.total_fat_g,
-                  maxFat: MAX_FAT,
-                  sugar: data.total_sugar_g,
-                  maxSugar: MAX_SUGAR,
-                  sodium: data.total_sodium_mg,
-                  maxSodium: MAX_SODIUM,
-                }
-              : null,
-          );
-        })
-        .catch((err: unknown) => {
-          if (err instanceof Error && err.name === "AbortError") return;
-          setMeals([]);
-          setNutrition(null);
-        })
-        .finally(() => setIsLoadingDaily(false));
+      const controller = loadDailyData();
       return () => controller.abort();
-    }, [year, month, selectedDay]),
+    }, [loadDailyData]),
   );
 
   const todayDay = useMemo(() => {
@@ -160,13 +165,14 @@ export default function ReportPage() {
           sugarG: Number(data.sugar),
           sodiumMg: Number(data.sodium),
         });
+        loadDailyData();
         setRefreshKey((k) => k + 1);
       } catch (err) {
         // TODO: 토스트 등 사용자 피드백 추가
         console.error(err);
       }
     },
-    [year, month, selectedDay],
+    [year, month, selectedDay, loadDailyData],
   );
 
   const handlePrevMonth = useCallback(() => {
