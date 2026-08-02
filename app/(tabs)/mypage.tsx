@@ -106,6 +106,12 @@ export default function MyPage() {
             router.push("/(auth)/ResetKcal");
           }}
         />
+        <MenuItem
+          title="알림 설정"
+          onPress={() => {
+            router.push("/notification-settings");
+          }}
+        />
 
         <View style={styles.divider} />
 
