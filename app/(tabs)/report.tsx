@@ -4,18 +4,14 @@ import MealSection from "@/components/report/MealSection";
 import MonthCalendar from "@/components/report/MonthCalendar";
 import NutritionCard from "@/components/report/NutritionCard";
 import SkeletonReport from "@/components/skeleton/SkeletonReport";
+import { useCalendar, useDailyCalendar, useRecordMealManual } from "@/hooks/useCalendar";
+import { MealItem } from "@/utils/api/calendarApi";
 import { DayNutrition, MealRecord, MealType } from "@/utils/types/meal";
-import {
-  fetchCalendar,
-  fetchDailyCalendar,
-  MealItem,
-} from "@/utils/api/calendarApi";
-import { recordMealManual } from "@/utils/api/mealApi";
 import QuickAddFoodSheet, {
   QuickAddFormData,
 } from "@/components/quickAdd/QuickAddFoodSheet";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -58,80 +54,60 @@ export default function ReportPage() {
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth() + 1);
   const [selectedDay, setSelectedDay] = useState(() => new Date().getDate());
-  const [markedDays, setMarkedDays] = useState<number[]>([]);
-  const [meals, setMeals] = useState<MealRecord[]>([]);
-  const [nutrition, setNutrition] = useState<DayNutrition | null>(null);
-  const [isLoadingDaily, setIsLoadingDaily] = useState(true);
   const [quickAddVisible, setQuickAddVisible] = useState(false);
   const [quickAddMealType, setQuickAddMealType] = useState<MealType>("아침");
-  const [refreshKey, setRefreshKey] = useState(0);
 
-  useEffect(() => {
-    const controller = new AbortController();
-    fetchCalendar(year, month, controller.signal)
-      .then((data) => {
-        const energeticDays = data.day_infos
-          .filter((d) => d.status === "ENERGETIC")
-          .map((d) => d.day_of_month);
-        setMarkedDays(energeticDays);
-      })
-      .catch((err: unknown) => {
-        if (err instanceof Error && err.name === "AbortError") return;
-        setMarkedDays([]);
-      });
-    return () => controller.abort();
-  }, [year, month, refreshKey]);
-
-  const loadDailyData = useCallback(() => {
-    setMeals([]);
-    setNutrition(null);
-    setIsLoadingDaily(true);
-    const controller = new AbortController();
-    const dateStr = formatDate(year, month, selectedDay);
-    fetchDailyCalendar(dateStr, controller.signal)
-      .then((data) => {
-        const allMeals: MealRecord[] = [
-          ...data.breakfast_meals.map((m) => mapMealItem(m, "아침")),
-          ...data.lunch_meals.map((m) => mapMealItem(m, "점심")),
-          ...data.dinner_meals.map((m) => mapMealItem(m, "저녁")),
-          ...data.snack_meals.map((m) => mapMealItem(m, "간식")),
-          ...data.midnight_snack_meals.map((m) => mapMealItem(m, "야식")),
-        ];
-        setMeals(allMeals);
-        setNutrition(
-          data.total_kcal > 0
-            ? {
-                calories: data.total_kcal,
-                maxCalories: MAX_CALORIES,
-                carbs: data.total_carbohydrate_g,
-                maxCarbs: MAX_CARBS,
-                protein: data.total_protein_g,
-                maxProtein: MAX_PROTEIN,
-                fat: data.total_fat_g,
-                maxFat: MAX_FAT,
-                sugar: data.total_sugar_g,
-                maxSugar: MAX_SUGAR,
-                sodium: data.total_sodium_mg,
-                maxSodium: MAX_SODIUM,
-              }
-            : null,
-        );
-      })
-      .catch((err: unknown) => {
-        if (err instanceof Error && err.name === "AbortError") return;
-        setMeals([]);
-        setNutrition(null);
-      })
-      .finally(() => setIsLoadingDaily(false));
-    return controller;
-  }, [year, month, selectedDay]);
+  const { data: calendarData } = useCalendar(year, month);
+  const dateStr = formatDate(year, month, selectedDay);
+  const {
+    data: dailyData,
+    isLoading: isLoadingDaily,
+    refetch: refetchDaily,
+  } = useDailyCalendar(dateStr);
+  const { mutateAsync: addMeal } = useRecordMealManual();
 
   useFocusEffect(
     useCallback(() => {
-      const controller = loadDailyData();
-      return () => controller.abort();
-    }, [loadDailyData]),
+      refetchDaily();
+    }, [refetchDaily]),
   );
+
+  const markedDays = useMemo(
+    () =>
+      calendarData?.day_infos
+        .filter((d) => d.status === "ENERGETIC")
+        .map((d) => d.day_of_month) ?? [],
+    [calendarData],
+  );
+
+  const meals = useMemo<MealRecord[]>(() => {
+    if (!dailyData) return [];
+    return [
+      ...dailyData.breakfast_meals.map((m) => mapMealItem(m, "아침")),
+      ...dailyData.lunch_meals.map((m) => mapMealItem(m, "점심")),
+      ...dailyData.dinner_meals.map((m) => mapMealItem(m, "저녁")),
+      ...dailyData.snack_meals.map((m) => mapMealItem(m, "간식")),
+      ...dailyData.midnight_snack_meals.map((m) => mapMealItem(m, "야식")),
+    ];
+  }, [dailyData]);
+
+  const nutrition = useMemo<DayNutrition | null>(() => {
+    if (!dailyData || dailyData.total_kcal === 0) return null;
+    return {
+      calories: dailyData.total_kcal,
+      maxCalories: MAX_CALORIES,
+      carbs: dailyData.total_carbohydrate_g,
+      maxCarbs: MAX_CARBS,
+      protein: dailyData.total_protein_g,
+      maxProtein: MAX_PROTEIN,
+      fat: dailyData.total_fat_g,
+      maxFat: MAX_FAT,
+      sugar: dailyData.total_sugar_g,
+      maxSugar: MAX_SUGAR,
+      sodium: dailyData.total_sodium_mg,
+      maxSodium: MAX_SODIUM,
+    };
+  }, [dailyData]);
 
   const todayDay = useMemo(() => {
     const now = new Date();
@@ -154,7 +130,7 @@ export default function ReportPage() {
   const handleQuickAddSubmit = useCallback(
     async (data: QuickAddFormData) => {
       try {
-        await recordMealManual({
+        await addMeal({
           date: formatDate(year, month, selectedDay),
           mealType: data.mealType,
           foodName: data.name,
@@ -165,14 +141,11 @@ export default function ReportPage() {
           sugarG: Number(data.sugar),
           sodiumMg: Number(data.sodium),
         });
-        loadDailyData();
-        setRefreshKey((k) => k + 1);
       } catch (err) {
-        // TODO: 토스트 등 사용자 피드백 추가
         console.error(err);
       }
     },
-    [year, month, selectedDay, loadDailyData],
+    [year, month, selectedDay, addMeal],
   );
 
   const handlePrevMonth = useCallback(() => {

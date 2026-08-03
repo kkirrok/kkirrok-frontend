@@ -6,10 +6,9 @@ import WeeklyNutrientsCard from "@/components/weeklyreport/WeeklyNutrientsCard";
 import WeeklyPatternCard from "@/components/weeklyreport/WeeklyPatternCard";
 import WeeklySuggestionsCard from "@/components/weeklyreport/WeeklySuggestionsCard";
 import { styles } from "@/components/weeklyreport/styles";
-import { getWeeklyReport } from "@/utils/api/reportApi";
-import type { WeeklyReportResponse } from "@/utils/types/report";
-import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import { useCallback, useMemo, useRef, useState } from "react";
+import { useWeeklyReport } from "@/hooks/useWeeklyReport";
+import { router, useLocalSearchParams } from "expo-router";
+import { useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -43,12 +42,6 @@ function getWeekOfMonth(date: Date) {
 
 export default function WeeklyReportPage() {
   const params = useLocalSearchParams();
-  const [report, setReport] = useState<WeeklyReportResponse["data"] | null>(
-    null,
-  );
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const lastFetchedWeekRef = useRef<string | null>(null);
 
   const selectedDate = useMemo(() => {
     const year = toNumberParam(params.year);
@@ -90,44 +83,21 @@ export default function WeeklyReportPage() {
     return `${year}년 ${String(month).padStart(2, "0")}월 ${week}주차`;
   }, [selectedDate]);
 
-  useFocusEffect(
-    useCallback(() => {
-      const controller = new AbortController();
+  const {
+    data: reportResponse,
+    isLoading: loading,
+    error: queryError,
+  } = useWeeklyReport(weekStart);
 
-      const fetchWeeklyReport = async () => {
-        if (lastFetchedWeekRef.current !== weekStart) setLoading(true);
-        setError(null);
-        try {
-          const response = await getWeeklyReport(weekStart, controller.signal);
-          if (!controller.signal.aborted) {
-            lastFetchedWeekRef.current = weekStart;
-            setReport(response.data);
-          }
-        } catch (err) {
-          if (!controller.signal.aborted) {
-            const message =
-              err instanceof Error ? err.message : "오류가 발생했습니다.";
-            if (message.includes("인증 토큰")) {
-              router.replace("/(auth)/SocialLogin");
-              return;
-            }
-            setError(message);
-          }
-        } finally {
-          if (!controller.signal.aborted) {
-            setLoading(false);
-          }
-        }
-      };
+  const report = reportResponse?.data ?? null;
+  const error = queryError instanceof Error ? queryError.message : queryError ? "오류가 발생했습니다." : null;
 
-      fetchWeeklyReport();
-      return () => controller.abort();
-    }, [weekStart]),
-  );
+  if (error?.includes("인증 토큰")) {
+    router.replace("/(auth)/SocialLogin");
+  }
 
   const dailyCalories = useMemo(() => {
     if (!report) return [];
-
     return DAY_OF_WEEK_ORDER.map((day) => report.daily_kcals[day] ?? 0);
   }, [report]);
 
