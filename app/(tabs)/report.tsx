@@ -11,7 +11,7 @@ import QuickAddFoodSheet, {
   QuickAddFormData,
 } from "@/components/quickAdd/QuickAddFoodSheet";
 import { useFocusEffect } from "expo-router";
-import { useCallback, useMemo, useState } from "react";
+import { useCallback, useMemo, useRef, useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
@@ -66,8 +66,14 @@ export default function ReportPage() {
   } = useDailyCalendar(dateStr);
   const { mutateAsync: addMeal } = useRecordMealManual();
 
+  const isFirstFocus = useRef(true);
+
   useFocusEffect(
     useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
       refetchDaily();
     }, [refetchDaily]),
   );

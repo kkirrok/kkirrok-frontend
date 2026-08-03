@@ -13,7 +13,7 @@ import type {
 } from "@/utils/types/notification";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import { ComponentProps, useCallback, useMemo, useState } from "react";
+import { ComponentProps, useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -119,10 +119,12 @@ export default function NotificationPage() {
     fetchNextPage,
     hasNextPage,
     isFetchingNextPage,
+    isLoading,
     refetch,
   } = useNotificationsInfinite();
 
   const [readIds, setReadIds] = useState<Set<number>>(new Set());
+  const isFirstFocus = useRef(true);
 
   const rawNotifications = useMemo(
     () =>
@@ -141,6 +143,10 @@ export default function NotificationPage() {
 
   useFocusEffect(
     useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
       refetch();
     }, [refetch]),
   );
@@ -152,16 +158,19 @@ export default function NotificationPage() {
 
   const handlePress = useCallback((id: number) => {
     setReadIds((prev) => new Set([...prev, id]));
-    markNotificationRead(id).catch(() => {});
+    markNotificationRead(id).catch(() => {
+      setReadIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    });
   }, []);
 
   const handleReadAll = useCallback(() => {
     setReadIds(
       (prev) =>
-        new Set([
-          ...prev,
-          ...rawNotifications.map((n) => n.notification_id),
-        ]),
+        new Set([...prev, ...rawNotifications.map((n) => n.notification_id)]),
     );
     markAllNotificationsRead().catch(() => {});
   }, [rawNotifications]);
@@ -180,7 +189,12 @@ export default function NotificationPage() {
           ) : undefined
         }
       />
-      {notifications.length === 0 ? (
+      {isLoading ? (
+        <ActivityIndicator
+          color={Colors.main[400]}
+          style={styles.loadingMore}
+        />
+      ) : notifications.length === 0 ? (
         <EmptyState />
       ) : (
         <FlatList

@@ -59,7 +59,12 @@ function buildAgreeMap(
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
-  const { data: settings, isLoading } = useNotificationSettings();
+  const {
+    data: settings,
+    isLoading,
+    isError,
+    error,
+  } = useNotificationSettings();
   const { mutateAsync: updateSettings, isPending: saving } =
     useUpdateNotificationSettings();
 
@@ -67,9 +72,10 @@ export default function NotificationSettingsPage() {
     () =>
       settings
         ? buildAgreeMap(settings)
-        : (Object.fromEntries(
-            ALL_TYPES.map((t) => [t, false]),
-          ) as Record<NotificationAgreeType, boolean>),
+        : (Object.fromEntries(ALL_TYPES.map((t) => [t, false])) as Record<
+            NotificationAgreeType,
+            boolean
+          >),
     [settings],
   );
 
@@ -87,6 +93,17 @@ export default function NotificationSettingsPage() {
       if (!token) router.replace("/(auth)/Login");
     });
   }, [router]);
+
+  useEffect(() => {
+    if (isError) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "알림 설정을 불러오지 못했습니다.",
+      );
+      setErrorModalVisible(true);
+    }
+  }, [isError, error]);
 
   const isAll = ALL_TYPES.every((t) => agreeMap[t]);
 
@@ -154,7 +171,11 @@ export default function NotificationSettingsPage() {
           </ScrollView>
 
           <View style={styles.bottom}>
-            <KkButton title="저장" disabled={saving} onPress={handleSave} />
+            <KkButton
+              title="저장"
+              disabled={saving || !settings}
+              onPress={handleSave}
+            />
           </View>
         </SafeAreaView>
       )}

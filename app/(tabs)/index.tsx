@@ -14,7 +14,7 @@ import {
   useTodayMeals,
 } from "@/hooks/useHome";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useEffect } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -180,6 +180,8 @@ export default function Home() {
     useRecommendations();
   const { data: todayMeals = [], refetch: refetchMeals } = useTodayMeals();
 
+  const isFirstFocus = useRef(true);
+
   useEffect(() => {
     if (homeError instanceof Error && homeError.message.includes("인증 토큰")) {
       router.replace("/(auth)/SocialLogin");
@@ -188,6 +190,10 @@ export default function Home() {
 
   useFocusEffect(
     useCallback(() => {
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
       refetchHome();
       refetchNutrition();
       refetchRecommendations();

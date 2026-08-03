@@ -73,9 +73,15 @@ export default function MealRecordDetail() {
     useYesterdayPicks();
   const { mutateAsync: deleteMealMutation } = useDeleteMeal();
 
+  const isFirstFocus = useRef(true);
+
   useFocusEffect(
     useCallback(() => {
       scrolledRef.current = false;
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
       refetchMeals();
       refetchPicks();
     }, [refetchMeals, refetchPicks]),

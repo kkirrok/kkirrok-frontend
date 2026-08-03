@@ -8,7 +8,7 @@ import WeeklySuggestionsCard from "@/components/weeklyreport/WeeklySuggestionsCa
 import { styles } from "@/components/weeklyreport/styles";
 import { useWeeklyReport } from "@/hooks/useWeeklyReport";
 import { router, useLocalSearchParams } from "expo-router";
-import { useMemo } from "react";
+import { useEffect, useMemo } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -90,11 +90,18 @@ export default function WeeklyReportPage() {
   } = useWeeklyReport(weekStart);
 
   const report = reportResponse?.data ?? null;
-  const error = queryError instanceof Error ? queryError.message : queryError ? "오류가 발생했습니다." : null;
+  const error =
+    queryError instanceof Error
+      ? queryError.message
+      : queryError
+        ? "오류가 발생했습니다."
+        : null;
 
-  if (error?.includes("인증 토큰")) {
-    router.replace("/(auth)/SocialLogin");
-  }
+  useEffect(() => {
+    if (error?.includes("인증 토큰")) {
+      router.replace("/(auth)/SocialLogin");
+    }
+  }, [error]);
 
   const dailyCalories = useMemo(() => {
     if (!report) return [];

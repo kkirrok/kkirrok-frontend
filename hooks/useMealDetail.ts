@@ -1,4 +1,8 @@
-import { deleteMeal, fetchTodayMeals, fetchYesterdayPicks } from "@/utils/api/mealApi";
+import {
+  deleteMeal,
+  fetchTodayMeals,
+  fetchYesterdayPicks,
+} from "@/utils/api/mealApi";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 
 export function useTodayMealsQuery() {
@@ -6,7 +10,10 @@ export function useTodayMealsQuery() {
 }
 
 export function useYesterdayPicks() {
-  return useQuery({ queryKey: ["yesterdayPicks"], queryFn: fetchYesterdayPicks });
+  return useQuery({
+    queryKey: ["yesterdayPicks"],
+    queryFn: fetchYesterdayPicks,
+  });
 }
 
 export function useDeleteMeal() {
@@ -17,6 +24,8 @@ export function useDeleteMeal() {
       queryClient.invalidateQueries({ queryKey: ["todayMeals"] });
       queryClient.invalidateQueries({ queryKey: ["nutritionSummary"] });
       queryClient.invalidateQueries({ queryKey: ["home"] });
+      queryClient.invalidateQueries({ queryKey: ["calendar"] });
+      queryClient.invalidateQueries({ queryKey: ["dailyCalendar"] });
     },
   });
 }
