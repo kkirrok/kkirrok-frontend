@@ -2,8 +2,8 @@ import KkBackground from "@/components/KkBackground";
 import KkHeader from "@/components/KkHeader";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { useNotificationsInfinite } from "@/hooks/useNotificationsInfinite";
 import {
-  fetchNotifications,
   markAllNotificationsRead,
   markNotificationRead,
 } from "@/utils/api/notificationApi";
@@ -13,7 +13,7 @@ import type {
 } from "@/utils/types/notification";
 import { Ionicons } from "@expo/vector-icons";
 import { useFocusEffect } from "expo-router";
-import { ComponentProps, useCallback, useRef, useState } from "react";
+import { ComponentProps, useCallback, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   FlatList,
@@ -113,72 +113,67 @@ function EmptyState() {
   );
 }
 
-const PAGE_SIZE = 20;
-
 export default function NotificationPage() {
-  const [notifications, setNotifications] = useState<NotificationItem[]>([]);
-  const [hasNext, setHasNext] = useState(false);
-  const [isLoadingMore, setIsLoadingMore] = useState(false);
-  const pageRef = useRef(0);
-  const isLoadingMoreRef = useRef(false);
-  const loadMoreControllerRef = useRef<AbortController | null>(null);
+  const {
+    data: notificationPages,
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+    isLoading,
+    refetch,
+  } = useNotificationsInfinite();
+
+  const [readIds, setReadIds] = useState<Set<number>>(new Set());
+  const isFirstFocus = useRef(true);
+
+  const rawNotifications = useMemo(
+    () =>
+      notificationPages?.pages.flatMap((page) => page.notifications ?? []) ??
+      [],
+    [notificationPages],
+  );
+
+  const notifications = useMemo(
+    () =>
+      rawNotifications.map((n) =>
+        readIds.has(n.notification_id) ? { ...n, is_read: true } : n,
+      ),
+    [rawNotifications, readIds],
+  );
 
   useFocusEffect(
     useCallback(() => {
-      const controller = new AbortController();
-      pageRef.current = 0;
-      loadMoreControllerRef.current?.abort();
-      loadMoreControllerRef.current = null;
-      isLoadingMoreRef.current = false;
-      fetchNotifications(0, PAGE_SIZE, controller.signal)
-        .then((res) => {
-          setNotifications(res.notifications ?? []);
-          setHasNext(res.page_info.has_next);
-        })
-        .catch((err: unknown) => {
-          if (err instanceof Error && err.name === "AbortError") return;
-          setNotifications([]);
-          setHasNext(false);
-        });
-      return () => controller.abort();
-    }, []),
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
+      refetch();
+    }, [refetch]),
   );
 
   const handleLoadMore = useCallback(() => {
-    if (!hasNext || isLoadingMoreRef.current) return;
-    isLoadingMoreRef.current = true;
-    setIsLoadingMore(true);
-    const nextPage = pageRef.current + 1;
-    const controller = new AbortController();
-    loadMoreControllerRef.current = controller;
-    fetchNotifications(nextPage, PAGE_SIZE, controller.signal)
-      .then((res) => {
-        setNotifications((prev) => [...prev, ...(res.notifications ?? [])]);
-        setHasNext(res.page_info.has_next);
-        pageRef.current = nextPage;
-      })
-      .catch((err: unknown) => {
-        if (err instanceof Error && err.name === "AbortError") return;
-      })
-      .finally(() => {
-        isLoadingMoreRef.current = false;
-        setIsLoadingMore(false);
-      });
-  }, [hasNext]);
+    if (!hasNextPage || isFetchingNextPage) return;
+    fetchNextPage();
+  }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
   const handlePress = useCallback((id: number) => {
-    setNotifications((prev) =>
-      prev.map((n) =>
-        n.notification_id === id ? { ...n, is_read: true } : n,
-      ),
-    );
-    markNotificationRead(id).catch(() => {});
+    setReadIds((prev) => new Set([...prev, id]));
+    markNotificationRead(id).catch(() => {
+      setReadIds((prev) => {
+        const next = new Set(prev);
+        next.delete(id);
+        return next;
+      });
+    });
   }, []);
 
   const handleReadAll = useCallback(() => {
-    setNotifications((prev) => prev.map((n) => ({ ...n, is_read: true })));
+    setReadIds(
+      (prev) =>
+        new Set([...prev, ...rawNotifications.map((n) => n.notification_id)]),
+    );
     markAllNotificationsRead().catch(() => {});
-  }, []);
+  }, [rawNotifications]);
 
   const hasUnread = notifications.some((n) => !n.is_read);
 
@@ -194,7 +189,12 @@ export default function NotificationPage() {
           ) : undefined
         }
       />
-      {notifications.length === 0 ? (
+      {isLoading ? (
+        <ActivityIndicator
+          color={Colors.main[400]}
+          style={styles.loadingMore}
+        />
+      ) : notifications.length === 0 ? (
         <EmptyState />
       ) : (
         <FlatList
@@ -207,7 +207,7 @@ export default function NotificationPage() {
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}
           ListFooterComponent={
-            isLoadingMore ? (
+            isFetchingNextPage ? (
               <ActivityIndicator
                 color={Colors.main[400]}
                 style={styles.loadingMore}

@@ -2,17 +2,12 @@ import KkBackground from "@/components/KkBackground";
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
-import {
-  deleteMeal,
-  fetchTodayMeals,
-  fetchYesterdayPicks,
-  MEAL_TIME_SLOT_TO_TYPE,
-  TodayMealRecord,
-  YesterdayPicksResult,
-} from "@/utils/api/mealApi";
+import { useDeleteMeal, useTodayMealsQuery, useYesterdayPicks } from "@/hooks/useMealDetail";
+import { MEAL_TIME_SLOT_TO_TYPE } from "@/utils/api/mealApi";
+import type { TodayMealRecord } from "@/utils/types/meal";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useRef, useState } from "react";
+import React, { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
@@ -63,70 +58,63 @@ export default function MealRecordDetail() {
   const { mealId } = useLocalSearchParams<{ mealId?: string }>();
   const insets = useSafeAreaInsets();
   const chartListRef = useRef<FlatList<TodayMealRecord>>(null);
-  const [records, setRecords] = useState<TodayMealRecord[]>([]);
-  const [loading, setLoading] = useState(true);
+  const scrolledRef = useRef(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
-  const [yesterdayPicks, setYesterdayPicks] =
-    useState<YesterdayPicksResult | null>(null);
+
+  const {
+    data: records = [],
+    isLoading: loading,
+    error: mealsError,
+    refetch: refetchMeals,
+  } = useTodayMealsQuery();
+  const { data: yesterdayPicks = null, refetch: refetchPicks } =
+    useYesterdayPicks();
+  const { mutateAsync: deleteMealMutation } = useDeleteMeal();
+
+  const isFirstFocus = useRef(true);
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-      setLoading(true);
-
-      const loadData = async () => {
-        const [mealsResult, picksResult] = await Promise.allSettled([
-          fetchTodayMeals(),
-          fetchYesterdayPicks(),
-        ]);
-        if (cancelled) return;
-
-        if (mealsResult.status === "fulfilled") {
-          const meals = mealsResult.value;
-          setRecords(meals);
-          const targetIndex = mealId
-            ? Math.max(
-                0,
-                meals.findIndex((m) => m.meal_id === Number(mealId)),
-              )
-            : 0;
-          setCurrentIndex(targetIndex);
-          if (targetIndex > 0) {
-            setTimeout(() => {
-              chartListRef.current?.scrollToIndex({
-                index: targetIndex,
-                animated: false,
-              });
-            }, 0);
-          }
-        } else {
-          setRecords([]);
-          const msg =
-            mealsResult.reason?.message ?? "식사 기록을 불러오지 못했어요.";
-          if (msg.includes("인증 토큰")) {
-            router.replace("/(auth)/SocialLogin");
-            return;
-          }
-          setErrorMessage(msg);
-        }
-
-        if (picksResult.status === "fulfilled") {
-          setYesterdayPicks(picksResult.value);
-        } else {
-          setYesterdayPicks(null);
-        }
-
-        setLoading(false);
-      };
-
-      loadData();
-      return () => {
-        cancelled = true;
-      };
-    }, [mealId]),
+      scrolledRef.current = false;
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
+      refetchMeals();
+      refetchPicks();
+    }, [refetchMeals, refetchPicks]),
   );
+
+  useEffect(() => {
+    if (
+      mealsError instanceof Error &&
+      mealsError.message.includes("인증 토큰")
+    ) {
+      router.replace("/(auth)/SocialLogin");
+    }
+  }, [mealsError]);
+
+  useEffect(() => {
+    if (loading || records.length === 0 || scrolledRef.current) return;
+    const targetIndex = mealId
+      ? Math.max(
+          0,
+          records.findIndex((m) => m.meal_id === Number(mealId)),
+        )
+      : 0;
+    setCurrentIndex(targetIndex);
+    scrolledRef.current = true;
+    if (targetIndex > 0) {
+      setTimeout(() => {
+        chartListRef.current?.scrollToIndex({
+          index: targetIndex,
+          animated: false,
+        });
+      }, 0);
+    }
+  }, [loading, records, mealId]);
 
   const record = records[currentIndex];
   const total = records.length;
@@ -146,7 +134,7 @@ export default function MealRecordDetail() {
     setDeleteModalVisible(false);
     if (!record) return;
     try {
-      await deleteMeal(record.meal_id);
+      await deleteMealMutation(record.meal_id);
       router.back();
     } catch (err: any) {
       setErrorMessage(err?.message ?? "삭제에 실패했어요. 다시 시도해 주세요.");

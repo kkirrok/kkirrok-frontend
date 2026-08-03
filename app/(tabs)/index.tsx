@@ -4,21 +4,17 @@ import SkeletonHome from "@/components/skeleton/SkeletonHome";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import KkirokSimpleLogo from "@/assets/logo/kkirok_white_simple_logo.svg";
+import { type HomeReminder } from "@/utils/api/homeApi";
+import { MEAL_TIME_SLOT_TO_TYPE } from "@/utils/api/mealApi";
+import type { TodayMealRecord } from "@/utils/types/meal";
 import {
-  fetchHome,
-  fetchRecommendations,
-  type HomeData,
-  type HomeReminder,
-  type RecommendationsData,
-} from "@/utils/api/homeApi";
-import {
-  fetchTodayMeals,
-  fetchTodayNutritionSummary,
-  MEAL_TIME_SLOT_TO_TYPE,
-} from "@/utils/api/mealApi";
-import type { NutritionSummary, TodayMealRecord } from "@/utils/types/meal";
+  useHomeData,
+  useNutritionSummary,
+  useRecommendations,
+  useTodayMeals,
+} from "@/hooks/useHome";
 import { useFocusEffect, useRouter } from "expo-router";
-import React, { useCallback, useState } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   ScrollView,
   StyleSheet,
@@ -173,56 +169,36 @@ function MealTimeline({
 
 export default function Home() {
   const router = useRouter();
-  const [home, setHome] = useState<HomeData | null>(null);
-  const [nutrition, setNutrition] = useState<NutritionSummary | null>(null);
-  const [recommendations, setRecommendations] =
-    useState<RecommendationsData | null>(null);
-  const [todayMeals, setTodayMeals] = useState<TodayMealRecord[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const {
+    data: home,
+    isLoading,
+    error: homeError,
+    refetch: refetchHome,
+  } = useHomeData();
+  const { data: nutrition, refetch: refetchNutrition } = useNutritionSummary();
+  const { data: recommendations, refetch: refetchRecommendations } =
+    useRecommendations();
+  const { data: todayMeals = [], refetch: refetchMeals } = useTodayMeals();
+
+  const isFirstFocus = useRef(true);
+
+  useEffect(() => {
+    if (homeError instanceof Error && homeError.message.includes("인증 토큰")) {
+      router.replace("/(auth)/SocialLogin");
+    }
+  }, [homeError, router]);
 
   useFocusEffect(
     useCallback(() => {
-      let cancelled = false;
-
-      const handleError = (err: unknown) => {
-        if (
-          !cancelled &&
-          err instanceof Error &&
-          err.message.includes("인증 토큰")
-        ) {
-          cancelled = true;
-          router.replace("/(auth)/SocialLogin");
-        }
-      };
-
-      setIsLoading(true);
-      fetchHome()
-        .then((data) => {
-          if (!cancelled) setHome(data);
-        })
-        .catch(handleError)
-        .finally(() => {
-          if (!cancelled) setIsLoading(false);
-        });
-      fetchTodayNutritionSummary()
-        .then((data) => {
-          if (!cancelled) setNutrition(data);
-        })
-        .catch(handleError);
-      fetchRecommendations()
-        .then((data) => {
-          if (!cancelled) setRecommendations(data);
-        })
-        .catch(handleError);
-      fetchTodayMeals()
-        .then((data) => {
-          if (!cancelled) setTodayMeals(data);
-        })
-        .catch(handleError);
-      return () => {
-        cancelled = true;
-      };
-    }, [router]),
+      if (isFirstFocus.current) {
+        isFirstFocus.current = false;
+        return;
+      }
+      refetchHome();
+      refetchNutrition();
+      refetchRecommendations();
+      refetchMeals();
+    }, [refetchHome, refetchNutrition, refetchRecommendations, refetchMeals]),
   );
 
   const exerciseRecs = recommendations?.exercise_recommend ?? [];
