@@ -3,14 +3,16 @@ import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import {
-  fetchNotificationSettings,
-  updateNotificationSettings,
-  type NotificationAgreeType,
-  type NotificationSettings,
-} from "@/utils/api/notificationApi";
+  useNotificationSettings,
+  useUpdateNotificationSettings,
+} from "@/hooks/useNotificationSettings";
 import { tokenStore } from "@/utils/store/tokenStore";
-import { useFocusEffect, useRouter } from "expo-router";
-import { useCallback, useEffect, useState } from "react";
+import type {
+  NotificationAgreeType,
+  NotificationSettings,
+} from "@/utils/types/notification";
+import { useRouter } from "expo-router";
+import { useEffect, useMemo, useState } from "react";
 import {
   ActivityIndicator,
   ScrollView,
@@ -57,19 +59,34 @@ function buildAgreeMap(
 
 export default function NotificationSettingsPage() {
   const router = useRouter();
-  const [agreeMap, setAgreeMap] = useState<
-    Record<NotificationAgreeType, boolean>
-  >(
+  const {
+    data: settings,
+    isLoading,
+    isError,
+    error,
+  } = useNotificationSettings();
+  const { mutateAsync: updateSettings, isPending: saving } =
+    useUpdateNotificationSettings();
+
+  const initialMap = useMemo(
     () =>
-      Object.fromEntries(ALL_TYPES.map((t) => [t, false])) as Record<
-        NotificationAgreeType,
-        boolean
-      >,
+      settings
+        ? buildAgreeMap(settings)
+        : (Object.fromEntries(ALL_TYPES.map((t) => [t, false])) as Record<
+            NotificationAgreeType,
+            boolean
+          >),
+    [settings],
   );
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
+
+  const [agreeMap, setAgreeMap] =
+    useState<Record<NotificationAgreeType, boolean>>(initialMap);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorModalVisible, setErrorModalVisible] = useState(false);
+
+  useEffect(() => {
+    if (settings) setAgreeMap(buildAgreeMap(settings));
+  }, [settings]);
 
   useEffect(() => {
     tokenStore.get().then((token) => {
@@ -77,27 +94,16 @@ export default function NotificationSettingsPage() {
     });
   }, [router]);
 
-  useFocusEffect(
-    useCallback(() => {
-      const controller = new AbortController();
-      setLoading(true);
-      fetchNotificationSettings(controller.signal)
-        .then((data: NotificationSettings) => {
-          setAgreeMap(buildAgreeMap(data));
-        })
-        .catch((err: unknown) => {
-          if (err instanceof Error && err.name === "AbortError") return;
-          setErrorMessage(
-            err instanceof Error
-              ? err.message
-              : "알림 설정 조회에 실패했습니다.",
-          );
-          setErrorModalVisible(true);
-        })
-        .finally(() => setLoading(false));
-      return () => controller.abort();
-    }, []),
-  );
+  useEffect(() => {
+    if (isError) {
+      setErrorMessage(
+        error instanceof Error
+          ? error.message
+          : "알림 설정을 불러오지 못했습니다.",
+      );
+      setErrorModalVisible(true);
+    }
+  }, [isError, error]);
 
   const isAll = ALL_TYPES.every((t) => agreeMap[t]);
 
@@ -115,27 +121,24 @@ export default function NotificationSettingsPage() {
   };
 
   const handleSave = async () => {
-    setSaving(true);
     try {
-      await updateNotificationSettings(
+      await updateSettings({
         isAll,
-        ALL_TYPES.map((t) => ({ type: t, is_agree: agreeMap[t] })),
-      );
+        agrees: ALL_TYPES.map((t) => ({ type: t, is_agree: agreeMap[t] })),
+      });
       router.back();
     } catch (e) {
       setErrorMessage(
         e instanceof Error ? e.message : "알림 설정 변경에 실패했습니다.",
       );
       setErrorModalVisible(true);
-    } finally {
-      setSaving(false);
     }
   };
 
   return (
     <KkBackground>
       <KkHeader title="알림 설정" />
-      {loading ? (
+      {isLoading ? (
         <View style={styles.center}>
           <ActivityIndicator color={ORANGE} />
         </View>
@@ -168,7 +171,11 @@ export default function NotificationSettingsPage() {
           </ScrollView>
 
           <View style={styles.bottom}>
-            <KkButton title="저장" disabled={saving} onPress={handleSave} />
+            <KkButton
+              title="저장"
+              disabled={saving || !settings}
+              onPress={handleSave}
+            />
           </View>
         </SafeAreaView>
       )}

@@ -7,8 +7,15 @@
     "icon": "./assets/images/icon.png",
     "scheme": "kkirrok",
     "userInterfaceStyle": "automatic",
+    "updates": {
+      "url": "https://u.expo.dev/81039a1c-09d2-442e-959a-6ed86fda552d"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
+      "bundleIdentifier": "com.kkirok.ios",
       "infoPlist": {
         "NSPhotoLibraryUsageDescription": "프로필 사진을 설정하기 위해 사진 접근 권한이 필요합니다.",
         "CFBundleURLTypes": [
@@ -27,7 +34,8 @@
       },
       "predictiveBackGestureEnabled": false,
       "package": "com.kkirok.android",
-      "googleServicesFile": "./google-services.json"
+      "googleServicesFile": "./google-services.json",
+      "permissions": ["android.permission.RECORD_AUDIO"]
     },
     "web": {
       "output": "static",
@@ -64,6 +72,13 @@
     "experiments": {
       "typedRoutes": true,
       "reactCompiler": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "81039a1c-09d2-442e-959a-6ed86fda552d"
+      }
+    },
+    "owner": "codud1125"
   }
 }

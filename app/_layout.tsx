@@ -1,15 +1,17 @@
+import { initializeKakaoSDK } from "@react-native-kakao/core";
+import NaverLogin from "@react-native-seoul/naver-login";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
 import { useEffect } from "react";
 import { Text } from "react-native";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import NaverLogin from "@react-native-seoul/naver-login";
-import { initializeKakaoSDK } from "@react-native-kakao/core";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
     shouldShowAlert: true,
+    shouldShowBanner: true,
+    shouldShowList: true,
     shouldPlaySound: true,
     shouldSetBadge: true,
     shouldPlayAnnouncement: false,
@@ -51,7 +53,15 @@ if (!naverId || !naverSecret) {
   }
 }
 
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      retry: 1,
+      staleTime: 0,
+      refetchOnWindowFocus: false,
+    },
+  },
+});
 
 export default function RootLayout() {
   const [fontsLoaded] = useFonts({
