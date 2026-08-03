@@ -1,0 +1,280 @@
+import KkBackground from "@/components/KkBackground";
+import KkButton from "@/components/KkButton";
+import KkHeader from "@/components/KkHeader";
+import { Colors } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
+import { createPost, fetchMyKkirokStatus } from "@/utils/api/kkinipopApi";
+import { Ionicons } from "@expo/vector-icons";
+import { CameraView, useCameraPermissions } from "expo-camera";
+import { Image } from "expo-image";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
+import {
+  Alert,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+
+const { width, height: screenHeight } = Dimensions.get("window");
+
+export default function KkinipopCamera() {
+  const { groupId } = useLocalSearchParams<{ groupId?: string }>();
+  const numericGroupId = Number(groupId);
+  const validGroupId =
+    Number.isInteger(numericGroupId) && numericGroupId > 0
+      ? numericGroupId
+      : null;
+  const [permission, requestPermission] = useCameraPermissions();
+  const cameraRef = useRef<CameraView | null>(null);
+  const [autoSave, setAutoSave] = useState(true);
+  const [cameraReady, setCameraReady] = useState(false);
+  const [isTaking, setIsTaking] = useState(false);
+  const [capturedUri, setCapturedUri] = useState<string | null>(null);
+  const [uploading, setUploading] = useState(false);
+  const [kkirokStatus, setKkirokStatus] = useState<{
+    remaining_count: number;
+    max_count: number;
+  } | null>(null);
+
+  useEffect(() => {
+    if (validGroupId == null) return;
+    fetchMyKkirokStatus(validGroupId)
+      .then(setKkirokStatus)
+      .catch(() => {});
+  }, [validGroupId]);
+
+  if (!permission) return <View style={styles.container} />;
+
+  if (!permission.granted) {
+    return (
+      <KkBackground>
+        <KkHeader title="끼니팝" />
+        <View style={styles.permissionWrap}>
+          <Text style={styles.permissionText}>카메라 권한이 필요합니다.</Text>
+          <KkButton title="권한 허용" onPress={requestPermission} />
+        </View>
+      </KkBackground>
+    );
+  }
+
+  const takePicture = async () => {
+    if (!cameraRef.current || !cameraReady || isTaking) return;
+    try {
+      setIsTaking(true);
+      const photo = await cameraRef.current.takePictureAsync({
+        skipProcessing: true,
+        quality: 0.5,
+        exif: false,
+        base64: false,
+      });
+      if (!photo?.uri) return;
+      setCapturedUri(photo.uri);
+    } catch (e) {
+      console.error("촬영 실패:", e);
+    } finally {
+      setIsTaking(false);
+    }
+  };
+
+  if (capturedUri) {
+    const camTop = (screenHeight - width) / 2;
+    const btnTop = camTop + width + 24;
+    return (
+      <KkBackground>
+        <View style={styles.headerAbsolute}>
+          <KkHeader
+            title="끼니팝"
+            onBackPress={() => {
+              setCapturedUri(null);
+              setCameraReady(false);
+            }}
+          />
+        </View>
+        <Image
+          source={{ uri: capturedUri }}
+          style={[styles.previewImage, { top: camTop, width, height: width }]}
+          contentFit="cover"
+        />
+        <View style={[styles.previewBtnWrap, { top: btnTop }]}>
+          <KkButton
+            title="끼록하기"
+            disabled={uploading}
+            onPress={async () => {
+              if (validGroupId == null || !capturedUri) return;
+              try {
+                setUploading(true);
+                await createPost(validGroupId, capturedUri, {
+                  saveToPersonalLog: autoSave,
+                  scanType: "CAMERA",
+                });
+                router.back();
+              } catch (err: any) {
+                const msg: string = err?.message ?? "";
+                if (
+                  msg.includes("LIVE_MISSION_NOT_FOUND") ||
+                  msg.includes("실시간 미션")
+                ) {
+                  Alert.alert("끼니팝", "현재 진행 중인 미션이 없어요.");
+                } else if (
+                  msg.includes("GENERAL_POST_LIMIT_EXCEEDED") ||
+                  msg.includes("3회")
+                ) {
+                  Alert.alert(
+                    "끼니팝",
+                    "나의끼록 자동 저장은 하루 3회까지만 가능해요.",
+                  );
+                } else {
+                  Alert.alert(
+                    "끼니팝",
+                    "게시글 작성에 실패했어요. 다시 시도해 주세요.",
+                  );
+                }
+              } finally {
+                setUploading(false);
+              }
+            }}
+          />
+        </View>
+      </KkBackground>
+    );
+  }
+
+  const camTop = (screenHeight - width) / 2;
+  const CHIP_H = 40;
+  const chipTop = camTop - 24 - CHIP_H;
+  const shutterTop = camTop + width + 24;
+
+  return (
+    <View style={styles.container}>
+      <View style={styles.headerAbsolute}>
+        <KkHeader title="끼니팝" />
+      </View>
+
+      <TouchableOpacity
+        style={[
+          styles.chip,
+          {
+            top: chipTop,
+            backgroundColor: autoSave ? Colors.main[600] : Colors.gray[900],
+          },
+        ]}
+        onPress={() => setAutoSave((v) => !v)}
+        activeOpacity={0.8}
+      >
+        {autoSave ? (
+          <Ionicons
+            name="checkmark-circle-outline"
+            size={20}
+            color={Colors.gray[100]}
+          />
+        ) : (
+          <Ionicons name="ellipse-outline" size={20} color={Colors.gray[300]} />
+        )}
+        <Text style={[styles.chipText]}>
+          나의 끼록 자동 저장{" "}
+          {kkirokStatus
+            ? `${kkirokStatus.remaining_count}/${kkirokStatus.max_count}`
+            : "-/-"}
+        </Text>
+      </TouchableOpacity>
+
+      <View
+        style={[styles.cameraWrapper, { top: camTop, width, height: width }]}
+      >
+        <CameraView
+          style={{ flex: 1 }}
+          ref={cameraRef}
+          onCameraReady={() => setCameraReady(true)}
+          onMountError={(error) => console.error("카메라 마운트 에러:", error)}
+        />
+      </View>
+
+      <View style={[styles.shutterWrap, { top: shutterTop }]}>
+        <TouchableOpacity
+          style={styles.shutterOuter}
+          onPress={takePicture}
+          disabled={!cameraReady || isTaking}
+        >
+          <View style={styles.shutterInner} />
+        </TouchableOpacity>
+      </View>
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: Colors.gray[1000],
+  },
+  permissionWrap: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    gap: 16,
+    paddingHorizontal: 24,
+  },
+  permissionText: {
+    color: Colors.gray[100],
+    fontFamily: "Pretendard-SemiBold",
+    fontSize: 16,
+  },
+  chip: {
+    position: "absolute",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    alignSelf: "center",
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 16,
+    zIndex: 5,
+  },
+  chipText: {
+    ...Typography.body.l,
+    color: Colors.gray[200],
+  },
+  headerAbsolute: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
+  },
+  cameraWrapper: {
+    position: "absolute",
+    overflow: "hidden",
+  },
+  shutterWrap: {
+    position: "absolute",
+    left: 0,
+    right: 0,
+    alignItems: "center",
+  },
+  shutterOuter: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: Colors.main[500],
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  shutterInner: {
+    width: 56,
+    height: 56,
+    borderRadius: 28,
+    backgroundColor: Colors.gray[100],
+  },
+  previewImage: {
+    position: "absolute",
+    borderRadius: 20,
+  },
+  previewBtnWrap: {
+    position: "absolute",
+    left: 16,
+    right: 16,
+  },
+});

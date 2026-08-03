@@ -1,0 +1,379 @@
+import PhotoIcon from "@/assets/icons/photo.svg";
+import ProfileIcon from "@/assets/icons/profile.svg";
+import KkButton from "@/components/KkButton";
+import KkModal from "@/components/KkModal";
+import KkTextBox from "@/components/KkTextBox";
+import { setProfile } from "@/utils/api/authApi";
+import { tokenStore } from "@/utils/store/tokenStore";
+import * as ImagePicker from "expo-image-picker";
+import { useRouter } from "expo-router";
+import React, { useState } from "react";
+import {
+  Image,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { SafeAreaView } from "react-native-safe-area-context";
+
+type Mode = "create" | "edit";
+
+interface ProfileFormProps {
+  mode: Mode;
+  name?: string;
+  birthdate?: string;
+  phone?: string;
+  initialNickname?: string;
+  initialGender?: "female" | "male";
+  initialGoal?: "lose" | "maintain" | "gain" | "habit";
+  initialHabits?: string[];
+  initialImageUrl?: string;
+}
+
+function formatBirthdate(digits: string): string {
+  if (digits.length <= 4) return digits;
+  if (digits.length <= 6) return `${digits.slice(0, 4)}.${digits.slice(4)}`;
+  return `${digits.slice(0, 4)}.${digits.slice(4, 6)}.${digits.slice(6)}`;
+}
+
+const PURPOSE_MAP: Record<string, string> = {
+  lose: "LOSE_WEIGHT",
+  maintain: "MAINTAIN",
+  gain: "GAIN_WEIGHT",
+  habit: "HABIT",
+};
+
+const HABITS: { label: string; value: string }[] = [
+  { label: "야식 잦음", value: "LATE_NIGHT_MEAL" },
+  { label: "폭식", value: "BIG_EATER" },
+  { label: "소식", value: "SMALL_EATER" },
+  { label: "불규칙 식사", value: "IRREGULAR_MEAL" },
+  { label: "규칙적 식사", value: "REGULAR_MEAL" },
+  { label: "단 음식 선호", value: "SWEET" },
+  { label: "짠 음식 선호", value: "SALTY" },
+  { label: "매운 음식 선호", value: "SPICY" },
+  { label: "음주 잦음", value: "BEVERAGE" },
+  { label: "배달 자주", value: "DELIVERY_FOOD" },
+  { label: "패스트푸드 자주", value: "FAST_FOOD" },
+  { label: "채소 위주", value: "VEGETABLE" },
+  { label: "육류 위주", value: "MEAT" },
+  { label: "간식 많음", value: "SNACK" },
+  { label: "디저트 선호", value: "DESSERT" },
+  { label: "간헐적 단식", value: "INTERMITTENT_FASTING" },
+  { label: "다이어트 식단", value: "DIET" },
+];
+
+export default function KkProfileForm({
+  mode,
+  name,
+  birthdate,
+  phone,
+  initialNickname,
+  initialGender,
+  initialGoal,
+  initialHabits,
+  initialImageUrl,
+}: ProfileFormProps) {
+  const isEdit = mode === "edit";
+  const [nickname, setNickname] = useState(initialNickname ?? "");
+  const [gender, setGender] = useState<"female" | "male" | null>(
+    initialGender ?? null,
+  );
+  const [goal, setGoal] = useState<
+    "lose" | "maintain" | "gain" | "habit" | null
+  >(initialGoal ?? null);
+  const [birthdateRaw, setBirthdateRaw] = useState(() =>
+    birthdate ? birthdate.replace(/-/g, "") : "",
+  );
+  const [selectedHabits, setSelectedHabits] = useState<string[]>(
+    initialHabits ?? [],
+  );
+  const [imageUri, setImageUri] = useState<string | null>(null);
+  const [modalVisible, setModalVisible] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const router = useRouter();
+
+  const handleBirthdateChange = (text: string) => {
+    const digits = text.replace(/\D/g, "").slice(0, 8);
+    setBirthdateRaw(digits);
+  };
+
+  const birthdateForApi =
+    birthdateRaw.length === 8
+      ? `${birthdateRaw.slice(0, 4)}-${birthdateRaw.slice(4, 6)}-${birthdateRaw.slice(6)}`
+      : birthdate ?? "";
+
+  const handlePickImage = async () => {
+    const { status } = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    if (status !== "granted") {
+      setErrorMessage("사진 접근 권한이 필요합니다.");
+      setErrorModalVisible(true);
+      return;
+    }
+    const result = await ImagePicker.launchImageLibraryAsync({
+      mediaTypes: ["images"],
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.8,
+    });
+    if (!result.canceled) {
+      setImageUri(result.assets[0].uri);
+    }
+  };
+
+  const handleCreate = async () => {
+    if (!gender || !goal) return;
+    setSubmitting(true);
+    try {
+      await setProfile(
+        {
+          name: name ?? "",
+          birth: birthdate ?? "",
+          phone: phone ?? "",
+          nickname,
+          gender: gender === "female" ? "FEMALE" : "MALE",
+          purpose: PURPOSE_MAP[goal],
+          habits: selectedHabits,
+        },
+        imageUri ?? undefined,
+      );
+      await tokenStore.setOnboarding(true);
+      await tokenStore.remove();
+      router.replace("/(auth)/Login");
+    } catch (e) {
+      setErrorMessage(
+        e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
+      );
+      setErrorModalVisible(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const handleEdit = async () => {
+    if (!gender || !goal) return;
+    if (birthdateRaw.length > 0 && birthdateRaw.length < 8) {
+      setErrorMessage("생년월일 8자리를 모두 입력해 주세요.");
+      setErrorModalVisible(true);
+      return;
+    }
+    setSubmitting(true);
+    try {
+      await setProfile(
+        {
+          name: name ?? "",
+          birth: birthdateForApi,
+          phone: phone ?? "",
+          nickname,
+          gender: gender === "female" ? "FEMALE" : "MALE",
+          purpose: PURPOSE_MAP[goal],
+          habits: selectedHabits,
+        },
+        imageUri ?? undefined,
+      );
+      setModalVisible(true);
+    } catch (e) {
+      setErrorMessage(
+        e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
+      );
+      setErrorModalVisible(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const toggleHabit = (value: string) => {
+    setSelectedHabits((prev) =>
+      prev.includes(value) ? prev.filter((h) => h !== value) : [...prev, value],
+    );
+  };
+
+  return (
+    <>
+      <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
+        <ScrollView
+          contentContainerStyle={styles.content}
+          showsVerticalScrollIndicator={false}
+        >
+          <Text style={styles.title}>프로필 사진</Text>
+          <View style={styles.profileSection}>
+            <View style={styles.wrapper}>
+              {imageUri || initialImageUrl ? (
+                <Image
+                  source={{ uri: imageUri ?? initialImageUrl }}
+                  style={styles.profileImage}
+                />
+              ) : (
+                <ProfileIcon width={112} height={112} />
+              )}
+
+              <TouchableOpacity style={styles.camera} onPress={handlePickImage}>
+                <PhotoIcon width={32} height={32} />
+              </TouchableOpacity>
+            </View>
+          </View>
+          <KkTextBox
+            label="닉네임*"
+            value={nickname}
+            onChangeText={setNickname}
+            placeholder="닉네임을 입력해 주세요."
+          />
+          <View>
+            <View style={styles.container}>
+              <Text style={styles.title}>성별*</Text>
+              <View style={styles.section}>
+                <KkButton
+                  title="여성"
+                  size="tag"
+                  selected={gender === "female"}
+                  onPress={() => setGender("female")}
+                />
+                <KkButton
+                  title="남성"
+                  size="tag"
+                  selected={gender === "male"}
+                  onPress={() => setGender("male")}
+                />
+              </View>
+            </View>
+
+            {isEdit && (
+              <View style={{ marginBottom: 24 }}>
+                <KkTextBox
+                  label="생년월일"
+                  value={formatBirthdate(birthdateRaw)}
+                  onChangeText={handleBirthdateChange}
+                  placeholder="생년월일 8자리를 입력해 주세요."
+                  keyboardType="numeric"
+                />
+              </View>
+            )}
+            <View style={styles.container}>
+              <Text style={styles.title}>목표*</Text>
+              <View style={styles.section}>
+                <KkButton
+                  title="감량"
+                  size="tag"
+                  selected={goal === "lose"}
+                  onPress={() => setGoal("lose")}
+                />
+                <KkButton
+                  title="유지"
+                  size="tag"
+                  selected={goal === "maintain"}
+                  onPress={() => setGoal("maintain")}
+                />
+                <KkButton
+                  title="증량"
+                  size="tag"
+                  selected={goal === "gain"}
+                  onPress={() => setGoal("gain")}
+                />
+                <KkButton
+                  title="습관"
+                  size="tag"
+                  selected={goal === "habit"}
+                  onPress={() => setGoal("habit")}
+                />
+              </View>
+            </View>
+
+            <View>
+              <Text style={[styles.title, { marginBottom: 8 }]}>
+                식습관 유형
+              </Text>
+              <View style={styles.section}>
+                {HABITS.map(({ label, value }) => (
+                  <KkButton
+                    key={value}
+                    title={label}
+                    size="tag"
+                    selected={selectedHabits.includes(value)}
+                    onPress={() => toggleHabit(value)}
+                    showIcon
+                  />
+                ))}
+              </View>
+            </View>
+          </View>
+
+          <View style={{ marginTop: "auto", marginBottom: 12 }}>
+            <KkButton
+              title={isEdit ? "변경하기" : "다음"}
+              disabled={!nickname || !gender || !goal || submitting}
+              onPress={() => {
+                if (isEdit) {
+                  handleEdit();
+                } else {
+                  handleCreate();
+                }
+              }}
+            />
+          </View>
+
+          <KkModal
+            visible={modalVisible}
+            onClose={() => setModalVisible(false)}
+            message="프로필이 변경되었습니다."
+            buttonText="확인"
+            onButtonPress={() => router.push("/(tabs)/mypage")}
+          />
+          <KkModal
+            visible={errorModalVisible}
+            onClose={() => setErrorModalVisible(false)}
+            message={errorMessage}
+            buttonText="확인"
+            onButtonPress={() => setErrorModalVisible(false)}
+          />
+        </ScrollView>
+      </SafeAreaView>
+    </>
+  );
+}
+
+const styles = StyleSheet.create({
+  content: {
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    gap: 24,
+  },
+  title: {
+    color: "#FDFCFC",
+    fontSize: 18,
+    fontWeight: "600",
+    paddingBottom: 8,
+  },
+  container: {
+    marginBottom: 24,
+  },
+  section: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    columnGap: 8,
+    rowGap: 16,
+  },
+  profileSection: {
+    alignItems: "center",
+    gap: 12,
+  },
+  wrapper: {
+    width: 112,
+    height: 112,
+    alignSelf: "center",
+  },
+  profileImage: {
+    width: 112,
+    height: 112,
+    borderRadius: 56,
+  },
+  camera: {
+    position: "absolute",
+    right: 0,
+    bottom: 0,
+    padding: 0,
+  },
+});

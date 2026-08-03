@@ -7,9 +7,16 @@
     "icon": "./assets/images/icon.png",
     "scheme": "kkirrok",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSPhotoLibraryUsageDescription": "프로필 사진을 설정하기 위해 사진 접근 권한이 필요합니다.",
+        "CFBundleURLTypes": [
+          {
+            "CFBundleURLSchemes": ["naverkkirrok"]
+          }
+        ]
+      }
     },
     "android": {
       "adaptiveIcon": {
@@ -18,9 +25,9 @@
         "backgroundImage": "./assets/images/android-icon-background.png",
         "monochromeImage": "./assets/images/android-icon-monochrome.png"
       },
-      "edgeToEdgeEnabled": true,
       "predictiveBackGestureEnabled": false,
-      "package": "com.anonymous.kkirrok"
+      "package": "com.kkirok.android",
+      "googleServicesFile": "./google-services.json"
     },
     "web": {
       "output": "static",
@@ -28,6 +35,12 @@
     },
     "plugins": [
       "expo-router",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "프로필 사진을 설정하기 위해 사진 접근 권한이 필요합니다."
+        }
+      ],
       [
         "expo-splash-screen",
         {
@@ -38,6 +51,13 @@
           "dark": {
             "backgroundColor": "#000000"
           }
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "defaultChannel": "default"
         }
       ]
     ],
