@@ -7,6 +7,12 @@
     "icon": "./assets/images/icon.png",
     "scheme": "kkirrok",
     "userInterfaceStyle": "automatic",
+    "updates": {
+      "url": "https://u.expo.dev/81039a1c-09d2-442e-959a-6ed86fda552d"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
     "ios": {
       "supportsTablet": true,
       "bundleIdentifier": "com.kkirok.ios",
