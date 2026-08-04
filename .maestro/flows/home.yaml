@@ -1,0 +1,17 @@
+appId: com.kkirok.android
+---
+- runFlow: login.yaml
+
+# 홈 탭 기본 요소 확인
+- assertVisible:
+    text: "오늘의 식사"
+- assertVisible:
+    text: "추천"
+
+# 하단 탭바 확인
+- assertVisible:
+    text: "홈"
+- assertVisible:
+    text: "리포트"
+- assertVisible:
+    text: "마이페이지"
