@@ -1,0 +1,65 @@
+name: Maestro E2E
+
+on:
+  workflow_dispatch:
+    inputs:
+      flow:
+        description: 실행할 플로우 (비워두면 전체 실행)
+        required: false
+        default: ""
+
+jobs:
+  e2e:
+    name: Maestro E2E Tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci --legacy-peer-deps
+
+      - name: Setup EAS
+        uses: expo/expo-github-action@v8
+        with:
+          eas-version: latest
+          token: ${{ secrets.EXPO_TOKEN }}
+
+      - name: Build preview APK
+        run: eas build --platform android --profile preview --non-interactive --local --output build.apk
+
+      - name: Enable KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Android Emulator + Maestro
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          arch: x86_64
+          profile: pixel_6
+          script: |
+            adb install build.apk
+            curl -Ls "https://get.maestro.mobile.dev" | bash
+            export PATH="$PATH:$HOME/.maestro/bin"
+            if [ -n "$FLOW" ]; then
+              maestro test ".maestro/flows/$FLOW.yaml" \
+                --env EMAIL="$E2E_EMAIL" \
+                --env PASSWORD="$E2E_PASSWORD"
+            else
+              maestro test .maestro/flows/ \
+                --env EMAIL="$E2E_EMAIL" \
+                --env PASSWORD="$E2E_PASSWORD"
+            fi
+        env:
+          FLOW: ${{ github.event.inputs.flow }}
+          E2E_EMAIL: ${{ secrets.E2E_EMAIL }}
+          E2E_PASSWORD: ${{ secrets.E2E_PASSWORD }}

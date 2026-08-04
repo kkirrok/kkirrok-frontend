@@ -1,0 +1,16 @@
+appId: com.kkirok.android
+---
+- runFlow: login.yaml
+
+# + 버튼으로 식단 기록 진입
+- tapOn:
+    text: "+"
+
+# 식단 기록 화면 진입 확인
+- waitForAnimationToEnd:
+    timeout: 3000
+- assertVisible:
+    text: "식단 기록"
+
+# 뒤로 가기
+- back

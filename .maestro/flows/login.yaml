@@ -1,0 +1,32 @@
+appId: com.kkirok.android
+---
+- launchApp:
+    clearState: true
+
+# 스플래시 로딩 대기
+- waitForAnimationToEnd:
+    timeout: 5000
+
+# 이메일로 로그인 버튼 탭
+- tapOn:
+    text: "이메일로 로그인"
+
+# 이메일 입력
+- tapOn:
+    text: "이메일"
+- inputText: "${EMAIL}"
+
+# 비밀번호 입력
+- tapOn:
+    text: "비밀번호"
+- inputText: "${PASSWORD}"
+
+# 로그인 버튼 탭
+- tapOn:
+    text: "로그인 하기"
+
+# 홈 화면 진입 확인
+- waitForAnimationToEnd:
+    timeout: 5000
+- assertVisible:
+    text: "오늘의 영양성분"
