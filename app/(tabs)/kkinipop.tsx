@@ -417,9 +417,6 @@ export default function KkinipopPage() {
           </TouchableOpacity>
           <View style={styles.headerCenter}>
             <View style={styles.headerTitleRow}>
-              <Text style={styles.headerLevel}>
-                Lv.{activeGroup?.level ?? "-"}{" "}
-              </Text>
               <Text style={styles.headerGroupName}>
                 {activeGroup?.name ?? "그룹 없음"}
               </Text>

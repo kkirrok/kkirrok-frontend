@@ -261,11 +261,13 @@ export default function Home() {
               <NutrientBar
                 label="당"
                 actual={nutrition?.total_sugar_g ?? 0}
+                recommended={nutrition?.recommended_sugar_g}
                 unit="g"
               />
               <NutrientBar
                 label="나트륨"
                 actual={nutrition?.total_sodium_mg ?? 0}
+                recommended={nutrition?.recommended_sodium_mg}
                 unit="mg"
               />
             </Card>

@@ -2,22 +2,24 @@ import type { WeeklyReportResponse } from "@/utils/types/report";
 import { StyleSheet, Text, View } from "react-native";
 import { styles } from "./styles";
 
-type NutrientStatus = "UNDER" | "NORMAL" | "OVER";
+type NutrientStatus = "UNDER" | "NORMAL" | "OVER" | "GOOD";
 
 const STATUS_LABEL: Record<NutrientStatus, string> = {
   UNDER: "부족",
   NORMAL: "적정",
   OVER: "과다",
+  GOOD: "적정",
 };
 
 const STATUS_COLOR: Record<NutrientStatus, string> = {
   UNDER: "#6DA0FF",
   NORMAL: "#5AC97A",
   OVER: "#FF6B6B",
+  GOOD: "#5AC97A",
 };
 
 type Props = {
-  nutrients: WeeklyReportResponse["data"]["nutrient_feedbacks"];
+  nutrients: WeeklyReportResponse["data"]["nutrientFeedbacks"];
 };
 
 export default function WeeklyNutrientsCard({ nutrients }: Props) {
@@ -31,7 +33,7 @@ export default function WeeklyNutrientsCard({ nutrients }: Props) {
             <Text style={styles.nutrientLabel}>{nutrient.nutrient}</Text>
 
             <Text style={styles.nutrientValue}>
-              {nutrient.avg_amount}
+              {nutrient.avgAmount}
               {nutrient.unit}
             </Text>
 

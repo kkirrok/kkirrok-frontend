@@ -11,9 +11,9 @@ const OUTER_R = 118;
 const INNER_R = 100;
 
 const DEFAULT_SEGMENTS = [
-  { label: "탄수화물", color: Colors.main[500], pct: 0.55 },
-  { label: "단백질", color: Colors.main[400], pct: 0.25 },
-  { label: "지방", color: Colors.main[200], pct: 0.2 },
+  { label: "탄수화물", color: Colors.main[500], pct: 1 / 3 },
+  { label: "단백질", color: Colors.main[400], pct: 1 / 3 },
+  { label: "지방", color: Colors.main[200], pct: 1 / 3 },
 ];
 
 export type DonutSegment = { label: string; color: string; pct: number };
@@ -72,7 +72,7 @@ function LegendDot({
     <View style={styles.legendItem}>
       <View style={[styles.legendDot, { backgroundColor: color }]} />
       <Text style={styles.legendLabel}>{label}</Text>
-      <Text style={styles.legendValue}>{value}</Text>
+      {!!value && <Text style={styles.legendValue}>{value}</Text>}
     </View>
   );
 }
@@ -90,12 +90,15 @@ export default function MealDonutChart({
   mealName,
   recognitionFailed,
   onCameraPress,
-  segments = DEFAULT_SEGMENTS,
+  segments,
 }: Props) {
+  const isDefault = segments == null;
+  const activeSegments = segments ?? DEFAULT_SEGMENTS;
+
   return (
     <View style={styles.chartSection}>
       <View style={styles.chartContainer}>
-        <NutrientDonut segments={segments} />
+        <NutrientDonut segments={activeSegments} />
         <TouchableOpacity
           style={styles.chartCenterIcon}
           onPress={onCameraPress}
@@ -135,12 +138,12 @@ export default function MealDonutChart({
         </TouchableOpacity>
       </View>
       <View style={styles.legend}>
-        {segments.map((seg) => (
+        {activeSegments.map((seg) => (
           <LegendDot
             key={seg.label}
             color={seg.color}
             label={seg.label}
-            value={`${Math.round(seg.pct * 100)}%`}
+            value={isDefault ? "" : `${Math.round(seg.pct * 100)}%`}
           />
         ))}
       </View>
