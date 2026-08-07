@@ -273,7 +273,7 @@ export default function MealRecordDetail() {
 
               {yesterdayPicks != null && yesterdayPicks.picks.length > 0 && (
                 <FoodItemScroll
-                  title={`${yesterdayPicks.meal_style} 유형 끼록이들의 어제 이 시간대 픽!`}
+                  title={`${yesterdayPicks.meal_style_label} 끼록이들의 어제 이 시간대 픽!`}
                   timeLabel={
                     MEAL_TIME_SLOT_TO_TYPE[
                       yesterdayPicks.time_slot as keyof typeof MEAL_TIME_SLOT_TO_TYPE
