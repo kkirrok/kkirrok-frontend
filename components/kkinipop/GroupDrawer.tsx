@@ -343,9 +343,6 @@ export default function GroupDrawer({
                       >
                         <View style={styles.groupRow}>
                           <Text style={styles.groupName}>{group.name}</Text>
-                          <Text style={styles.groupLevel}>
-                            LV.{group.level}
-                          </Text>
                         </View>
                       </TouchableOpacity>
                       <View style={styles.groupRow}>
