@@ -33,6 +33,8 @@ export type NutritionSummary = {
   recommended_carbohydrate_g: number;
   recommended_protein_g: number;
   recommended_fat_g: number;
+  recommended_sugar_g: number;
+  recommended_sodium_mg: number;
 };
 
 export type ScanMealResult = {
@@ -83,6 +85,7 @@ type YesterdayPick = {
 
 export type YesterdayPicksResult = {
   meal_style: string;
+  meal_style_label: string;
   time_slot: string;
   picks: YesterdayPick[];
 };
