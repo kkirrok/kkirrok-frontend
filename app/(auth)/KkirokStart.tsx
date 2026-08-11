@@ -6,7 +6,7 @@ import KkTextBox from "@/components/KkTextBox";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
-import { StyleSheet, View } from "react-native";
+import { BackHandler, StyleSheet, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 const formatBirthdate = (digits: string): string => {
@@ -33,6 +33,14 @@ export default function KkirokStart() {
       })
       .catch(() => router.replace("/(auth)/Login"));
   }, [router]);
+
+  useEffect(() => {
+    const sub = BackHandler.addEventListener("hardwareBackPress", () => {
+      setModalVisible(true);
+      return true;
+    });
+    return () => sub.remove();
+  }, []);
   const [birthdateRaw, setBirthdateRaw] = useState("");
   const [phoneRaw, setPhoneRaw] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -47,10 +55,19 @@ export default function KkirokStart() {
     setPhoneRaw(digits);
   };
 
-  const birthdateForApi =
-    birthdateRaw.length === 8
-      ? `${birthdateRaw.slice(0, 4)}-${birthdateRaw.slice(4, 6)}-${birthdateRaw.slice(6)}`
-      : "";
+  const isBirthdateValid =
+    birthdateRaw.length === 8 &&
+    (() => {
+      const month = parseInt(birthdateRaw.slice(4, 6), 10);
+      const day = parseInt(birthdateRaw.slice(6), 10);
+      return month >= 1 && month <= 12 && day >= 1 && day <= 31;
+    })();
+
+  const isPhoneValid = phoneRaw.length >= 10;
+
+  const birthdateForApi = isBirthdateValid
+    ? `${birthdateRaw.slice(0, 4)}-${birthdateRaw.slice(4, 6)}-${birthdateRaw.slice(6)}`
+    : "";
 
   return (
     <KkBackground>
@@ -74,6 +91,11 @@ export default function KkirokStart() {
               onChangeText={handleBirthdateChange}
               placeholder="생년월일 8자리를 입력해 주세요."
               keyboardType="numeric"
+              error={
+                birthdateRaw.length === 8 && !isBirthdateValid
+                  ? "올바르지 않은 형태의 생년월일입니다."
+                  : undefined
+              }
             />
             <KkTextBox
               label="전화번호"
@@ -81,15 +103,18 @@ export default function KkirokStart() {
               onChangeText={handlePhoneChange}
               placeholder="전화번호를 입력해 주세요."
               keyboardType="phone-pad"
+              error={
+                phoneRaw.length > 0 && !isPhoneValid
+                  ? "올바르지 않은 전화번호입니다."
+                  : undefined
+              }
             />
           </View>
 
           <View style={styles.bottom}>
             <KkButton
               title="다음"
-              disabled={
-                !name || birthdateRaw.length !== 8 || phoneRaw.length < 10
-              }
+              disabled={!name || !isBirthdateValid || !isPhoneValid}
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/ProfileSetting",
