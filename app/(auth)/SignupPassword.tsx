@@ -5,6 +5,7 @@ import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { signUpLocal } from "@/utils/api/authApi";
 import { tokenStore } from "@/utils/store/tokenStore";
+import { isValidPassword } from "@/utils/validation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -19,8 +20,9 @@ export default function SignupPassword() {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [loading, setLoading] = useState(false);
 
+  const isPasswordInvalid = password.length > 0 && !isValidPassword(password);
   const isMismatch = confirmPassword.length > 0 && password !== confirmPassword;
-  const isSubmitEnabled = password.length >= 8 && password === confirmPassword;
+  const isSubmitEnabled = isValidPassword(password) && password === confirmPassword;
 
   const handleSignUp = async () => {
     if (!email) {
@@ -58,6 +60,7 @@ export default function SignupPassword() {
           onChangeText={setPassword}
           placeholder="영문, 숫자, 특수문자 포함 8자 이상"
           secureTextEntry
+          error={isPasswordInvalid ? "영문, 숫자, 특수문자를 포함한 8자 이상으로 입력해 주세요." : undefined}
         />
         <KkTextBox
           label="비밀번호 재입력하기"

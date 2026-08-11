@@ -6,6 +6,7 @@ import KkTextBox from "@/components/KkTextBox";
 import { loginLocal } from "@/utils/api/authApi";
 import { requestAndRegisterPushToken } from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
+import { isValidEmail } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
@@ -49,6 +50,7 @@ export default function Login() {
           value={email}
           onChangeText={setEmail}
           placeholder="이메일을 입력해 주세요."
+          error={email && !isValidEmail(email) ? "올바르지 않은 형태의 이메일입니다." : undefined}
         />
         <KkTextBox
           label="비밀번호"
@@ -61,7 +63,7 @@ export default function Login() {
         <View style={styles.button}>
           <KkButton
             title="로그인 하기"
-            disabled={!email || !password || loading}
+            disabled={!email || !isValidEmail(email) || !password || loading}
             onPress={handleLogin}
           />
         </View>
@@ -79,7 +81,7 @@ export default function Login() {
 
           <Text style={styles.text}> | </Text>
 
-          <TouchableOpacity onPress={() => router.push("/(auth)/Signup")}>
+          <TouchableOpacity onPress={() => router.push("/(auth)/SignupTerms")}>
             <Text style={styles.text}>회원가입</Text>
           </TouchableOpacity>
         </View>

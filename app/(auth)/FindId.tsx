@@ -4,6 +4,7 @@ import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { findEmail } from "@/utils/api/authApi";
+import { isValidPhone } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -21,7 +22,7 @@ export default function FindId() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
-  const [phone, setPhone] = useState("");
+  const [phoneRaw, setPhoneRaw] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
@@ -29,7 +30,8 @@ export default function FindId() {
   const [loading, setLoading] = useState(false);
 
   const isBirthInvalid = birthDate.length > 0 && !BIRTH_REGEX.test(birthDate);
-  const isSubmitEnabled = name && BIRTH_REGEX.test(birthDate) && phone;
+  const isPhoneInvalid = phoneRaw.length > 0 && !isValidPhone(phoneRaw);
+  const isSubmitEnabled = name && BIRTH_REGEX.test(birthDate) && isValidPhone(phoneRaw);
 
   const handleSubmit = async () => {
     if (loading) return;
@@ -38,7 +40,7 @@ export default function FindId() {
       const email = await findEmail({
         name,
         birth: birthDate.replace(/\./g, "-"),
-        phone,
+        phone: phoneRaw,
       });
       setFoundEmail(email);
       setModalVisible(true);
@@ -71,9 +73,15 @@ export default function FindId() {
         />
         <KkTextBox
           label="전화번호"
-          value={phone}
-          onChangeText={setPhone}
+          value={(() => {
+            if (phoneRaw.length <= 3) return phoneRaw;
+            if (phoneRaw.length <= 7) return `${phoneRaw.slice(0, 3)}-${phoneRaw.slice(3)}`;
+            return `${phoneRaw.slice(0, 3)}-${phoneRaw.slice(3, 7)}-${phoneRaw.slice(7)}`;
+          })()}
+          onChangeText={(text) => setPhoneRaw(text.replace(/\D/g, "").slice(0, 11))}
           placeholder="전화번호를 입력해 주세요."
+          keyboardType="phone-pad"
+          error={isPhoneInvalid ? "올바르지 않은 전화번호입니다." : undefined}
         />
 
         <View style={styles.bottom}>

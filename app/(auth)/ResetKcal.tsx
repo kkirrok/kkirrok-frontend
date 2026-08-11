@@ -15,6 +15,10 @@ export default function ResetKcal() {
   const [errorMessage, setErrorMessage] = useState("");
   const [errorModalVisible, setErrorModalVisible] = useState(false);
 
+  const kcalNum = Number(kcal);
+  const isKcalValid = kcal.length > 0 && kcalNum > 0 && kcalNum <= 10000;
+  const isKcalInvalid = kcal.length > 0 && !isKcalValid;
+
   const handleSubmit = async () => {
     setLoading(true);
     try {
@@ -44,18 +48,21 @@ export default function ResetKcal() {
           <TextInput
             style={styles.input}
             value={kcal}
-            onChangeText={setKcal}
+            onChangeText={(text) => setKcal(text.replace(/\D/g, ""))}
             keyboardType="numeric"
             placeholder="0"
             placeholderTextColor="#aaa"
           />
           <Text style={styles.suffix}>Kcal</Text>
         </View>
+        {isKcalInvalid && (
+          <Text style={styles.errorText}>1 ~ 10,000 사이의 칼로리를 입력해 주세요.</Text>
+        )}
 
         <View style={styles.bottom}>
           <KkButton
             title="변경하기"
-            disabled={!kcal || loading}
+            disabled={!isKcalValid || loading}
             onPress={handleSubmit}
           />
         </View>
@@ -119,5 +126,10 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     paddingBottom: 32,
+  },
+  errorText: {
+    color: "#F6623B",
+    fontSize: 12,
+    marginTop: 4,
   },
 });

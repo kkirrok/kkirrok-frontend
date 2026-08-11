@@ -4,6 +4,7 @@ import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { sendEmailVerification, verifyEmailCode } from "@/utils/api/authApi";
+import { isValidEmail } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
@@ -18,6 +19,8 @@ export default function FindPassword() {
   const [verifying, setVerifying] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorModalVisible, setErrorModalVisible] = useState(false);
+  const [successModalVisible, setSuccessModalVisible] = useState(false);
+  const [verifyFailed, setVerifyFailed] = useState(false);
 
   const isSubmitEnabled = name && verified;
 
@@ -43,7 +46,10 @@ export default function FindPassword() {
       const ok = await verifyEmailCode(email, code);
       if (ok) {
         setVerified(true);
+        setVerifyFailed(false);
+        setSuccessModalVisible(true);
       } else {
+        setVerifyFailed(true);
         setErrorMessage("인증번호가 올바르지 않습니다.");
         setErrorModalVisible(true);
       }
@@ -73,11 +79,12 @@ export default function FindPassword() {
             setVerified(false);
           }}
           placeholder="이메일을 입력해 주세요."
+          error={email && !isValidEmail(email) ? "올바르지 않은 형태의 이메일입니다." : undefined}
           rightButton={
             <KkButton
               title={sendingCode ? "발송 중..." : "이메일 인증"}
               size="small"
-              disabled={!email || sendingCode}
+              disabled={!email || !isValidEmail(email) || sendingCode}
               onPress={handleSendCode}
             />
           }
@@ -87,9 +94,7 @@ export default function FindPassword() {
           value={code}
           onChangeText={setCode}
           placeholder="인증번호를 입력해 주세요."
-          error={
-            !verified && !!code ? "인증번호가 올바르지 않습니다." : undefined
-          }
+          error={verifyFailed && !verified ? "인증번호가 올바르지 않습니다." : undefined}
           rightButton={
             <KkButton
               title={
@@ -116,6 +121,13 @@ export default function FindPassword() {
         </View>
       </View>
 
+      <KkModal
+        visible={successModalVisible}
+        onClose={() => setSuccessModalVisible(false)}
+        message="이메일 인증이 완료되었어요!"
+        buttonText="확인"
+        onButtonPress={() => setSuccessModalVisible(false)}
+      />
       <KkModal
         visible={errorModalVisible}
         onClose={() => setErrorModalVisible(false)}
