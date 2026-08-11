@@ -25,7 +25,7 @@ export default function MealCard({ record }: Props) {
           {record.name} {record.calories}kcal
         </Text>
         <Text style={styles.nutrients}>
-          🍚 {record.carbs}g | 🥩 {record.protein}g | 🐔 {record.fat}g | 🧂
+          🍚 {record.carbs}g | 🐔 {record.protein}g | 🥩 {record.fat}g | 🧂
           {record.sodium}mg | 🧁 {record.sugar}g
         </Text>
       </View>
