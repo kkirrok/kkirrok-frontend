@@ -4,6 +4,7 @@ import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { tokenStore } from "@/utils/store/tokenStore";
+import { isValidBirthdate, isValidPhone } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import { BackHandler, StyleSheet, View } from "react-native";
@@ -17,7 +18,8 @@ const formatBirthdate = (digits: string): string => {
 
 const formatPhone = (digits: string): string => {
   if (digits.length <= 3) return digits;
-  if (digits.length <= 7) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  if (digits.length < 8) return `${digits.slice(0, 3)}-${digits.slice(3)}`;
+  if (digits.length <= 10) return `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
   return `${digits.slice(0, 3)}-${digits.slice(3, 7)}-${digits.slice(7)}`;
 };
 
@@ -55,15 +57,8 @@ export default function KkirokStart() {
     setPhoneRaw(digits);
   };
 
-  const isBirthdateValid =
-    birthdateRaw.length === 8 &&
-    (() => {
-      const month = parseInt(birthdateRaw.slice(4, 6), 10);
-      const day = parseInt(birthdateRaw.slice(6), 10);
-      return month >= 1 && month <= 12 && day >= 1 && day <= 31;
-    })();
-
-  const isPhoneValid = phoneRaw.length >= 10;
+  const isBirthdateValid = isValidBirthdate(birthdateRaw);
+  const isPhoneValid = isValidPhone(phoneRaw);
 
   const birthdateForApi = isBirthdateValid
     ? `${birthdateRaw.slice(0, 4)}-${birthdateRaw.slice(4, 6)}-${birthdateRaw.slice(6)}`

@@ -75,7 +75,8 @@ export default function FindId() {
           label="전화번호"
           value={(() => {
             if (phoneRaw.length <= 3) return phoneRaw;
-            if (phoneRaw.length <= 7) return `${phoneRaw.slice(0, 3)}-${phoneRaw.slice(3)}`;
+            if (phoneRaw.length < 8) return `${phoneRaw.slice(0, 3)}-${phoneRaw.slice(3)}`;
+            if (phoneRaw.length <= 10) return `${phoneRaw.slice(0, 3)}-${phoneRaw.slice(3, 6)}-${phoneRaw.slice(6)}`;
             return `${phoneRaw.slice(0, 3)}-${phoneRaw.slice(3, 7)}-${phoneRaw.slice(7)}`;
           })()}
           onChangeText={(text) => setPhoneRaw(text.replace(/\D/g, "").slice(0, 11))}

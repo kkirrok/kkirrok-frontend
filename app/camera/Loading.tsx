@@ -11,16 +11,26 @@ export default function Loading() {
   const { uri } = useLocalSearchParams<{ uri: string }>();
   const rotateAnim = useRef(new Animated.Value(0)).current;
   const [failed, setFailed] = useState(false);
+  const [scanning, setScanning] = useState(false);
+  const scanningRef = useRef(false);
 
   const startScan = (imageUri: string) => {
+    if (scanningRef.current) return;
+    scanningRef.current = true;
+    setScanning(true);
     setFailed(false);
     scanMeal(imageUri, "CAMERA")
       .then((result) => {
         setScanResult(result);
         router.dismissAll();
+        router.back();
       })
       .catch(() => {
         setFailed(true);
+      })
+      .finally(() => {
+        scanningRef.current = false;
+        setScanning(false);
       });
   };
 
@@ -79,6 +89,7 @@ export default function Loading() {
           <KkButton
             title="다시하기"
             size="small"
+            disabled={scanning}
             onPress={() => {
               if (uri) startScan(uri);
               else router.back();

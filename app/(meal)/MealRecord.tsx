@@ -128,6 +128,7 @@ export default function MealRecord() {
         setSegments(
           makeSegments(scanResult.carbohydrate_g, scanResult.protein_g, scanResult.fat_g),
         );
+        setRecordTime(formatTime(new Date()));
         setRecognitionFailed(false);
         setSearchResults([]);
         return;
