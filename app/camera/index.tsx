@@ -1,8 +1,7 @@
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
-import { setMealPhoto } from "@/utils/store/mealPhotoStore";
 import { CameraView, useCameraPermissions } from "expo-camera";
-import { router, useLocalSearchParams } from "expo-router";
+import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import {
   Dimensions,
@@ -19,7 +18,6 @@ const CAMERA_HEIGHT = height * 0.45;
 const GAP = 24;
 
 export default function CameraScreen() {
-  const { source } = useLocalSearchParams<{ source?: string }>();
   const [permission, requestPermission] = useCameraPermissions();
   const cameraRef = useRef<CameraView | null>(null);
   const [mode, setMode] = useState<"food" | "nutrition">("food");
@@ -45,18 +43,12 @@ export default function CameraScreen() {
 
   const takePicture = async () => {
     if (!cameraRef.current) return;
-
-    const photo = await cameraRef.current.takePictureAsync();
-    if (!photo) return;
-
-    if (source === "meal") {
-      setMealPhoto(photo.uri);
-      router.back();
-    } else {
-      router.push({
-        pathname: "/camera/Preview",
-        params: { uri: photo.uri },
-      });
+    try {
+      const photo = await cameraRef.current.takePictureAsync();
+      if (!photo) return;
+      router.push({ pathname: "/camera/Preview", params: { uri: photo.uri } });
+    } catch (e) {
+      console.error("사진 촬영 실패:", e);
     }
   };
 

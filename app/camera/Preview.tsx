@@ -1,7 +1,7 @@
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
-import { useLocalSearchParams } from "expo-router";
+import { router, useLocalSearchParams } from "expo-router";
 import { Image, View } from "react-native";
 
 export default function Preview() {
@@ -30,7 +30,9 @@ export default function Preview() {
         <KkButton
           title="끼록하기"
           style={{ marginTop: 24 }}
-          onPress={() => console.log("사진 확인")}
+          onPress={() => {
+            router.push({ pathname: "/camera/Loading", params: { uri } });
+          }}
         />
       </View>
     </KkBackground>

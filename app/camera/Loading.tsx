@@ -1,11 +1,28 @@
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
-import { useEffect, useRef } from "react";
+import { scanMeal } from "@/utils/api/mealApi";
+import { setScanResult } from "@/utils/store/mealPhotoStore";
+import { router, useLocalSearchParams } from "expo-router";
+import { useEffect, useRef, useState } from "react";
 import { Animated, Easing, Text, View } from "react-native";
 
 export default function Loading() {
+  const { uri } = useLocalSearchParams<{ uri: string }>();
   const rotateAnim = useRef(new Animated.Value(0)).current;
+  const [failed, setFailed] = useState(false);
+
+  const startScan = (imageUri: string) => {
+    setFailed(false);
+    scanMeal(imageUri, "CAMERA")
+      .then((result) => {
+        setScanResult(result);
+        router.dismissAll();
+      })
+      .catch(() => {
+        setFailed(true);
+      });
+  };
 
   useEffect(() => {
     Animated.loop(
@@ -16,7 +33,9 @@ export default function Loading() {
         useNativeDriver: true,
       }),
     ).start();
-  }, [rotateAnim]);
+
+    if (uri) startScan(uri);
+  }, [uri]);
 
   const rotate = rotateAnim.interpolate({
     inputRange: [0, 1],
@@ -47,7 +66,7 @@ export default function Loading() {
             fontWeight: "600",
           }}
         >
-          끼록 분석 중입니다
+          {failed ? "분석에 실패했어요." : "끼록 분석 중입니다"}
         </Text>
 
         <View
@@ -60,7 +79,10 @@ export default function Loading() {
           <KkButton
             title="다시하기"
             size="small"
-            onPress={() => console.log("다시")}
+            onPress={() => {
+              if (uri) startScan(uri);
+              else router.back();
+            }}
           />
         </View>
       </View>
