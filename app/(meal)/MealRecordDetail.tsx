@@ -2,7 +2,7 @@ import KkBackground from "@/components/KkBackground";
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
-import { useDeleteMeal, useTodayMealsQuery, useYesterdayPicks } from "@/hooks/useMealDetail";
+import { useDailyMealsQuery, useDeleteMeal, useTodayMealsQuery, useYesterdayPicks } from "@/hooks/useMealDetail";
 import { MEAL_TIME_SLOT_TO_TYPE } from "@/utils/api/mealApi";
 import type { TodayMealRecord } from "@/utils/types/meal";
 import { Ionicons } from "@expo/vector-icons";
@@ -55,7 +55,8 @@ function makeSegments(r: TodayMealRecord): DonutSegment[] | undefined {
 }
 
 export default function MealRecordDetail() {
-  const { mealId } = useLocalSearchParams<{ mealId?: string }>();
+  const { mealId, date: dateParam } = useLocalSearchParams<{ mealId?: string; date?: string }>();
+  const isDateMode = !!dateParam;
   const insets = useSafeAreaInsets();
   const chartListRef = useRef<FlatList<TodayMealRecord>>(null);
   const scrolledRef = useRef(false);
@@ -63,12 +64,13 @@ export default function MealRecordDetail() {
   const [deleteModalVisible, setDeleteModalVisible] = useState(false);
   const [errorMessage, setErrorMessage] = useState<string | null>(null);
 
-  const {
-    data: records = [],
-    isLoading: loading,
-    error: mealsError,
-    refetch: refetchMeals,
-  } = useTodayMealsQuery();
+  const todayQuery = useTodayMealsQuery(!isDateMode);
+  const dailyQuery = useDailyMealsQuery(dateParam ?? "", isDateMode);
+
+  const records = (isDateMode ? dailyQuery.data : todayQuery.data) ?? [];
+  const loading = isDateMode ? dailyQuery.isLoading : todayQuery.isLoading;
+  const mealsError = isDateMode ? dailyQuery.error : todayQuery.error;
+  const refetchMeals = isDateMode ? dailyQuery.refetch : todayQuery.refetch;
   const { data: yesterdayPicks = null, refetch: refetchPicks } =
     useYesterdayPicks();
   const { mutateAsync: deleteMealMutation } = useDeleteMeal();
