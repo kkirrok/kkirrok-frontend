@@ -1,10 +1,10 @@
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { MealRecord, MealType } from "@/utils/types/meal";
 import { Ionicons } from "@expo/vector-icons";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import MealCard from "./MealCard";
-import { MealRecord, MealType } from "@/utils/types/meal";
 
 const MEAL_TYPES: MealType[] = ["아침", "점심", "저녁", "간식", "야식"];
 
@@ -12,9 +12,15 @@ type Props = {
   dateLabel: string;
   meals: MealRecord[];
   onAdd: (mealType: MealType) => void;
+  onMealPress?: (mealId: string) => void;
 };
 
-export default function MealSection({ dateLabel, meals, onAdd }: Props) {
+export default function MealSection({
+  dateLabel,
+  meals,
+  onAdd,
+  onMealPress,
+}: Props) {
   const [activeTab, setActiveTab] = useState<MealType>("아침");
 
   const filtered = meals.filter((m) => m.mealType === activeTab);
@@ -34,30 +40,49 @@ export default function MealSection({ dateLabel, meals, onAdd }: Props) {
       </View>
 
       <View style={styles.tabs}>
-        {MEAL_TYPES.map((type) => (
-          <TouchableOpacity
-            key={type}
-            style={[styles.tab, activeTab === type && styles.tabActive]}
-            onPress={() => setActiveTab(type)}
-            activeOpacity={0.7}
-          >
-            <Text
+        {MEAL_TYPES.map((type) => {
+          const hasMeals = meals.some((m) => m.mealType === type);
+          const isActive = activeTab === type;
+          return (
+            <TouchableOpacity
+              key={type}
               style={[
-                styles.tabText,
-                activeTab === type && styles.tabTextActive,
+                styles.tab,
+                hasMeals && styles.tabHasMeals,
+                isActive &&
+                  (hasMeals ? styles.tabActiveMeals : styles.tabActive),
               ]}
+              onPress={() => setActiveTab(type)}
+              activeOpacity={0.7}
             >
-              {type}
-            </Text>
-          </TouchableOpacity>
-        ))}
+              <Text
+                style={[
+                  styles.tabText,
+                  hasMeals && styles.tabTextHasMeals,
+                  isActive &&
+                    (hasMeals
+                      ? styles.tabTextActiveMeals
+                      : styles.tabTextActive),
+                ]}
+              >
+                {type}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
       </View>
 
       <View style={styles.list}>
         {filtered.length === 0 ? (
           <Text style={styles.empty}>기록된 식단이 없습니다.</Text>
         ) : (
-          filtered.map((record) => <MealCard key={record.id} record={record} />)
+          filtered.map((record) => (
+            <MealCard
+              key={record.id}
+              record={record}
+              onPress={onMealPress ? () => onMealPress(record.id) : undefined}
+            />
+          ))
         )}
       </View>
     </View>
@@ -93,16 +118,29 @@ const styles = StyleSheet.create({
     borderBottomWidth: 2,
     borderBottomColor: Colors.gray[300],
   },
+  tabHasMeals: {
+    borderBottomColor: Colors.main[400],
+  },
   tabActive: {
     borderBottomColor: Colors.gray[100],
+  },
+  tabActiveMeals: {
+    borderBottomColor: Colors.main[300],
   },
   tabText: {
     ...Typography.body.l,
     color: Colors.gray[300],
   },
+  tabTextHasMeals: {
+    color: Colors.main[400],
+  },
   tabTextActive: {
     ...Typography.title.xs,
     color: Colors.gray[100],
+  },
+  tabTextActiveMeals: {
+    ...Typography.title.xs,
+    color: Colors.main[300],
   },
   tabIndicator: {
     position: "absolute",
