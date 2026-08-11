@@ -287,8 +287,8 @@ const styles = StyleSheet.create({
     color: Colors.gray[100],
   },
   readAllBtn: {
+    ...Typography.body.m,
     color: Colors.main[400],
-    fontSize: 14,
     fontFamily: "Pretendard-SemiBold",
   },
   loadingMore: {

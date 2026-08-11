@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
@@ -116,8 +117,7 @@ export default function KkTextBox({
 
 const styles = StyleSheet.create({
   label: {
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
+    ...Typography.title.s,
     color: "#FDFCFC",
   },
   container: {
@@ -129,9 +129,8 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   textInput: {
+    ...Typography.body.l,
     flex: 1,
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
     color: "#FDFCFC",
   },
   row: {

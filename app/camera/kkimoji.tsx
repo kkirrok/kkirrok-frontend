@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
@@ -158,9 +159,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   permissionText: {
+    ...Typography.title.xs,
     color: Colors.gray[100],
-    fontFamily: "Pretendard-SemiBold",
-    fontSize: 16,
   },
   headerAbsolute: {
     position: "absolute",
@@ -205,9 +205,8 @@ const styles = StyleSheet.create({
     borderRadius: 20,
   },
   errorText: {
+    ...Typography.body.m,
     color: "#FF6B6B",
-    fontFamily: "Pretendard-Regular",
-    fontSize: 14,
     textAlign: "center",
   },
   previewButtons: {

@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkHeader from "@/components/KkHeader";
 import ProfileForm from "@/components/KkProfileForm";
@@ -120,10 +121,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   errorText: {
+    ...Typography.body.l,
     color: "#E7E2DF",
-    fontSize: 16,
     textAlign: "center",
-    fontFamily: "Pretendard-Regular",
   },
   errorButton: {
     paddingVertical: 10,
@@ -132,8 +132,8 @@ const styles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
   },
   errorButtonText: {
+    ...Typography.body.m,
     color: "#E7E2DF",
-    fontSize: 14,
     fontFamily: "Pretendard-SemiBold",
   },
 });

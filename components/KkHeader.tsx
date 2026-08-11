@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
 import { useRouter } from "expo-router";
 import { ReactNode } from "react";
@@ -88,10 +89,9 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   title: {
+    ...Typography.title.m,
     flex: 1,
     color: "#FFFFFF",
-    fontSize: 20,
-    fontFamily: "Pretendard-SemiBold",
     textAlign: "center",
   },
 });

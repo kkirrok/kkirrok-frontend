@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
@@ -113,8 +114,7 @@ const styles = StyleSheet.create({
     paddingVertical: 4,
   },
   masterLabel: {
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
+    ...Typography.title.xs,
     color: Colors.gray[100],
   },
   separator: {
@@ -135,8 +135,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   termLabel: {
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
+    ...Typography.body.m,
     color: Colors.gray[200],
     flex: 1,
   },

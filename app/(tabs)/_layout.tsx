@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import { Tabs, router } from "expo-router";
 import React from "react";
 import { Platform, StyleSheet, TouchableOpacity, View } from "react-native";
@@ -33,8 +34,7 @@ export default function TabLayout() {
           marginTop: 10,
         },
         tabBarLabelStyle: {
-          fontFamily: "Pretendard-Regular",
-          fontSize: 12,
+          ...Typography.caption[1],
           marginTop: 5,
         },
       }}
