@@ -10,7 +10,7 @@ import ReportIcon from "../../assets/icons/reportIcon.svg";
 
 export default function TabLayout() {
   const insets = useSafeAreaInsets();
-  const TAB_BAR_HEIGHT = Platform.OS === "ios" ? 60 + insets.bottom : 70;
+  const TAB_BAR_HEIGHT = Platform.OS === "ios" ? 60 + insets.bottom : 70 + insets.bottom;
   const activeColor = "#FDFCFC";
   const inactiveColor = "#BAADA6";
 
