@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import BellIcon from "@/assets/icons/bell.svg";
 import ProfileIcon from "@/assets/icons/profile.svg";
 import KkBackground from "@/components/KkBackground";
@@ -51,9 +52,13 @@ export default function MyPage() {
         <SafeAreaView>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>마이페이지</Text>
-            <View style={styles.bellIconContainer}>
+            <TouchableOpacity
+              style={styles.bellIconContainer}
+              onPress={() => router.push("/notification")}
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
               <BellIcon width={24} height={24} />
-            </View>
+            </TouchableOpacity>
           </View>
         </SafeAreaView>
 
@@ -204,17 +209,16 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   headerTitle: {
+    ...Typography.title.m,
     position: "absolute",
     left: 0,
     right: 0,
     textAlign: "center",
     color: "white",
-    fontSize: 20,
-    fontWeight: "600",
-    fontFamily: "Pretendard-SemiBold",
   },
   bellIconContainer: {
     marginLeft: "auto",
+    marginRight: 6,
   },
   profileSection: {
     gap: 24,
@@ -224,23 +228,19 @@ const styles = StyleSheet.create({
     marginBottom: 30,
   },
   name: {
+    ...Typography.title.s,
     color: "#FDFCFC",
-    fontSize: 18,
-    fontWeight: "600",
-    fontFamily: "Pretendard-SemiBold",
   },
 
   sub: {
+    ...Typography.title.xs,
     color: "#E7E2DF",
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
     marginTop: 4,
   },
   sub2: {
+    ...Typography.title.xs,
     color: "#D0C7C2",
     marginTop: 4,
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
   },
   sectionTitle: {
     color: "#FDFCFC",
@@ -254,9 +254,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 4,
   },
   menuText: {
+    ...Typography.title.xs,
     color: "#E7E2DF",
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
   },
   divider: {
     height: 1,
