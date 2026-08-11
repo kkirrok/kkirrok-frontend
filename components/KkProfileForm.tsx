@@ -5,6 +5,7 @@ import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { setProfile } from "@/utils/api/authApi";
 import { tokenStore } from "@/utils/store/tokenStore";
+import { isValidBirthdate } from "@/utils/validation";
 import * as ImagePicker from "expo-image-picker";
 import { useRouter } from "expo-router";
 import React, { useState } from "react";
@@ -154,10 +155,12 @@ export default function KkProfileForm({
     }
   };
 
+  const isBirthdateInvalid = isEdit && birthdateRaw.length > 0 && !isValidBirthdate(birthdateRaw);
+
   const handleEdit = async () => {
     if (!gender || !goal) return;
-    if (birthdateRaw.length > 0 && birthdateRaw.length < 8) {
-      setErrorMessage("생년월일 8자리를 모두 입력해 주세요.");
+    if (isBirthdateInvalid) {
+      setErrorMessage("올바르지 않은 형태의 생년월일입니다.");
       setErrorModalVisible(true);
       return;
     }
@@ -249,6 +252,7 @@ export default function KkProfileForm({
                   onChangeText={handleBirthdateChange}
                   placeholder="생년월일 8자리를 입력해 주세요."
                   keyboardType="numeric"
+                  error={isBirthdateInvalid ? "올바르지 않은 형태의 생년월일입니다." : undefined}
                 />
               </View>
             )}
@@ -304,7 +308,7 @@ export default function KkProfileForm({
           <View style={{ marginTop: "auto", marginBottom: 12 }}>
             <KkButton
               title={isEdit ? "변경하기" : "다음"}
-              disabled={!nickname || !gender || !goal || submitting}
+              disabled={!nickname || !gender || !goal || submitting || isBirthdateInvalid}
               onPress={() => {
                 if (isEdit) {
                   handleEdit();

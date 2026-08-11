@@ -4,8 +4,9 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
 import { Stack } from "expo-router";
+import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
-import { Text } from "react-native";
+import { Platform, Text } from "react-native";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -77,6 +78,12 @@ export default function RootLayout() {
       Text.defaultProps.style = { fontFamily: "Pretendard-Regular" };
     }
   }, [fontsLoaded]);
+
+  useEffect(() => {
+    if (Platform.OS === "android") {
+      SystemUI.setBackgroundColorAsync("#1A1614");
+    }
+  }, []);
 
   if (!fontsLoaded) return null;
 

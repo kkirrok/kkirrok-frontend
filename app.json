@@ -44,6 +44,18 @@
     "plugins": [
       "expo-router",
       [
+        "@react-native-kakao/core",
+        {
+          "nativeAppKey": "f9014f3cc314858d6a5c61a8af28d89f",
+          "android": {
+            "authCodeHandlerActivity": true
+          },
+          "ios": {
+            "handleMakeAppUrl": true
+          }
+        }
+      ],
+      [
         "expo-build-properties",
         {
           "android": {
@@ -69,6 +81,8 @@
           }
         }
       ],
+      "expo-font",
+      "expo-web-browser",
       "expo-secure-store",
       [
         "expo-notifications",

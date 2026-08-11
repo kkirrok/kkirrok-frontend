@@ -1,3 +1,4 @@
+import { Ionicons } from "@expo/vector-icons";
 import React, { useState } from "react";
 import {
   View,
@@ -40,6 +41,7 @@ export default function KkTextBox({
   inputStyle,
 }: KkTextBoxProps) {
   const [isFocused, setIsFocused] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   const isActive = isFocused || value.length > 0;
   const hasError = !!error;
@@ -58,18 +60,33 @@ export default function KkTextBox({
     }
 
     return (
-      <TextInput
-        value={value}
-        onChangeText={onChangeText}
-        placeholder={placeholder}
-        editable={!disabled}
-        placeholderTextColor="#C7C7C7"
-        secureTextEntry={secureTextEntry}
-        keyboardType={keyboardType}
-        onFocus={() => setIsFocused(true)}
-        onBlur={() => setIsFocused(false)}
-        style={[styles.textInput, inputStyle]}
-      />
+      <>
+        <TextInput
+          value={value}
+          onChangeText={onChangeText}
+          placeholder={placeholder}
+          editable={!disabled}
+          placeholderTextColor="#C7C7C7"
+          secureTextEntry={secureTextEntry && !showPassword}
+          keyboardType={keyboardType}
+          onFocus={() => setIsFocused(true)}
+          onBlur={() => setIsFocused(false)}
+          style={[styles.textInput, inputStyle]}
+        />
+        {secureTextEntry && (
+          <TouchableOpacity
+            onPress={() => setShowPassword((v) => !v)}
+            hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            disabled={disabled}
+          >
+            <Ionicons
+              name={showPassword ? "eye-off-outline" : "eye-outline"}
+              size={20}
+              color="#A49289"
+            />
+          </TouchableOpacity>
+        )}
+      </>
     );
   };
 

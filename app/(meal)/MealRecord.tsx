@@ -11,7 +11,7 @@ import {
   scanMeal,
   searchFoods,
 } from "@/utils/api/mealApi";
-import { consumeMealPhoto } from "@/utils/store/mealPhotoStore";
+import { consumeMealPhoto, consumeScanResult } from "@/utils/store/mealPhotoStore";
 import { BlurView } from "expo-blur";
 import { router, useFocusEffect } from "expo-router";
 import React, { useCallback, useRef, useState } from "react";
@@ -111,6 +111,29 @@ export default function MealRecord() {
 
   useFocusEffect(
     useCallback(() => {
+      const scanResult = consumeScanResult();
+      if (scanResult) {
+        setPhoto(null);
+        setImageKey(scanResult.image_key);
+        setScanType(scanResult.scan_type);
+        setMealName(scanResult.food_name);
+        setCalories(String(scanResult.kcal));
+        setNutrients({
+          단백질: String(scanResult.protein_g),
+          탄수화물: String(scanResult.carbohydrate_g),
+          당: String(scanResult.sugar_g),
+          지방: String(scanResult.fat_g),
+          나트륨: String(scanResult.sodium_mg),
+        });
+        setSegments(
+          makeSegments(scanResult.carbohydrate_g, scanResult.protein_g, scanResult.fat_g),
+        );
+        setRecordTime(formatTime(new Date()));
+        setRecognitionFailed(false);
+        setSearchResults([]);
+        return;
+      }
+
       const uri = consumeMealPhoto();
       if (uri) {
         scanControllerRef.current?.abort();

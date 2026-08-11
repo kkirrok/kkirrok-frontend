@@ -1,5 +1,6 @@
 import KakaoLogo from "@/assets/images/kakao_logo.svg";
 import NaverLogo from "@/assets/images/naver_logo.svg";
+import KkirokColorLogo from "@/assets/logo/kkirok_color_logo.svg";
 import KkBackground from "@/components/KkBackground";
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
@@ -80,6 +81,11 @@ export default function SocialLogin() {
           { paddingTop: insets.top, paddingBottom: insets.bottom + 24 },
         ]}
       >
+        <View style={styles.logoArea}>
+          <KkirokColorLogo width={280} height={53} />
+          <Text style={styles.tagline}>끼록과 함께 끼니를 기록해요</Text>
+        </View>
+
         <View style={styles.buttonArea}>
           <TouchableOpacity
             style={styles.naverBtn}
@@ -115,7 +121,9 @@ export default function SocialLogin() {
 
           <View style={styles.signupRow}>
             <Text style={styles.signupLabel}>아직 계정이 없다면?</Text>
-            <TouchableOpacity onPress={() => router.push("/(auth)/Signup")}>
+            <TouchableOpacity
+              onPress={() => router.push("/(auth)/SignupTerms")}
+            >
               <Text style={styles.signupLink}>회원가입하기</Text>
             </TouchableOpacity>
           </View>
@@ -144,7 +152,17 @@ const btnBase = {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    justifyContent: "flex-end",
+    justifyContent: "space-between",
+  },
+  logoArea: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+  },
+  tagline: {
+    ...Typography.title.m,
+    color: Colors.gray[300],
   },
   buttonArea: {
     paddingHorizontal: 20,
