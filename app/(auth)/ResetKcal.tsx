@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
@@ -93,11 +94,9 @@ const styles = StyleSheet.create({
     paddingTop: 16,
   },
   label: {
+    ...Typography.title.s,
     color: "#FDFCFC",
     marginBottom: 8,
-    fontSize: 18,
-    fontWeight: "500",
-    fontFamily: "Pretendard-SemiBold",
   },
   inputBox: {
     borderWidth: 1,
@@ -111,16 +110,14 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
   },
   input: {
+    ...Typography.body.l,
     flex: 1,
     color: "#FDFCFC",
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
     textAlign: "right",
   },
   suffix: {
+    ...Typography.body.l,
     color: "#FDFCFC",
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
   },
   bottom: {
     flex: 1,

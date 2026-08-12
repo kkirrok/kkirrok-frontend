@@ -171,14 +171,16 @@ export default function Home() {
   const router = useRouter();
   const {
     data: home,
-    isLoading,
+    isLoading: homeLoading,
     error: homeError,
     refetch: refetchHome,
   } = useHomeData();
-  const { data: nutrition, refetch: refetchNutrition } = useNutritionSummary();
-  const { data: recommendations, refetch: refetchRecommendations } =
+  const { data: nutrition, isLoading: nutritionLoading, refetch: refetchNutrition } = useNutritionSummary();
+  const { data: recommendations, isLoading: recLoading, refetch: refetchRecommendations } =
     useRecommendations();
-  const { data: todayMeals = [], refetch: refetchMeals } = useTodayMeals();
+  const { data: todayMeals = [], isLoading: mealsLoading, refetch: refetchMeals } = useTodayMeals();
+
+  const isLoading = homeLoading || nutritionLoading || recLoading || mealsLoading;
 
   const isFirstFocus = useRef(true);
 
@@ -355,27 +357,23 @@ const styles = StyleSheet.create({
     padding: 15,
   },
   title: {
-    fontSize: 20,
-    fontFamily: "Pretendard-SemiBold",
+    ...Typography.title.m,
     textAlign: "center",
     color: "#FDFCFC",
   },
   nickname: {
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
+    ...Typography.title.s,
     textAlign: "center",
     marginBottom: 8,
     color: "#FDFCFC",
   },
   sectionTitle: {
-    fontFamily: "Pretendard-SemiBold",
-    fontSize: 20,
+    ...Typography.title.m,
     color: "#FDFCFC",
     marginTop: 16,
   },
   subTitle: {
-    fontFamily: "Pretendard-SemiBold",
-    fontSize: 18,
+    ...Typography.title.s,
     color: "#E7E2DF",
   },
   nutrientRow: {
@@ -384,9 +382,8 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   nutrientLabel: {
+    ...Typography.title.xs,
     width: "20%",
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
     color: "#E7E2DF",
   },
   barBg: {
@@ -402,9 +399,8 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   nutrientValue: {
+    ...Typography.body.m,
     color: "#E7E2DF",
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
     width: 90,
     textAlign: "right",
   },
@@ -432,20 +428,17 @@ const styles = StyleSheet.create({
     fontSize: 32,
   },
   cardTitle: {
+    ...Typography.title.xs,
     color: "#E7E2DF",
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
   },
   cardDesc: {
+    ...Typography.caption[1],
     color: "#E7E2DF",
-    fontSize: 12,
-    fontFamily: "Pretendard-Regular",
     marginTop: 4,
   },
   cardDesc2: {
+    ...Typography.body.m,
     color: "#E7E2DF",
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
     marginTop: 4,
   },
   // 타임라인
@@ -523,9 +516,8 @@ const styles = StyleSheet.create({
     paddingVertical: 3,
   },
   tlMealTagText: {
+    ...Typography.caption[1],
     color: Colors.main[100],
-    fontSize: 12,
-    fontFamily: "Pretendard-Regular",
   },
   tlKcal: {
     color: Colors.gray[200],

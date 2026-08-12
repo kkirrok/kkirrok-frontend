@@ -143,8 +143,7 @@ export default function KkProfileForm({
         imageUri ?? undefined,
       );
       await tokenStore.setOnboarding(true);
-      await tokenStore.remove();
-      router.replace("/(auth)/Login");
+      router.replace("/(tabs)");
     } catch (e) {
       setErrorMessage(
         e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",

@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import React from "react";
 import {
   StyleSheet,
@@ -163,16 +164,13 @@ const styles = StyleSheet.create({
     borderRadius: 8,
   },
   text: {
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
+    ...Typography.title.s,
   },
   textSmall: {
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
+    ...Typography.body.l,
   },
   textTag: {
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
+    ...Typography.body.l,
   },
   shadow: {
     shadowColor: "#FF8868",

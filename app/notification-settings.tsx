@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
@@ -209,9 +210,8 @@ const styles = StyleSheet.create({
     paddingVertical: 16,
   },
   label: {
+    ...Typography.title.xs,
     color: "#FDFCFC",
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
   },
   divider: {
     height: 1,

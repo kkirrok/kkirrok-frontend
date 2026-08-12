@@ -1,4 +1,5 @@
 import CalendarIcon from "@/assets/icons/CalendarIcon.svg";
+import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkHeader from "@/components/KkHeader";
 import WeeklyCaloriesCard from "@/components/weeklyreport/WeeklyCaloriesCard";
@@ -10,6 +11,7 @@ import { useWeeklyReport } from "@/hooks/useWeeklyReport";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo } from "react";
 import {
+  ActivityIndicator,
   ScrollView,
   StyleSheet,
   Text,
@@ -63,11 +65,9 @@ export default function WeeklyReportPage() {
 
   const weekStart = useMemo(() => {
     const date = new Date(selectedDate);
-
     const day = date.getDay(); // 일:0 ~ 토:6
     const diff = day === 0 ? -6 : 1 - day;
-
-    date.setDate(date.getDate() + diff);
+    date.setDate(date.getDate() + diff - 7); // 전주 월요일
 
     const y = date.getFullYear();
     const m = String(date.getMonth() + 1).padStart(2, "0");
@@ -76,12 +76,13 @@ export default function WeeklyReportPage() {
   }, [selectedDate]);
 
   const weekTitle = useMemo(() => {
-    const year = selectedDate.getFullYear();
-    const month = selectedDate.getMonth() + 1;
-    const week = getWeekOfMonth(selectedDate);
-
+    const [y, m, d] = weekStart.split("-").map(Number);
+    const base = new Date(y, m - 1, d);
+    const year = base.getFullYear();
+    const month = base.getMonth() + 1;
+    const week = getWeekOfMonth(base);
     return `${year}년 ${String(month).padStart(2, "0")}월 ${week}주차`;
-  }, [selectedDate]);
+  }, [weekStart]);
 
   const {
     data: reportResponse,
@@ -112,6 +113,9 @@ export default function WeeklyReportPage() {
     return (
       <KkBackground>
         <KkHeader title="주간 리포트" />
+        <View style={errorStyles.container}>
+          <ActivityIndicator size="large" color="#F6623B" />
+        </View>
       </KkBackground>
     );
   }
@@ -163,8 +167,13 @@ export default function WeeklyReportPage() {
           dailyCalories={dailyCalories}
           weekDays={WEEK_DAYS}
           maxCalories={MAX_DAILY_CALORIES}
+          avgDailyKcal={report.avgDailyKcal}
+          totalWeeklyKcal={report.totalWeeklyKcal}
         />
-        <WeeklyNutrientsCard nutrients={report.nutrientFeedbacks} />
+        <WeeklyNutrientsCard
+          nutrients={report.nutrientFeedbacks}
+          kcalFeedback={report.kcalFeedback}
+        />
         <WeeklyPatternCard description={report.mealPatternDescription} />
         <WeeklySuggestionsCard suggestions={report.nextWeekSuggestions} />
       </ScrollView>
@@ -181,10 +190,9 @@ const errorStyles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   message: {
+    ...Typography.body.l,
     color: "#E7E2DF",
-    fontSize: 16,
     textAlign: "center",
-    fontFamily: "Pretendard-Regular",
   },
   button: {
     paddingVertical: 10,
@@ -193,8 +201,8 @@ const errorStyles = StyleSheet.create({
     backgroundColor: "rgba(255,255,255,0.1)",
   },
   buttonText: {
+    ...Typography.body.m,
     color: "#E7E2DF",
-    fontSize: 14,
     fontFamily: "Pretendard-SemiBold",
   },
 });

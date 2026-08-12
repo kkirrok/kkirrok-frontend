@@ -1,14 +1,19 @@
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import { Ionicons } from "@expo/vector-icons";
-import { Image, StyleSheet, Text, View } from "react-native";
+import { Image, StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { MealRecord } from "@/utils/types/meal";
 
-type Props = { record: MealRecord };
+type Props = { record: MealRecord; onPress?: () => void };
 
-export default function MealCard({ record }: Props) {
+export default function MealCard({ record, onPress }: Props) {
   return (
-    <View style={styles.card}>
+    <TouchableOpacity
+      style={styles.card}
+      onPress={onPress}
+      activeOpacity={onPress ? 0.7 : 1}
+      disabled={!onPress}
+    >
       {record.image ? (
         <Image
           source={{ uri: record.image }}
@@ -29,7 +34,7 @@ export default function MealCard({ record }: Props) {
           {record.sodium}mg | 🧁 {record.sugar}g
         </Text>
       </View>
-    </View>
+    </TouchableOpacity>
   );
 }
 

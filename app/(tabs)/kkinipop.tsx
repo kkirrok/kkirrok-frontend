@@ -5,6 +5,7 @@ import RecordCard from "@/components/kkinipop/RecordCard";
 import WeekCalendar from "@/components/kkinipop/WeekCalendar";
 import SkeletonMissionCard from "@/components/skeleton/SkeletonMissionCard";
 import SkeletonRecordRow from "@/components/skeleton/SkeletonRecordRow";
+import BellIcon from "@/assets/icons/bell.svg";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import {
@@ -451,12 +452,13 @@ export default function KkinipopPage() {
                 color={Colors.gray[100]}
               />
             </TouchableOpacity>
-            <TouchableOpacity>
-              <Ionicons
-                name="notifications-outline"
-                size={24}
-                color={Colors.gray[100]}
-              />
+            <TouchableOpacity
+              onPress={() => router.push("/notification")}
+              accessibilityRole="button"
+              accessibilityLabel="알림 화면으로 이동"
+              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+            >
+              <BellIcon width={24} height={24} />
             </TouchableOpacity>
           </View>
         </View>
@@ -703,7 +705,7 @@ const styles = StyleSheet.create({
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "space-between",
-    paddingHorizontal: 20,
+    paddingHorizontal: 22,
   },
   headerBtn: { width: 36, alignItems: "center" },
   headerRight: { flexDirection: "row", alignItems: "center", gap: 16 },
@@ -790,8 +792,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   modalBtnText: {
+    ...Typography.title.xs,
     color: Colors.gray[100],
-    fontFamily: "Pretendard-SemiBold",
-    fontSize: 16,
   },
 });

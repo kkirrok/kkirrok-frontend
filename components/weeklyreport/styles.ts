@@ -1,4 +1,5 @@
 import { Colors } from "@/constants/colors";
+import { Typography } from "@/constants/typography";
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
@@ -19,9 +20,8 @@ export const styles = StyleSheet.create({
     gap: 12,
   },
   weekSelectorText: {
+    ...Typography.title.s,
     color: Colors.gray[100],
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
   },
   card: {
     marginBottom: 22,
@@ -31,22 +31,20 @@ export const styles = StyleSheet.create({
     backgroundColor: "#FDFCFC0A",
   },
   cardTitle: {
+    ...Typography.title.s,
     color: Colors.gray[100],
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
     marginBottom: 6,
     textAlign: "center",
   },
   summaryText: {
+    ...Typography.title.s,
     color: Colors.gray[100],
-    fontSize: 18,
-    fontFamily: "Pretendard-SemiBold",
     marginBottom: 18,
     textAlign: "center",
   },
   highlight: {
+    ...Typography.title.s,
     color: Colors.main[400],
-    fontFamily: "Pretendard-SemiBold",
   },
   chart: {
     flexDirection: "row",
@@ -58,9 +56,9 @@ export const styles = StyleSheet.create({
     alignItems: "center",
   },
   barTrack: {
-    width: 26,
+    width: 28,
     height: 128,
-    borderRadius: 7,
+    borderRadius: 8,
     overflow: "hidden",
     backgroundColor: "#FDFCFC1A",
     justifyContent: "flex-end",
@@ -70,15 +68,13 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.main[400],
   },
   dayText: {
+    ...Typography.body.l,
     color: Colors.gray[200],
-    fontSize: 16,
-    fontFamily: "Pretendard-Regular",
     marginTop: 8,
   },
   totalText: {
+    ...Typography.title.xs,
     color: Colors.gray[200],
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
     marginTop: 14,
     textAlign: "center",
   },
@@ -92,10 +88,9 @@ export const styles = StyleSheet.create({
     gap: 12,
   },
   nutrientLabel: {
+    ...Typography.title.xs,
     minWidth: 60,
     color: Colors.gray[200],
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
   },
   nutrientTrack: {
     flex: 1,
@@ -109,17 +104,14 @@ export const styles = StyleSheet.create({
     backgroundColor: Colors.main[300],
   },
   nutrientValue: {
+    ...Typography.body.m,
     minWidth: 55,
     color: Colors.gray[200],
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
     textAlign: "right",
   },
   description: {
+    ...Typography.caption[1],
     color: Colors.gray[200],
-    fontSize: 12,
-    fontFamily: "Pretendard-Regular",
-    lineHeight: 18,
     marginTop: 16,
   },
   patternRow: {
@@ -133,9 +125,8 @@ export const styles = StyleSheet.create({
     gap: 5,
   },
   patternText: {
+    ...Typography.body.m,
     color: Colors.gray[100],
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
     lineHeight: 20,
   },
   imagePlaceholder: {
@@ -160,15 +151,13 @@ export const styles = StyleSheet.create({
     flex: 1,
   },
   tipTitle: {
+    ...Typography.title.xs,
     color: Colors.gray[100],
-    fontSize: 16,
-    fontFamily: "Pretendard-SemiBold",
     marginBottom: 4,
   },
   tipBody: {
+    ...Typography.body.m,
     color: Colors.gray[200],
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
     lineHeight: 19,
   },
 });

@@ -5,32 +5,31 @@ interface Props {
   dailyCalories: number[];
   weekDays: string[];
   maxCalories: number;
+  avgDailyKcal: number;
+  totalWeeklyKcal: number;
 }
 
 export default function WeeklyCaloriesCard({
   dailyCalories,
   weekDays,
   maxCalories,
+  avgDailyKcal,
+  totalWeeklyKcal,
 }: Props) {
-  const totalCalories = dailyCalories.reduce(
-    (total, calories) => total + calories,
-    0,
-  );
-
   return (
     <View style={styles.card}>
       <Text style={styles.cardTitle}>일주일동안</Text>
       <Text style={styles.summaryText}>
         평균{" "}
         <Text style={styles.highlight}>
-          {(totalCalories / dailyCalories.length).toFixed(0)}kcal
+          {avgDailyKcal.toLocaleString()}kcal
         </Text>
         를 섭취했어요!
       </Text>
 
       <View style={styles.chart}>
         {dailyCalories.map((calories, index) => {
-          const barHeight = Math.max(32, (calories / maxCalories) * 116);
+          const barHeight = calories > 0 ? Math.max(32, (calories / maxCalories) * 116) : 0;
 
           return (
             <View key={index} style={styles.day}>
@@ -45,7 +44,7 @@ export default function WeeklyCaloriesCard({
       </View>
 
       <Text style={styles.totalText}>
-        총 섭취 칼로리: {totalCalories.toLocaleString()}kcal
+        총 섭취 칼로리: {totalWeeklyKcal.toLocaleString()}kcal
       </Text>
     </View>
   );

@@ -218,9 +218,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 24,
   },
   permissionText: {
+    ...Typography.title.xs,
     color: Colors.gray[100],
-    fontFamily: "Pretendard-SemiBold",
-    fontSize: 16,
   },
   chip: {
     position: "absolute",

@@ -10,7 +10,7 @@ import { DayNutrition, MealRecord, MealType } from "@/utils/types/meal";
 import QuickAddFoodSheet, {
   QuickAddFormData,
 } from "@/components/quickAdd/QuickAddFoodSheet";
-import { useFocusEffect } from "expo-router";
+import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback, useMemo, useRef, useState } from "react";
 import { Platform, ScrollView, StyleSheet } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
@@ -48,6 +48,7 @@ function mapMealItem(
 }
 
 export default function ReportPage() {
+  const router = useRouter();
   const insets = useSafeAreaInsets();
   const tabBarHeight = Platform.OS === "ios" ? 60 + insets.bottom + 20 : 90;
 
@@ -199,6 +200,12 @@ export default function ReportPage() {
               dateLabel={dateLabel}
               meals={meals}
               onAdd={handleAddMeal}
+              onMealPress={(mealId) =>
+                router.push({
+                  pathname: "/(meal)/MealRecordDetail",
+                  params: { mealId, date: dateStr },
+                })
+              }
             />
           </>
         )}

@@ -32,6 +32,9 @@ export type MealItem = {
   fat_g: number;
   sugar_g: number;
   sodium_mg: number;
+  carbohydrate_percent: number | null;
+  protein_percent: number | null;
+  fat_percent: number | null;
   memo: string | null;
 };
 

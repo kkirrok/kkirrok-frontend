@@ -1,3 +1,4 @@
+import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
@@ -48,8 +49,7 @@ const styles = StyleSheet.create({
     paddingBottom: 24,
   },
   body: {
-    fontSize: 14,
-    fontFamily: "Pretendard-Regular",
+    ...Typography.body.m,
     color: Colors.gray[200],
     lineHeight: 22,
   },
