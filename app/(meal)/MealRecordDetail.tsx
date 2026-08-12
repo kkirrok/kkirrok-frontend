@@ -162,7 +162,9 @@ export default function MealRecordDetail() {
         </View>
       ) : total === 0 ? (
         <View style={styles.centerFill}>
-          <Text style={styles.emptyText}>오늘 기록된 식사가 없어요.</Text>
+          <Text style={styles.emptyText}>
+            {isDateMode ? "기록된 식사가 없어요." : "오늘 기록된 식사가 없어요."}
+          </Text>
         </View>
       ) : (
         <ScrollView

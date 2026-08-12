@@ -76,7 +76,8 @@ export default function WeeklyReportPage() {
   }, [selectedDate]);
 
   const weekTitle = useMemo(() => {
-    const base = new Date(weekStart);
+    const [y, m, d] = weekStart.split("-").map(Number);
+    const base = new Date(y, m - 1, d);
     const year = base.getFullYear();
     const month = base.getMonth() + 1;
     const week = getWeekOfMonth(base);

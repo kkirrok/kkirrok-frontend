@@ -79,7 +79,6 @@ const styles = StyleSheet.create({
   },
   label: {
     ...Typography.body.l,
-    fontSize: 15,
     color: Colors.gray[200],
   },
   separator: {

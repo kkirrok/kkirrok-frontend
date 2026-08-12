@@ -454,6 +454,8 @@ export default function KkinipopPage() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={() => router.push("/notification")}
+              accessibilityRole="button"
+              accessibilityLabel="알림 화면으로 이동"
               hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
             >
               <BellIcon width={24} height={24} />
