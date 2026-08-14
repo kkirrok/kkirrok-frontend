@@ -1,16 +1,9 @@
 import { fetchHome, fetchRecommendations } from "@/utils/api/homeApi";
-import { fetchTodayMeals, fetchTodayNutritionSummary } from "@/utils/api/mealApi";
+import { fetchTodayMeals } from "@/utils/api/mealApi";
 import { useQuery } from "@tanstack/react-query";
 
 export function useHomeData() {
   return useQuery({ queryKey: ["home"], queryFn: ({ signal }) => fetchHome(signal) });
-}
-
-export function useNutritionSummary() {
-  return useQuery({
-    queryKey: ["nutritionSummary"],
-    queryFn: () => fetchTodayNutritionSummary(),
-  });
 }
 
 export function useRecommendations() {

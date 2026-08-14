@@ -1,12 +1,13 @@
 import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
-import KkHeader from "@/components/KkHeader";
+import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
-import { getTermsList } from "@/utils/api/termsApi";
+import { agreeTerms, getTermsList } from "@/utils/api/termsApi";
+import { tokenStore } from "@/utils/store/tokenStore";
 import { TERM_LABELS, TermItem } from "@/utils/types/terms";
 import { Ionicons } from "@expo/vector-icons";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useState } from "react";
 import {
   ActivityIndicator,
@@ -17,26 +18,37 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-export default function SignupTerms() {
+export default function TermsAgreement() {
   const router = useRouter();
+  const { next } = useLocalSearchParams<{ next?: string }>();
+
   const [terms, setTerms] = useState<TermItem[]>([]);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
   const [termsLoadFailed, setTermsLoadFailed] = useState(false);
+  const [submitting, setSubmitting] = useState(false);
+  const [errorMessage, setErrorMessage] = useState("");
+  const [errorModalVisible, setErrorModalVisible] = useState(false);
 
-  const fetchTerms = () => {
-    setLoading(true);
-    setTermsLoadFailed(false);
+  useEffect(() => {
+    tokenStore.get().then((token) => {
+      if (!token) router.replace("/(auth)/Login");
+    });
+  }, []);
+
+  useEffect(() => {
     getTermsList()
       .then((list) => {
         setTerms(list);
         setChecked(Object.fromEntries(list.map((t) => [t.type, false])));
       })
-      .catch(() => setTermsLoadFailed(true))
+      .catch(() => {
+        setTermsLoadFailed(true);
+        setErrorMessage("약관 목록을 불러오는 데 실패했습니다.");
+        setErrorModalVisible(true);
+      })
       .finally(() => setLoading(false));
-  };
-
-  useEffect(() => { fetchTerms(); }, []);
+  }, []);
 
   const allChecked = terms.every((t) => checked[t.type]);
   const requiredChecked = terms
@@ -51,20 +63,38 @@ export default function SignupTerms() {
   const toggle = (type: string) =>
     setChecked((prev) => ({ ...prev, [type]: !prev[type] }));
 
+  const handleSubmit = async () => {
+    setSubmitting(true);
+    try {
+      await agreeTerms(
+        terms.map((t) => ({ type: t.type, is_agree: checked[t.type] ?? false })),
+      );
+      if (next === "onboarding") {
+        router.replace("/(auth)/KkirokStart");
+      } else {
+        router.replace("/(tabs)");
+      }
+    } catch (e) {
+      setErrorMessage(
+        e instanceof Error ? e.message : "약관 동의에 실패했습니다.",
+      );
+      setErrorModalVisible(true);
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
   return (
     <KkBackground>
-      <KkHeader title="끼록 시작하기" variant="back" />
-      <SafeAreaView style={{ flex: 1 }} edges={["bottom"]}>
+      <SafeAreaView style={{ flex: 1 }} edges={["top", "bottom"]}>
+        <View style={styles.header}>
+          <Text style={styles.title}>서비스 이용 약관</Text>
+          <Text style={styles.subtitle}>서비스 이용을 위해 약관에 동의해 주세요.</Text>
+        </View>
+
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={Colors.main[500]} />
-          </View>
-        ) : termsLoadFailed ? (
-          <View style={styles.center}>
-            <Text style={styles.errorText}>약관을 불러오지 못했습니다.</Text>
-            <TouchableOpacity onPress={fetchTerms} style={styles.retryBtn}>
-              <Text style={styles.retryText}>다시 시도</Text>
-            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.content}>
@@ -127,24 +157,41 @@ export default function SignupTerms() {
 
             <View style={styles.bottom}>
               <KkButton
-                title="다음"
-                disabled={!requiredChecked}
-                onPress={() =>
-                  router.push({
-                    pathname: "/(auth)/SignupNotification",
-                    params: { termsChecked: JSON.stringify(checked) },
-                  })
-                }
+                title="동의하고 시작하기"
+                disabled={termsLoadFailed || !requiredChecked || submitting}
+                onPress={handleSubmit}
               />
             </View>
           </View>
         )}
       </SafeAreaView>
+
+      <KkModal
+        visible={errorModalVisible}
+        onClose={() => setErrorModalVisible(false)}
+        message={errorMessage}
+        buttonText="확인"
+        onButtonPress={() => setErrorModalVisible(false)}
+      />
     </KkBackground>
   );
 }
 
 const styles = StyleSheet.create({
+  header: {
+    paddingHorizontal: 16,
+    paddingTop: 32,
+    paddingBottom: 24,
+    gap: 8,
+  },
+  title: {
+    ...Typography.title.m,
+    color: Colors.gray[100],
+  },
+  subtitle: {
+    ...Typography.body.m,
+    color: Colors.gray[400],
+  },
   center: {
     flex: 1,
     justifyContent: "center",
@@ -153,7 +200,6 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     paddingHorizontal: 16,
-    paddingTop: 24,
   },
   masterRow: {
     flexDirection: "row",
@@ -193,20 +239,5 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     paddingBottom: 12,
-  },
-  errorText: {
-    ...Typography.body.m,
-    color: Colors.gray[400],
-    marginBottom: 12,
-  },
-  retryBtn: {
-    paddingVertical: 8,
-    paddingHorizontal: 24,
-    borderRadius: 100,
-    backgroundColor: Colors.gray[800],
-  },
-  retryText: {
-    ...Typography.body.m,
-    color: Colors.gray[100],
   },
 });

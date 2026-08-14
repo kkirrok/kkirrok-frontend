@@ -1,3 +1,5 @@
+import { TermItem } from "./terms";
+
 export type SetProfileParams = {
   name: string;
   birth: string;
@@ -17,5 +19,6 @@ export type AuthResponse = {
     nickname: string;
     role: string;
     onboarding_completed: boolean;
+    pending_terms_agree: TermItem[];
   };
 };

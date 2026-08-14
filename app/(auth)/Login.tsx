@@ -10,9 +10,11 @@ import { isValidEmail } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Login() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -26,7 +28,12 @@ export default function Login() {
       await tokenStore.save(res.data.access_token);
       await tokenStore.setOnboarding(res.data.onboarding_completed);
       requestAndRegisterPushToken().catch(() => {});
-      if (res.data.onboarding_completed) {
+      if (res.data.pending_terms_agree.length > 0) {
+        router.replace({
+          pathname: "/(auth)/TermsAgreement",
+          params: { next: res.data.onboarding_completed ? "tabs" : "onboarding" },
+        });
+      } else if (res.data.onboarding_completed) {
         router.replace("/(tabs)");
       } else {
         router.replace("/(auth)/KkirokStart");
@@ -44,7 +51,7 @@ export default function Login() {
   return (
     <KkBackground>
       <KkHeader title="로그인 하기" />
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 32) }]}>
         <KkTextBox
           label="이메일"
           value={email}

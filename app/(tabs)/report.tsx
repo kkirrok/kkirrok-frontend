@@ -50,7 +50,7 @@ function mapMealItem(
 export default function ReportPage() {
   const router = useRouter();
   const insets = useSafeAreaInsets();
-  const tabBarHeight = Platform.OS === "ios" ? 60 + insets.bottom + 20 : 90;
+  const tabBarHeight = insets.bottom + 100;
 
   const [year, setYear] = useState(() => new Date().getFullYear());
   const [month, setMonth] = useState(() => new Date().getMonth() + 1);

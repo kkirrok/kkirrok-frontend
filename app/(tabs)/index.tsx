@@ -9,7 +9,6 @@ import { MEAL_TIME_SLOT_TO_TYPE } from "@/utils/api/mealApi";
 import type { TodayMealRecord } from "@/utils/types/meal";
 import {
   useHomeData,
-  useNutritionSummary,
   useRecommendations,
   useTodayMeals,
 } from "@/hooks/useHome";
@@ -23,6 +22,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 function formatTime(isoString: string | null): string {
   if (!isoString) return "";
@@ -153,7 +153,7 @@ function MealTimeline({
                 </TouchableOpacity>
               ) : (
                 <View style={[styles.tlCard, styles.tlReminderCard]}>
-                  <Text style={styles.tlReminderTitle}>끼록할 시간이에요!</Text>
+                  <Text style={styles.tlReminderTitle}>{item.data.title}</Text>
                   <Text style={styles.tlReminderSub}>
                     {item.data.description}
                   </Text>
@@ -169,18 +169,19 @@ function MealTimeline({
 
 export default function Home() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const {
     data: home,
     isLoading: homeLoading,
     error: homeError,
     refetch: refetchHome,
   } = useHomeData();
-  const { data: nutrition, isLoading: nutritionLoading, refetch: refetchNutrition } = useNutritionSummary();
   const { data: recommendations, isLoading: recLoading, refetch: refetchRecommendations } =
     useRecommendations();
   const { data: todayMeals = [], isLoading: mealsLoading, refetch: refetchMeals } = useTodayMeals();
 
-  const isLoading = homeLoading || nutritionLoading || recLoading || mealsLoading;
+  const isLoading = homeLoading || recLoading || mealsLoading;
+  const nutrition = home?.nutrition;
 
   const isFirstFocus = useRef(true);
 
@@ -197,10 +198,9 @@ export default function Home() {
         return;
       }
       refetchHome();
-      refetchNutrition();
       refetchRecommendations();
       refetchMeals();
-    }, [refetchHome, refetchNutrition, refetchRecommendations, refetchMeals]),
+    }, [refetchHome, refetchRecommendations, refetchMeals]),
   );
 
   const exerciseRecs = recommendations?.exercise_recommend ?? [];
@@ -210,7 +210,7 @@ export default function Home() {
 
   return (
     <KkBackground>
-      <ScrollView>
+      <ScrollView contentContainerStyle={{ paddingBottom: insets.bottom + 100 }}>
         <KkLogoHeader />
         {isLoading ? (
           <SkeletonHome />
@@ -325,19 +325,14 @@ export default function Home() {
               </>
             )}
 
-            {/* 이전 기록 기반 피드백 */}
-            {home?.feedback?.description ? (
+            {/* 오늘의 피드백 코멘트 */}
+            {home?.feedback?.comment ? (
               <Card>
-                <Text style={styles.cardTitle}>
-                  이전 요일들 기록 기반 피드백
-                </Text>
-                <Text style={styles.cardDesc2}>
-                  {home.feedback.description}
-                </Text>
+                <Text style={styles.cardTitle}>{home.feedback.title}</Text>
+                <Text style={styles.cardDesc2}>{home.feedback.comment}</Text>
               </Card>
             ) : null}
 
-            <View style={{ height: 98 }} />
           </View>
         )}
       </ScrollView>
