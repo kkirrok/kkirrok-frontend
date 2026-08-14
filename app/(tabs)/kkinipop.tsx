@@ -6,6 +6,7 @@ import WeekCalendar from "@/components/kkinipop/WeekCalendar";
 import SkeletonMissionCard from "@/components/skeleton/SkeletonMissionCard";
 import SkeletonRecordRow from "@/components/skeleton/SkeletonRecordRow";
 import BellIcon from "@/assets/icons/bell.svg";
+import { useKkinipopSSE } from "@/hooks/useKkinipopSSE";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
 import {
@@ -35,8 +36,10 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   Modal,
   Pressable,
+  RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
@@ -75,14 +78,24 @@ export default function KkinipopPage() {
   const [customEmojiList, setCustomEmojiList] = useState<
     (GroupEmoji & { imageUrl: string | null })[]
   >([]);
+  const [profileImageCache, setProfileImageCache] = useState<Record<number, string>>({});
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [missionLoading, setMissionLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   const postsControllerRef = useRef<AbortController | null>(null);
   const emojiControllerRef = useRef<AbortController | null>(null);
   const skipNextFocusRef = useRef(false);
   const scrollRef = useRef<ScrollView>(null);
   const rowRefs = useRef<(View | null)[]>([]);
+  const selectedGroupIdRef = useRef<number | null>(selectedGroupId);
+  const systemEmojisRef = useRef<SystemEmoji[]>([]);
+  const customEmojisRef = useRef<typeof customEmojiList>([]);
+
+  useEffect(() => { selectedGroupIdRef.current = selectedGroupId; }, [selectedGroupId]);
+  useEffect(() => { systemEmojisRef.current = globalSystemEmojis; }, [globalSystemEmojis]);
+  useEffect(() => { customEmojisRef.current = customEmojiList; }, [customEmojiList]);
+
 
   useEffect(() => {
     const controller = new AbortController();
@@ -143,8 +156,25 @@ export default function KkinipopPage() {
     try {
       const data = await fetchMissions(groupId, date, controller.signal);
       if (controller.signal.aborted) return;
-      setMissions(data);
-      const realTimeIdx = data.findIndex((m) => m.is_real_time);
+      const resolvedData = await Promise.all(
+        data.map(async (mission) => ({
+          ...mission,
+          success_members: await Promise.all(
+            mission.success_members.map(async (member) => {
+              if (!member.profile_image) return member;
+              try {
+                const url = await getDownloadUrl(member.profile_image);
+                return { ...member, profile_image: url };
+              } catch {
+                return member;
+              }
+            }),
+          ),
+        })),
+      );
+      if (controller.signal.aborted) return;
+      setMissions(resolvedData);
+      const realTimeIdx = resolvedData.findIndex((m) => m.is_real_time);
       setMissionIndex(realTimeIdx >= 0 ? realTimeIdx : 0);
     } catch (err: any) {
       if (err?.name !== "AbortError") console.error(err);
@@ -166,6 +196,19 @@ export default function KkinipopPage() {
       if (!controller.signal.aborted) setContentLoading(false);
     }
   }, []);
+
+  const handleMemberChange = useCallback(() => {
+    if (selectedGroupIdRef.current != null) loadPosts(selectedGroupIdRef.current);
+  }, [loadPosts]);
+
+  useKkinipopSSE({
+    selectedGroupIdRef,
+    setPostDays,
+    setMissions,
+    onMemberChange: handleMemberChange,
+    systemEmojisRef,
+    customEmojisRef,
+  });
 
   useEffect(() => {
     if (selectedGroupId == null) return;
@@ -231,6 +274,34 @@ export default function KkinipopPage() {
 
   useEffect(() => {
     let cancelled = false;
+    const needProfileFetch = todayPosts.filter(
+      (p) => p.profile_image && !(p.member_id in profileImageCache),
+    );
+    if (needProfileFetch.length) {
+      Promise.all(
+        needProfileFetch.map(async (p) => {
+          try {
+            const url = await getDownloadUrl(p.profile_image!);
+            return [p.member_id, url] as [number, string];
+          } catch {
+            return null;
+          }
+        }),
+      ).then((entries) => {
+        if (cancelled) return;
+        setProfileImageCache((prev) => {
+          const next = { ...prev };
+          for (const e of entries) if (e) next[e[0]] = e[1];
+          return next;
+        });
+      });
+    }
+    return () => { cancelled = true; };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [todayPosts]);
+
+  useEffect(() => {
+    let cancelled = false;
     const needFetch = todayPosts.filter(
       (p) => p.image && !(p.post_id in imageCache),
     );
@@ -258,9 +329,6 @@ export default function KkinipopPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [todayPosts]);
 
-  const reactedIds = todayPosts
-    .filter((p) => p.reactions.some((r) => r.reacted))
-    .map((p) => String(p.post_id));
 
   const visibleMissions = missions.filter((m) => {
     if (!m.start_at) return true;
@@ -278,16 +346,23 @@ export default function KkinipopPage() {
         })
       : "--:--",
     image: imageCache[p.post_id] ?? null,
+    profileImage: profileImageCache[p.member_id] ?? null,
     isOwn: p.member_id === myMemberId,
     missionId: p.mission_id,
-    reactions: p.reactions.map((r) => ({
-      emoji:
-        SYSTEM_EMOJI_CHAR[r.emoji_code] ??
-        globalSystemEmojis.find((e) => e.emoji_code === r.emoji_code)?.label ??
-        customEmojiList.find((e) => e.emoji_code === r.emoji_code)?.label ??
-        r.emoji_code,
-      count: r.count,
-    })),
+    reactions: p.reactions.map((r) => {
+      const customEmoji = customEmojiList.find((e) => e.emoji_code === r.emoji_code);
+      return {
+        emoji:
+          SYSTEM_EMOJI_CHAR[r.emoji_code] ??
+          globalSystemEmojis.find((e) => e.emoji_code === r.emoji_code)?.label ??
+          customEmoji?.label ??
+          r.emoji_code,
+        emoji_code: r.emoji_code,
+        count: r.count,
+        reacted: r.reacted,
+        imageUrl: customEmoji?.imageUrl ?? null,
+      };
+    }),
   }));
 
   const activeGroup =
@@ -299,6 +374,16 @@ export default function KkinipopPage() {
   const handleAddReaction = async (id: string, emojiCode: string) => {
     if (!selectedGroupId) return;
     const postId = parseInt(id);
+
+    // 한 사람당 하나 규칙: API 호출 전에 현재 반응 중인 다른 이모지 코드를 기억
+    const prevReactedCode =
+      postDays
+        .flatMap((d) => d.posts)
+        .find((p) => p.post_id === postId)
+        ?.reactions.find((r) => r.reacted && r.emoji_code !== emojiCode)
+        ?.emoji_code ?? null;
+
+    setOpenPickerId(null);
     try {
       const result = await addReaction(selectedGroupId, postId, emojiCode);
       setPostDays((prev) =>
@@ -306,21 +391,36 @@ export default function KkinipopPage() {
           ...day,
           posts: day.posts.map((p) => {
             if (p.post_id !== postId) return p;
-            const existing = p.reactions.find(
+
+            // 새 이모지 추가 시 이전 반응 제거 (한 사람당 하나)
+            let reactions = p.reactions;
+            if (result.reacted && prevReactedCode) {
+              reactions = reactions
+                .map((r) => {
+                  if (r.emoji_code !== prevReactedCode) return r;
+                  const newCount = r.count - 1;
+                  return newCount > 0
+                    ? { ...r, count: newCount, reacted: false }
+                    : null;
+                })
+                .filter((r): r is NonNullable<typeof r> => r !== null);
+            }
+
+            const existing = reactions.find(
               (r) => r.emoji_code === result.emoji_code,
             );
             if (existing) {
               if (result.count === 0) {
                 return {
                   ...p,
-                  reactions: p.reactions.filter(
+                  reactions: reactions.filter(
                     (r) => r.emoji_code !== result.emoji_code,
                   ),
                 };
               }
               return {
                 ...p,
-                reactions: p.reactions.map((r) =>
+                reactions: reactions.map((r) =>
                   r.emoji_code === result.emoji_code
                     ? { ...r, count: result.count, reacted: result.reacted }
                     : r,
@@ -330,7 +430,7 @@ export default function KkinipopPage() {
             return {
               ...p,
               reactions: [
-                ...p.reactions,
+                ...reactions,
                 {
                   emoji_code: result.emoji_code,
                   label: result.label,
@@ -343,10 +443,9 @@ export default function KkinipopPage() {
           }),
         })),
       );
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      Alert.alert("오류", err?.message ?? "이모지 반응에 실패했어요.");
     }
-    setOpenPickerId(null);
   };
 
   const handleDelete = async (id: string) => {
@@ -360,10 +459,23 @@ export default function KkinipopPage() {
           posts: day.posts.filter((p) => p.post_id !== postId),
         })),
       );
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      Alert.alert("오류", err?.message ?? "게시글 삭제에 실패했어요.");
     }
   };
+
+  const handleRefresh = useCallback(async () => {
+    if (!selectedGroupId) return;
+    setRefreshing(true);
+    try {
+      await Promise.all([
+        loadPosts(selectedGroupId),
+        loadGroupEmojis(selectedGroupId),
+      ]);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [selectedGroupId, loadPosts, loadGroupEmojis]);
 
   const handleDeleteCustomEmoji = async (emojiId: number) => {
     if (!selectedGroupId) return;
@@ -470,6 +582,13 @@ export default function KkinipopPage() {
         contentContainerStyle={{ flexGrow: 1 }}
         showsVerticalScrollIndicator={false}
         onScrollBeginDrag={() => setOpenPickerId(null)}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={handleRefresh}
+            tintColor={Colors.main[400]}
+          />
+        }
       >
         <Pressable
           style={[
@@ -565,7 +684,6 @@ export default function KkinipopPage() {
                         handleAddReaction(record.id, emoji)
                       }
                       onDelete={() => handleDelete(record.id)}
-                      hasReacted={reactedIds.includes(record.id)}
                       highlighted={
                         moabogiMissionId != null &&
                         record.missionId === moabogiMissionId

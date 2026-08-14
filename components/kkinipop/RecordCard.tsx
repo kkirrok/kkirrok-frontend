@@ -8,11 +8,13 @@ import { useEffect, useRef, useState } from "react";
 import {
   Animated,
   Pressable,
+  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from "react-native";
+import EmojiSpark, { type SparkHandle } from "./EmojiSpark";
 
 type SystemEmojiItem = { emoji_code: string; display: string };
 type CustomEmojiItem = {
@@ -28,7 +30,6 @@ type Props = {
   onTogglePicker: () => void;
   onAddReaction: (emojiCode: string) => void;
   onDelete: () => void;
-  hasReacted: boolean;
   highlighted?: boolean;
   onOpenKkimoji?: () => void;
   systemEmojis: SystemEmojiItem[];
@@ -42,7 +43,6 @@ export default function RecordCard({
   onTogglePicker,
   onAddReaction,
   onDelete,
-  hasReacted,
   highlighted = false,
   onOpenKkimoji,
   systemEmojis,
@@ -51,6 +51,28 @@ export default function RecordCard({
 }: Props) {
   const [isDeleteMode, setIsDeleteMode] = useState(false);
   const wiggleAnim = useRef(new Animated.Value(0)).current;
+  const sparkRef = useRef<SparkHandle>(null);
+  const cardRef = useRef<View>(null);
+  const pillRefs = useRef(new Map<string, View | null>());
+  const pendingSparkCode = useRef<string | null>(null);
+
+  // picker에서 선택한 이모지가 pill로 렌더된 후 해당 위치에서 스파크 발사
+  useEffect(() => {
+    const code = pendingSparkCode.current;
+    if (!code || pickerOpen) return;
+
+    requestAnimationFrame(() => {
+      const pill = pillRefs.current.get(code);
+      if (pill && cardRef.current) {
+        pendingSparkCode.current = null;
+        pill.measureLayout(
+          cardRef.current,
+          (x, y, w, h) => sparkRef.current?.trigger(x + w / 2, y + h / 2),
+          () => {},
+        );
+      }
+    });
+  }, [record.reactions, pickerOpen]);
 
   useEffect(() => {
     if (customGroupEmojis.length === 0) setIsDeleteMode(false);
@@ -64,21 +86,9 @@ export default function RecordCard({
     if (isDeleteMode) {
       Animated.loop(
         Animated.sequence([
-          Animated.timing(wiggleAnim, {
-            toValue: 1,
-            duration: 120,
-            useNativeDriver: true,
-          }),
-          Animated.timing(wiggleAnim, {
-            toValue: -1,
-            duration: 120,
-            useNativeDriver: true,
-          }),
-          Animated.timing(wiggleAnim, {
-            toValue: 0,
-            duration: 120,
-            useNativeDriver: true,
-          }),
+          Animated.timing(wiggleAnim, { toValue: 1, duration: 120, useNativeDriver: true }),
+          Animated.timing(wiggleAnim, { toValue: -1, duration: 120, useNativeDriver: true }),
+          Animated.timing(wiggleAnim, { toValue: 0, duration: 120, useNativeDriver: true }),
         ]),
       ).start();
     } else {
@@ -98,9 +108,7 @@ export default function RecordCard({
   };
 
   return (
-    <View
-      style={[styles.card, highlighted && { borderColor: Colors.main[600] }]}
-    >
+    <View ref={cardRef} style={[styles.card, highlighted && { borderColor: Colors.main[600] }]}>
       {record.image ? (
         <Image
           source={{ uri: record.image }}
@@ -117,9 +125,19 @@ export default function RecordCard({
         style={StyleSheet.absoluteFillObject}
       />
 
+      <EmojiSpark ref={sparkRef} />
+
       <View style={styles.cardTopRow}>
         <View style={styles.cardAvatarRow}>
-          <View style={styles.cardAvatar} />
+          {record.profileImage ? (
+            <Image
+              source={{ uri: record.profileImage }}
+              style={styles.cardAvatar}
+              contentFit="cover"
+            />
+          ) : (
+            <View style={styles.cardAvatar} />
+          )}
           <Text style={styles.cardName}>{record.name}</Text>
         </View>
         <View style={styles.cardActions}>
@@ -132,33 +150,58 @@ export default function RecordCard({
               <Ionicons name="trash" size={20} color={Colors.gray[100]} />
             </TouchableOpacity>
           )}
-          {!hasReacted && (
-            <TouchableOpacity
-              onPress={onTogglePicker}
-              style={styles.cardActionBtn}
-            >
-              <Ionicons
-                name="happy-outline"
-                size={20}
-                color={Colors.gray[100]}
-              />
-            </TouchableOpacity>
-          )}
+          <TouchableOpacity onPress={onTogglePicker} style={styles.cardActionBtn}>
+            <Ionicons name="happy-outline" size={20} color={Colors.gray[100]} />
+          </TouchableOpacity>
         </View>
       </View>
 
       {!pickerOpen && (
         <View style={styles.cardBottomRow}>
           <Text style={styles.cardTime}>{record.time}</Text>
-          <View style={styles.reactionRow}>
+          <ScrollView
+            horizontal
+            showsHorizontalScrollIndicator={false}
+            style={styles.reactionScroll}
+            contentContainerStyle={styles.reactionRow}
+          >
             {record.reactions.map((r) => (
-              <View key={r.emoji} style={styles.reactionPill}>
-                <Text style={styles.reactionText}>
-                  {r.emoji} {r.count}
-                </Text>
+              <View
+                key={r.emoji_code}
+                ref={(el) => pillRefs.current.set(r.emoji_code, el)}
+              >
+                <TouchableOpacity
+                  onPress={() => {
+                    if (!r.reacted) {
+                      const pill = pillRefs.current.get(r.emoji_code);
+                      if (pill && cardRef.current) {
+                        pill.measureLayout(
+                          cardRef.current,
+                          (x, y, w, h) => sparkRef.current?.trigger(x + w / 2, y + h / 2),
+                          () => {},
+                        );
+                      }
+                    }
+                    onAddReaction(r.emoji_code);
+                  }}
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.reactionPill, r.reacted && styles.reactionPillReacted]}>
+                    {r.imageUrl ? (
+                      <Image
+                        source={{ uri: r.imageUrl }}
+                        style={styles.reactionEmojiImage}
+                        contentFit="cover"
+                      />
+                    ) : (
+                      <Text style={styles.reactionEmojiText}>{r.emoji}</Text>
+                    )}
+                    <Text style={styles.reactionText}>{r.count}</Text>
+                  </View>
+                </TouchableOpacity>
               </View>
             ))}
-          </View>
+          </ScrollView>
         </View>
       )}
 
@@ -175,11 +218,7 @@ export default function RecordCard({
           >
             <View style={styles.emojiTopSection}>
               <TouchableOpacity onPress={onOpenKkimoji}>
-                <Ionicons
-                  name="add-circle-outline"
-                  size={24}
-                  color={Colors.gray[300]}
-                />
+                <Ionicons name="add-circle-outline" size={24} color={Colors.gray[300]} />
               </TouchableOpacity>
 
               {customGroupEmojis.map((item) => (
@@ -193,6 +232,7 @@ export default function RecordCard({
                       if (isDeleteMode) {
                         setIsDeleteMode(false);
                       } else {
+                        pendingSparkCode.current = item.emoji_code;
                         onAddReaction(item.emoji_code);
                       }
                     }}
@@ -213,11 +253,7 @@ export default function RecordCard({
                       style={styles.emojiCloseBtn}
                       onPress={() => onDeleteCustomEmoji?.(item.emoji_id)}
                     >
-                      <Ionicons
-                        name="close-circle"
-                        size={14}
-                        color={Colors.gray[200]}
-                      />
+                      <Ionicons name="close-circle" size={14} color={Colors.gray[200]} />
                     </TouchableOpacity>
                   )}
                 </Animated.View>
@@ -269,7 +305,8 @@ const styles = StyleSheet.create({
     width: 24,
     height: 24,
     borderRadius: 12,
-    backgroundColor: Colors.gray[100],
+    backgroundColor: Colors.gray[600],
+    overflow: "hidden",
   },
   cardName: { ...Typography.caption[1], color: Colors.gray[100] },
   cardActions: { flexDirection: "row", gap: 6 },
@@ -288,16 +325,31 @@ const styles = StyleSheet.create({
     right: 10,
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 6,
   },
   cardTime: { ...Typography.caption[1], color: Colors.gray[100] },
+  reactionScroll: { flex: 1 },
   reactionRow: { flexDirection: "row", gap: 4 },
   reactionPill: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 4,
     backgroundColor: Colors.gray[900],
     borderRadius: 999,
     paddingHorizontal: 8,
-    paddingVertical: 3,
+    height: 22,
+    borderWidth: 1,
+    borderColor: "transparent",
   },
+  reactionPillReacted: {
+    borderColor: Colors.main[400],
+  },
+  reactionEmojiImage: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+  },
+  reactionEmojiText: { ...Typography.caption[2] },
   reactionText: { ...Typography.caption[2], color: Colors.gray[100] },
   emojiOverlayWrapper: {
     ...StyleSheet.absoluteFillObject,
