@@ -550,21 +550,6 @@ export default function KkinipopPage() {
           </View>
           <View style={styles.headerRight}>
             <TouchableOpacity
-              onPress={() =>
-                selectedGroupId != null &&
-                router.push({
-                  pathname: "/camera/kkinipop",
-                  params: { groupId: selectedGroupId },
-                })
-              }
-            >
-              <Ionicons
-                name="camera-outline"
-                size={24}
-                color={Colors.gray[100]}
-              />
-            </TouchableOpacity>
-            <TouchableOpacity
               onPress={() => router.push("/notification")}
               accessibilityRole="button"
               accessibilityLabel="알림 화면으로 이동"
