@@ -13,11 +13,14 @@ export type MemberInfo = {
 
 export type HomeReminder = {
   is_time_to_kkirok: boolean;
+  title: string;
   description: string;
 };
 
 export type HomeFeedback = {
-  description?: string;
+  kcal_status: string;
+  title: string;
+  comment: string;
 };
 
 export type HomeData = {
