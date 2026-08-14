@@ -30,28 +30,37 @@ export default function SignupTermsDetail() {
   const [error, setError] = useState(false);
 
   useEffect(() => {
+    setLoading(true);
+    setError(false);
+    setContent("");
+
     if (!termUrl) {
       setLoading(false);
       setError(true);
       return;
     }
 
+    const controller = new AbortController();
+
     const fetchContent = async () => {
       try {
         const url = termUrl.startsWith("http")
           ? termUrl
           : await getDownloadUrlPublic(termUrl);
-        const res = await fetch(url);
+        if (controller.signal.aborted) return;
+        const res = await fetch(url, { signal: controller.signal });
         if (!res.ok) throw new Error();
         setContent(await res.text());
-      } catch {
+      } catch (e: any) {
+        if (e?.name === "AbortError") return;
         setError(true);
       } finally {
-        setLoading(false);
+        if (!controller.signal.aborted) setLoading(false);
       }
     };
 
     fetchContent();
+    return () => controller.abort();
   }, [termUrl]);
 
   return (
