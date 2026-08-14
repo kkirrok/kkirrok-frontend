@@ -168,7 +168,7 @@ export default function RecordCard({
             {record.reactions.map((r) => (
               <View
                 key={r.emoji_code}
-                ref={(el) => pillRefs.current.set(r.emoji_code, el)}
+                ref={(el) => { pillRefs.current.set(r.emoji_code, el); }}
               >
                 <TouchableOpacity
                   onPress={() => {
