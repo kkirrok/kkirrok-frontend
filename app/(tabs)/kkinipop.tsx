@@ -531,7 +531,7 @@ export default function KkinipopPage() {
           <View style={styles.headerCenter}>
             <View style={styles.headerTitleRow}>
               <Text style={styles.headerGroupName}>
-                {activeGroup?.name ?? "그룹 없음"}
+                {activeGroup?.name ?? "끼니팝"}
               </Text>
             </View>
             <View style={styles.progressBg}>
@@ -584,72 +584,98 @@ export default function KkinipopPage() {
             if (openPickerId) setOpenPickerId(null);
           }}
         >
-          {contentLoading || missionLoading ? (
-            <SkeletonMissionCard />
-          ) : (
-            visibleMissions.length > 0 &&
-            (() => {
-              const safeIndex = Math.min(
-                missionIndex,
-                visibleMissions.length - 1,
-              );
-              const m = visibleMissions[safeIndex];
-              return (
-                <MissionCard
-                  title={m.title}
-                  startAt={m.start_at}
-                  isRealTime={m.is_real_time}
-                  endAt={m.end_at}
-                  successMembers={m.success_members}
-                  successMemberCount={m.success_member_count}
-                  hasPrev={safeIndex > 0}
-                  hasNext={safeIndex < visibleMissions.length - 1}
-                  onPrev={() => setMissionIndex((i) => i - 1)}
-                  onNext={() => setMissionIndex((i) => i + 1)}
-                  onKkirok={() =>
-                    router.push({
-                      pathname: "/camera/kkinipop",
-                      params: { groupId: selectedGroupId },
-                    })
-                  }
-                  moabogiActive={
-                    moabogiMissionId ===
-                    visibleMissions[
-                      Math.min(missionIndex, visibleMissions.length - 1)
-                    ].mission_id
-                  }
-                  onMoabogi={() =>
-                    setMoabogiMissionId((prev) =>
-                      prev ===
-                      visibleMissions[
-                        Math.min(missionIndex, visibleMissions.length - 1)
-                      ].mission_id
-                        ? null
-                        : visibleMissions[
-                            Math.min(missionIndex, visibleMissions.length - 1)
-                          ].mission_id,
-                    )
-                  }
-                />
-              );
-            })()
-          )}
-
-          <WeekCalendar
-            selectedDate={selectedDate}
-            onSelectDate={setSelectedDate}
-          />
-
-          {contentLoading ? (
-            <>
-              <SkeletonRecordRow />
-              <SkeletonRecordRow />
-            </>
-          ) : records.length === 0 ? (
-            <View style={styles.emptyWrap}>
-              <Text style={styles.emptyText}>기록이 없습니다.</Text>
+          {groups.length === 0 ? (
+            <View style={styles.emptyGroupWrap}>
+              <Text style={styles.emptyGroupEmoji}>🍽️</Text>
+              <Text style={styles.emptyGroupTitle}>
+                아직 참여한 그룹이 없어요
+              </Text>
+              <Text style={styles.emptyGroupSub}>
+                그룹을 만들거나 초대 코드로{"\n"}참여해 보세요!
+              </Text>
+              <TouchableOpacity
+                style={styles.emptyGroupBtnPrimary}
+                onPress={() => setDrawerOpen(true)}
+              >
+                <Ionicons name="add" size={18} color={Colors.gray[100]} />
+                <Text style={styles.emptyGroupBtnText}>그룹 만들기</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.emptyGroupBtnOutline}
+                onPress={() => setDrawerOpen(true)}
+              >
+                <Ionicons name="enter-outline" size={18} color={Colors.gray[100]} />
+                <Text style={styles.emptyGroupBtnText}>초대 코드로 참여</Text>
+              </TouchableOpacity>
             </View>
           ) : (
+            <>
+              {contentLoading || missionLoading ? (
+                <SkeletonMissionCard />
+              ) : (
+                visibleMissions.length > 0 &&
+                (() => {
+                  const safeIndex = Math.min(
+                    missionIndex,
+                    visibleMissions.length - 1,
+                  );
+                  const m = visibleMissions[safeIndex];
+                  return (
+                    <MissionCard
+                      title={m.title}
+                      startAt={m.start_at}
+                      isRealTime={m.is_real_time}
+                      endAt={m.end_at}
+                      successMembers={m.success_members}
+                      successMemberCount={m.success_member_count}
+                      hasPrev={safeIndex > 0}
+                      hasNext={safeIndex < visibleMissions.length - 1}
+                      onPrev={() => setMissionIndex((i) => i - 1)}
+                      onNext={() => setMissionIndex((i) => i + 1)}
+                      onKkirok={() =>
+                        router.push({
+                          pathname: "/camera/kkinipop",
+                          params: { groupId: selectedGroupId },
+                        })
+                      }
+                      moabogiActive={
+                        moabogiMissionId ===
+                        visibleMissions[
+                          Math.min(missionIndex, visibleMissions.length - 1)
+                        ].mission_id
+                      }
+                      onMoabogi={() =>
+                        setMoabogiMissionId((prev) =>
+                          prev ===
+                          visibleMissions[
+                            Math.min(missionIndex, visibleMissions.length - 1)
+                          ].mission_id
+                            ? null
+                            : visibleMissions[
+                                Math.min(missionIndex, visibleMissions.length - 1)
+                              ].mission_id,
+                        )
+                      }
+                    />
+                  );
+                })()
+              )}
+
+              <WeekCalendar
+                selectedDate={selectedDate}
+                onSelectDate={setSelectedDate}
+              />
+
+              {contentLoading ? (
+                <>
+                  <SkeletonRecordRow />
+                  <SkeletonRecordRow />
+                </>
+              ) : records.length === 0 ? (
+                <View style={styles.emptyWrap}>
+                  <Text style={styles.emptyText}>기록이 없습니다.</Text>
+                </View>
+              ) : (
             <View style={styles.grid}>
               {rows.map((row, rowIdx) => (
                 <View
@@ -688,6 +714,8 @@ export default function KkinipopPage() {
                 </View>
               ))}
             </View>
+          )}
+          </>
           )}
         </Pressable>
       </ScrollView>
@@ -831,6 +859,41 @@ const styles = StyleSheet.create({
   scrollContent: { paddingHorizontal: 20, paddingTop: 16, gap: 24 },
   emptyWrap: { flex: 1, alignItems: "center", paddingTop: 80 },
   emptyText: { ...Typography.title.s, color: Colors.gray[300] },
+  emptyGroupWrap: {
+    flex: 1,
+    alignItems: "center",
+    justifyContent: "center",
+    gap: 12,
+    paddingHorizontal: 24,
+  },
+  emptyGroupEmoji: { fontSize: 56 },
+  emptyGroupTitle: { ...Typography.title.m, color: Colors.gray[100] },
+  emptyGroupSub: {
+    ...Typography.body.m,
+    color: Colors.gray[300],
+    textAlign: "center",
+    marginBottom: 8,
+  },
+  emptyGroupBtnPrimary: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    backgroundColor: Colors.main[500],
+    borderRadius: 100,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  emptyGroupBtnOutline: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    borderWidth: 1,
+    borderColor: Colors.gray[500],
+    borderRadius: 100,
+    paddingVertical: 12,
+    paddingHorizontal: 24,
+  },
+  emptyGroupBtnText: { ...Typography.title.xs, color: Colors.gray[100] },
   grid: { gap: 12 },
   gridRow: { flexDirection: "row", gap: 12 },
   cardPlaceholderSlot: { flex: 1 },
