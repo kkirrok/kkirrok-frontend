@@ -51,7 +51,7 @@ export default function Login() {
   return (
     <KkBackground>
       <KkHeader title="로그인 하기" />
-      <View style={[styles.content, { paddingBottom: insets.bottom }]}>
+      <View style={[styles.content, { paddingBottom: Math.max(insets.bottom, 32) }]}>
         <KkTextBox
           label="이메일"
           value={email}

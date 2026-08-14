@@ -87,7 +87,7 @@ export default function FindId() {
           error={isPhoneInvalid ? "올바르지 않은 전화번호입니다." : undefined}
         />
 
-        <View style={[styles.bottom, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <KkButton
             title="이메일 찾기"
             disabled={!isSubmitEnabled || loading}

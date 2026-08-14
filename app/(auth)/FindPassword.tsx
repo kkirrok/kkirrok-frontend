@@ -109,7 +109,7 @@ export default function FindPassword() {
           }
         />
 
-        <View style={[styles.bottom, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <KkButton
             title="비밀번호 찾기"
             disabled={!isSubmitEnabled}

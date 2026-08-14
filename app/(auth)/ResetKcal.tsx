@@ -62,7 +62,7 @@ export default function ResetKcal() {
           <Text style={styles.errorText}>1 ~ 10,000 사이의 칼로리를 입력해 주세요.</Text>
         )}
 
-        <View style={[styles.bottom, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <KkButton
             title="변경하기"
             disabled={!isKcalValid || loading}

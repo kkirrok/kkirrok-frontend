@@ -68,7 +68,7 @@ export default function ResetPassword() {
           error={isMismatch ? "동일하지 않습니다." : undefined}
         />
 
-        <View style={[styles.bottom, { paddingBottom: insets.bottom }]}>
+        <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <KkButton
             title="비밀번호 재설정"
             disabled={!isSubmitEnabled || loading}
