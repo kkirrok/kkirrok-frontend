@@ -10,9 +10,11 @@ import { isValidEmail } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function Login() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
@@ -49,7 +51,7 @@ export default function Login() {
   return (
     <KkBackground>
       <KkHeader title="로그인 하기" />
-      <View style={styles.content}>
+      <View style={[styles.content, { paddingBottom: insets.bottom }]}>
         <KkTextBox
           label="이메일"
           value={email}

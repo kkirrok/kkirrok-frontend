@@ -8,6 +8,7 @@ import { isValidPhone } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 const BIRTH_REGEX = /^\d{4}\.(0[1-9]|1[0-2])\.(0[1-9]|[12]\d|3[01])$/;
 
@@ -20,6 +21,7 @@ const formatBirthDate = (text: string) => {
 
 export default function FindId() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [phoneRaw, setPhoneRaw] = useState("");
@@ -85,7 +87,7 @@ export default function FindId() {
           error={isPhoneInvalid ? "올바르지 않은 전화번호입니다." : undefined}
         />
 
-        <View style={styles.bottom}>
+        <View style={[styles.bottom, { paddingBottom: insets.bottom }]}>
           <KkButton
             title="이메일 찾기"
             disabled={!isSubmitEnabled || loading}
@@ -123,6 +125,5 @@ const styles = StyleSheet.create({
   bottom: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingBottom: 32,
   },
 });

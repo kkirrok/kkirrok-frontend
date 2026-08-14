@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 type IconType =
   | "record"
@@ -114,6 +115,7 @@ function EmptyState() {
 }
 
 export default function NotificationPage() {
+  const insets = useSafeAreaInsets();
   const {
     data: notificationPages,
     fetchNextPage,
@@ -203,7 +205,7 @@ export default function NotificationPage() {
           renderItem={({ item }) => (
             <NotificationRow item={item} onPress={handlePress} />
           )}
-          contentContainerStyle={styles.list}
+          contentContainerStyle={[styles.list, { paddingBottom: insets.bottom + 32 }]}
           onEndReached={handleLoadMore}
           onEndReachedThreshold={0.3}
           ListFooterComponent={
@@ -224,7 +226,6 @@ const styles = StyleSheet.create({
   list: {
     paddingHorizontal: 16,
     paddingTop: 12,
-    paddingBottom: 32,
     gap: 12,
   },
   card: {

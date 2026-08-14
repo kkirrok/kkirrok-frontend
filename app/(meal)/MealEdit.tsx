@@ -7,6 +7,7 @@ import { useFocusEffect } from "@react-navigation/native";
 import { router, useLocalSearchParams } from "expo-router";
 import React, { useState } from "react";
 import { BackHandler, ScrollView, StyleSheet } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MealCards, { NutrientKey } from "./components/MealCards";
 import MealDonutChart from "./components/MealDonutChart";
 import MealTypeTab, { MealType } from "./components/MealTypeTab";
@@ -26,6 +27,7 @@ const defaultNutrients = (
 });
 
 export default function MealEdit() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{
     id?: string;
     mealName?: string;
@@ -116,7 +118,7 @@ export default function MealEdit() {
 
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
       >
         <MealDonutChart
@@ -177,7 +179,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
     gap: 16,
   },
   submitButton: {
