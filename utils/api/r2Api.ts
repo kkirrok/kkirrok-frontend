@@ -30,7 +30,11 @@ export async function getDownloadUrl(key: string) {
     throw new Error(json.message ?? "다운로드 URL 조회 실패");
   }
 
-  return json.data.download_url as string;
+  const downloadUrl = json.data?.download_url;
+  if (typeof downloadUrl !== "string") {
+    throw new Error("다운로드 URL 응답이 올바르지 않습니다.");
+  }
+  return downloadUrl;
 }
 
 export async function getDownloadUrlPublic(key: string) {
@@ -51,5 +55,9 @@ export async function getDownloadUrlPublic(key: string) {
     throw new Error(json.message ?? "다운로드 URL 조회 실패");
   }
 
-  return json.data.download_url as string;
+  const downloadUrl = json.data?.download_url;
+  if (typeof downloadUrl !== "string") {
+    throw new Error("다운로드 URL 응답이 올바르지 않습니다.");
+  }
+  return downloadUrl;
 }

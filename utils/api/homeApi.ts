@@ -1,55 +1,27 @@
 import { tokenStore } from "@/utils/store/tokenStore";
-import type { NutritionSummary } from "@/utils/types/meal";
+import type {
+  ExerciseRecommend,
+  FoodRecommend,
+  HomeFeedback,
+  HomeData,
+  HomeReminder,
+  MemberInfo,
+  RecommendationsData,
+} from "@/utils/types/home";
+
+export type {
+  ExerciseRecommend,
+  FoodRecommend,
+  HomeFeedback,
+  HomeData,
+  HomeReminder,
+  MemberInfo,
+  RecommendationsData,
+};
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 if (!BASE_URL)
   throw new Error("EXPO_PUBLIC_API_URL 환경변수가 설정되지 않았습니다.");
-
-export type MemberInfo = {
-  meal_style: string;
-  meal_style_label: string;
-  nickname: string;
-};
-
-export type HomeReminder = {
-  is_time_to_kkirok: boolean;
-  title: string;
-  description: string;
-};
-
-export type HomeFeedback = {
-  kcal_status: string;
-  title: string;
-  comment: string;
-};
-
-export type HomeData = {
-  member_info: MemberInfo | null;
-  reminder: HomeReminder | null;
-  nutrition: NutritionSummary | null;
-  feedback: HomeFeedback | null;
-};
-
-export type ExerciseRecommend = {
-  exercise_name: string;
-  description: string;
-  category: string;
-  emoji: string;
-};
-
-export type FoodRecommend = {
-  food_name: string;
-  description: string;
-  target_nutrient_type: string;
-  emoji: string;
-};
-
-export type RecommendationsData = {
-  target_exercise_kcal: number;
-  exercise_recommend: ExerciseRecommend[];
-  remaining_food_kcal: number;
-  food_recommend: FoodRecommend[];
-};
 
 export async function fetchHome(signal?: AbortSignal): Promise<HomeData> {
   const token = await tokenStore.get();

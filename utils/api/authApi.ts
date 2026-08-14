@@ -105,12 +105,15 @@ export async function setProfile(
   } as any);
 
   if (imageUri) {
-    const ext = imageUri.split(".").pop()?.toLowerCase() ?? "jpg";
-    const mimeType =
-      ext === "png" ? "image/png"
-      : ext === "webp" ? "image/webp"
-      : ext === "heic" || ext === "heif" ? "image/heic"
-      : "image/jpeg";
+    const MIME_MAP: Record<string, string> = {
+      jpg: "image/jpeg", jpeg: "image/jpeg",
+      png: "image/png", webp: "image/webp",
+      heic: "image/heic", heif: "image/heif",
+    };
+    const path = imageUri.split("?")[0].split("#")[0];
+    const rawExt = path.split(".").pop()?.toLowerCase() ?? "";
+    const ext = rawExt in MIME_MAP ? rawExt : "jpg";
+    const mimeType = MIME_MAP[ext];
     formData.append("image", {
       uri: imageUri,
       type: mimeType,
