@@ -4,15 +4,18 @@ import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { signUpLocal } from "@/utils/api/authApi";
+import { agreeTerms } from "@/utils/api/termsApi";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { isValidPassword } from "@/utils/validation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SignupPassword() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const insets = useSafeAreaInsets();
+  const { email, termsChecked } = useLocalSearchParams<{ email: string; termsChecked?: string }>();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -36,13 +39,17 @@ export default function SignupPassword() {
       await tokenStore.save(res.data.access_token);
       await tokenStore.setOnboarding(false);
       if (res.data.pending_terms_agree.length > 0) {
-        router.replace({
-          pathname: "/(auth)/TermsAgreement",
-          params: { next: "onboarding" },
-        });
-      } else {
-        router.replace("/(auth)/KkirokStart");
+        const userChoices: Record<string, boolean> = termsChecked
+          ? JSON.parse(termsChecked)
+          : {};
+        await agreeTerms(
+          res.data.pending_terms_agree.map((t) => ({
+            type: t.type,
+            is_agree: userChoices[t.type] ?? t.is_required,
+          })),
+        );
       }
+      router.replace("/(auth)/KkirokStart");
     } catch (e) {
       setErrorMessage(
         e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
@@ -78,7 +85,7 @@ export default function SignupPassword() {
           error={isMismatch ? "동일하지 않습니다." : undefined}
         />
 
-        <View style={styles.bottom}>
+        <View style={[styles.bottom, { paddingBottom: insets.bottom }]}>
           <KkButton
             title="회원가입"
             disabled={!isSubmitEnabled || loading}
@@ -125,6 +132,5 @@ const styles = StyleSheet.create({
   bottom: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingBottom: 32,
   },
 });

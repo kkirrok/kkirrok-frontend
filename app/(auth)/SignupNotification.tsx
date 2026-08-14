@@ -4,13 +4,14 @@ import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import { Colors } from "@/constants/colors";
 import { NOTIFICATION_ITEMS } from "@/constants/notifications";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, Switch, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function SignupNotification() {
   const router = useRouter();
+  const { termsChecked } = useLocalSearchParams<{ termsChecked?: string }>();
   const [settings, setSettings] = useState<Record<string, boolean>>(
     Object.fromEntries(NOTIFICATION_ITEMS.map((n) => [n.id, false])),
   );
@@ -56,7 +57,12 @@ export default function SignupNotification() {
             {/* TODO: 알림 설정 저장 API 스펙 확정 후 settings 값 전달 (ex. PATCH /v1/users/notifications) */}
             <KkButton
               title="다음"
-              onPress={() => router.push("/(auth)/Signup")}
+              onPress={() =>
+                router.push({
+                  pathname: "/(auth)/Signup",
+                  params: { termsChecked },
+                })
+              }
             />
           </View>
         </View>

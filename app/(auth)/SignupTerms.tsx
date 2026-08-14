@@ -116,7 +116,12 @@ export default function SignupTerms() {
               <KkButton
                 title="다음"
                 disabled={!requiredChecked}
-                onPress={() => router.push("/(auth)/SignupNotification")}
+                onPress={() =>
+                  router.push({
+                    pathname: "/(auth)/SignupNotification",
+                    params: { termsChecked: JSON.stringify(checked) },
+                  })
+                }
               />
             </View>
           </View>
