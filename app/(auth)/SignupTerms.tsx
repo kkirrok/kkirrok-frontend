@@ -22,15 +22,21 @@ export default function SignupTerms() {
   const [terms, setTerms] = useState<TermItem[]>([]);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [termsLoadFailed, setTermsLoadFailed] = useState(false);
 
-  useEffect(() => {
+  const fetchTerms = () => {
+    setLoading(true);
+    setTermsLoadFailed(false);
     getTermsList()
       .then((list) => {
         setTerms(list);
         setChecked(Object.fromEntries(list.map((t) => [t.type, false])));
       })
+      .catch(() => setTermsLoadFailed(true))
       .finally(() => setLoading(false));
-  }, []);
+  };
+
+  useEffect(() => { fetchTerms(); }, []);
 
   const allChecked = terms.every((t) => checked[t.type]);
   const requiredChecked = terms
@@ -52,6 +58,13 @@ export default function SignupTerms() {
         {loading ? (
           <View style={styles.center}>
             <ActivityIndicator color={Colors.main[500]} />
+          </View>
+        ) : termsLoadFailed ? (
+          <View style={styles.center}>
+            <Text style={styles.errorText}>약관을 불러오지 못했습니다.</Text>
+            <TouchableOpacity onPress={fetchTerms} style={styles.retryBtn}>
+              <Text style={styles.retryText}>다시 시도</Text>
+            </TouchableOpacity>
           </View>
         ) : (
           <View style={styles.content}>
@@ -180,5 +193,20 @@ const styles = StyleSheet.create({
     flex: 1,
     justifyContent: "flex-end",
     paddingBottom: 12,
+  },
+  errorText: {
+    ...Typography.body.m,
+    color: Colors.gray[400],
+    marginBottom: 12,
+  },
+  retryBtn: {
+    paddingVertical: 8,
+    paddingHorizontal: 24,
+    borderRadius: 100,
+    backgroundColor: Colors.gray[800],
+  },
+  retryText: {
+    ...Typography.body.m,
+    color: Colors.gray[100],
   },
 });

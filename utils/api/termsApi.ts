@@ -15,11 +15,12 @@ export async function agreeTerms(
   agrees: { type: string; is_agree: boolean }[],
 ): Promise<void> {
   const token = await tokenStore.get();
+  if (!token) throw new Error("인증 토큰이 없습니다. 다시 로그인해 주세요.");
   const res = await fetch(`${BASE_URL}/v1/terms/agree`, {
     method: "POST",
     headers: {
       "Content-Type": "application/json;charset=UTF-8",
-      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      Authorization: `Bearer ${token}`,
     },
     body: JSON.stringify({ agrees }),
   });

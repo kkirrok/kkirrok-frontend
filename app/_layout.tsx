@@ -9,6 +9,7 @@ import {
 import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
 import { Stack, router } from "expo-router";
+import { tokenStore } from "@/utils/store/tokenStore";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 import { Platform, Text } from "react-native";
@@ -59,14 +60,15 @@ if (!naverId || !naverSecret) {
   }
 }
 
-function handleTermsError(error: unknown) {
+async function handleTermsError(error: unknown) {
   if (
     error instanceof Error &&
     error.message === "TERMS_AGREEMENT_REQUIRED"
   ) {
+    const onboardingDone = await tokenStore.getOnboarding();
     router.replace({
       pathname: "/(auth)/TermsAgreement",
-      params: { next: "tabs" },
+      params: { next: onboardingDone ? "tabs" : "onboarding" },
     });
   }
 }

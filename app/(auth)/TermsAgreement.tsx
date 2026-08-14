@@ -4,6 +4,7 @@ import KkButton from "@/components/KkButton";
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { agreeTerms, getTermsList } from "@/utils/api/termsApi";
+import { tokenStore } from "@/utils/store/tokenStore";
 import { TERM_LABELS, TermItem } from "@/utils/types/terms";
 import { Ionicons } from "@expo/vector-icons";
 import { useLocalSearchParams, useRouter } from "expo-router";
@@ -24,9 +25,16 @@ export default function TermsAgreement() {
   const [terms, setTerms] = useState<TermItem[]>([]);
   const [checked, setChecked] = useState<Record<string, boolean>>({});
   const [loading, setLoading] = useState(true);
+  const [termsLoadFailed, setTermsLoadFailed] = useState(false);
   const [submitting, setSubmitting] = useState(false);
   const [errorMessage, setErrorMessage] = useState("");
   const [errorModalVisible, setErrorModalVisible] = useState(false);
+
+  useEffect(() => {
+    tokenStore.get().then((token) => {
+      if (!token) router.replace("/(auth)/Login");
+    });
+  }, []);
 
   useEffect(() => {
     getTermsList()
@@ -35,6 +43,7 @@ export default function TermsAgreement() {
         setChecked(Object.fromEntries(list.map((t) => [t.type, false])));
       })
       .catch(() => {
+        setTermsLoadFailed(true);
         setErrorMessage("약관 목록을 불러오는 데 실패했습니다.");
         setErrorModalVisible(true);
       })
@@ -149,7 +158,7 @@ export default function TermsAgreement() {
             <View style={styles.bottom}>
               <KkButton
                 title="동의하고 시작하기"
-                disabled={!requiredChecked || submitting}
+                disabled={termsLoadFailed || !requiredChecked || submitting}
                 onPress={handleSubmit}
               />
             </View>
