@@ -139,6 +139,8 @@ export default function KkimojiCamera() {
         <TouchableOpacity
           style={styles.flipBtn}
           onPress={() => setFacing((f) => (f === "front" ? "back" : "front"))}
+          accessibilityRole="button"
+          accessibilityLabel={facing === "front" ? "후면 카메라로 전환" : "전면 카메라로 전환"}
         >
           <Ionicons name="camera-reverse-outline" size={32} color={Colors.gray[100]} />
         </TouchableOpacity>

@@ -61,10 +61,10 @@ export default function RecordCard({
     const code = pendingSparkCode.current;
     if (!code || pickerOpen) return;
 
-    requestAnimationFrame(() => {
+    const frameId = requestAnimationFrame(() => {
       const pill = pillRefs.current.get(code);
+      pendingSparkCode.current = null;
       if (pill && cardRef.current) {
-        pendingSparkCode.current = null;
         pill.measureLayout(
           cardRef.current,
           (x, y, w, h) => sparkRef.current?.trigger(x + w / 2, y + h / 2),
@@ -72,6 +72,8 @@ export default function RecordCard({
         );
       }
     });
+
+    return () => cancelAnimationFrame(frameId);
   }, [record.reactions, pickerOpen]);
 
   useEffect(() => {
