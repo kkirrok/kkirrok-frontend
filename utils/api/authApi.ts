@@ -94,8 +94,6 @@ export async function setProfile(
 ): Promise<void> {
   const token = await getRequiredToken();
 
-  // React Native FormData doesn't serialize Blob correctly at the native layer.
-  // Writing JSON to a temp file and using its URI is the reliable multipart approach in RN.
   const tempFile = new File(Paths.cache, "profile_request.json");
   await tempFile.write(JSON.stringify(params));
 
@@ -107,10 +105,16 @@ export async function setProfile(
   } as any);
 
   if (imageUri) {
+    const ext = imageUri.split(".").pop()?.toLowerCase() ?? "jpg";
+    const mimeType =
+      ext === "png" ? "image/png"
+      : ext === "webp" ? "image/webp"
+      : ext === "heic" || ext === "heif" ? "image/heic"
+      : "image/jpeg";
     formData.append("image", {
       uri: imageUri,
-      type: "image/jpeg",
-      name: "profile.jpg",
+      type: mimeType,
+      name: `profile.${ext}`,
     } as any);
   }
 
@@ -186,7 +190,9 @@ export async function getUserRole(): Promise<string> {
   });
 
   const json = await res.json();
-  if (!res.ok) throw new Error(json.message ?? "권한 조회에 실패했습니다.");
+  if (!res.ok) {
+    throw new Error(json.code ?? json.message ?? "권한 조회에 실패했습니다.");
+  }
 
   return json.data.role;
 }

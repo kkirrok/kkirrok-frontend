@@ -26,7 +26,12 @@ export default function Login() {
       await tokenStore.save(res.data.access_token);
       await tokenStore.setOnboarding(res.data.onboarding_completed);
       requestAndRegisterPushToken().catch(() => {});
-      if (res.data.onboarding_completed) {
+      if (res.data.pending_terms_agree.length > 0) {
+        router.replace({
+          pathname: "/(auth)/TermsAgreement",
+          params: { next: res.data.onboarding_completed ? "tabs" : "onboarding" },
+        });
+      } else if (res.data.onboarding_completed) {
         router.replace("/(tabs)");
       } else {
         router.replace("/(auth)/KkirokStart");

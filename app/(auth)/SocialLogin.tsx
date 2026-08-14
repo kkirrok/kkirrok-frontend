@@ -24,11 +24,17 @@ export default function SocialLogin() {
   const handleLoginResult = async (
     accessToken: string,
     onboardingCompleted: boolean,
+    hasPendingTerms: boolean,
   ) => {
     await tokenStore.save(accessToken);
     await tokenStore.setOnboarding(onboardingCompleted);
     requestAndRegisterPushToken().catch(() => {});
-    if (onboardingCompleted) {
+    if (hasPendingTerms) {
+      router.replace({
+        pathname: "/(auth)/TermsAgreement",
+        params: { next: onboardingCompleted ? "tabs" : "onboarding" },
+      });
+    } else if (onboardingCompleted) {
       router.replace("/(tabs)");
     } else {
       router.replace("/(auth)/KkirokStart");
@@ -42,6 +48,7 @@ export default function SocialLogin() {
       await handleLoginResult(
         res.data.access_token,
         res.data.onboarding_completed,
+        res.data.pending_terms_agree.length > 0,
       );
     } catch (e) {
       setErrorMessage(
@@ -64,6 +71,7 @@ export default function SocialLogin() {
       await handleLoginResult(
         res.data.access_token,
         res.data.onboarding_completed,
+        res.data.pending_terms_agree.length > 0,
       );
     } catch (e) {
       setErrorMessage(
