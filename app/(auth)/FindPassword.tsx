@@ -8,9 +8,11 @@ import { isValidEmail } from "@/utils/validation";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function FindPassword() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [code, setCode] = useState("");
@@ -107,7 +109,7 @@ export default function FindPassword() {
           }
         />
 
-        <View style={styles.bottom}>
+        <View style={[styles.bottom, { paddingBottom: insets.bottom }]}>
           <KkButton
             title="비밀번호 찾기"
             disabled={!isSubmitEnabled}
@@ -149,6 +151,5 @@ const styles = StyleSheet.create({
   bottom: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingBottom: 32,
   },
 });
