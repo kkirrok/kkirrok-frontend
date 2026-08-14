@@ -35,7 +35,14 @@ export default function SignupPassword() {
       const res = await signUpLocal(email, password);
       await tokenStore.save(res.data.access_token);
       await tokenStore.setOnboarding(false);
-      router.replace("/(auth)/KkirokStart");
+      if (res.data.pending_terms_agree.length > 0) {
+        router.replace({
+          pathname: "/(auth)/TermsAgreement",
+          params: { next: "onboarding" },
+        });
+      } else {
+        router.replace("/(auth)/KkirokStart");
+      }
     } catch (e) {
       setErrorMessage(
         e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
