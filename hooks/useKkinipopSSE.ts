@@ -35,12 +35,21 @@ export function useKkinipopSSE({
     let es: EventSource<SSEEventMap> | null = null;
     let closed = false;
 
-    (async () => {
+    async function connect() {
+      if (closed) return;
       const token = await tokenStore.get();
       if (!token || closed) return;
 
       es = new EventSource<SSEEventMap>(`${BASE_URL}/v1/sse/subscribe`, {
         headers: { Authorization: `Bearer ${token}` },
+      });
+
+      es.addEventListener("error", async () => {
+        if (closed) return;
+        es?.close();
+        es = null;
+        await new Promise<void>((resolve) => setTimeout(resolve, 3000));
+        connect();
       });
 
       es.addEventListener("reaction-updated", (event: CustomEvent<"reaction-updated">) => {
@@ -158,7 +167,9 @@ export function useKkinipopSSE({
           onMemberChange();
         } catch {}
       });
-    })();
+    }
+
+    connect();
 
     return () => {
       closed = true;

@@ -41,6 +41,7 @@ type Props = {
   onGroupDeleted: (groupId: number) => void;
   onGroupLeft: (groupId: number) => void;
   onMemberKicked: (groupId: number) => void;
+  initialView?: "main" | "create" | "join";
 };
 
 export default function GroupDrawer({
@@ -54,6 +55,7 @@ export default function GroupDrawer({
   onGroupDeleted,
   onGroupLeft,
   onMemberKicked,
+  initialView = "main",
 }: Props) {
   const insets = useSafeAreaInsets();
   const slideAnim = useRef(new Animated.Value(-DRAWER_WIDTH)).current;
@@ -124,6 +126,7 @@ export default function GroupDrawer({
   useEffect(() => {
     if (visible) {
       setMounted(true);
+      setView(initialView);
       Animated.parallel([
         Animated.timing(slideAnim, {
           toValue: 0,

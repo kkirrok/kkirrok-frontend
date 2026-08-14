@@ -79,6 +79,8 @@ export default function KkinipopPage() {
     (GroupEmoji & { imageUrl: string | null })[]
   >([]);
   const [profileImageCache, setProfileImageCache] = useState<Record<number, string>>({});
+  const failedProfileIdsRef = useRef(new Set<number>());
+  const [drawerInitialView, setDrawerInitialView] = useState<"main" | "create" | "join">("main");
   const [groupsLoading, setGroupsLoading] = useState(true);
   const [contentLoading, setContentLoading] = useState(false);
   const [missionLoading, setMissionLoading] = useState(false);
@@ -274,9 +276,15 @@ export default function KkinipopPage() {
 
   useEffect(() => {
     let cancelled = false;
-    const needProfileFetch = todayPosts.filter(
-      (p) => p.profile_image && !(p.member_id in profileImageCache),
-    );
+    const seen = new Set<number>();
+    const needProfileFetch = todayPosts.filter((p) => {
+      if (!p.profile_image) return false;
+      if (p.member_id in profileImageCache) return false;
+      if (failedProfileIdsRef.current.has(p.member_id)) return false;
+      if (seen.has(p.member_id)) return false;
+      seen.add(p.member_id);
+      return true;
+    });
     if (needProfileFetch.length) {
       Promise.all(
         needProfileFetch.map(async (p) => {
@@ -284,6 +292,7 @@ export default function KkinipopPage() {
             const url = await getDownloadUrl(p.profile_image!);
             return [p.member_id, url] as [number, string];
           } catch {
+            failedProfileIdsRef.current.add(p.member_id);
             return null;
           }
         }),
@@ -595,14 +604,14 @@ export default function KkinipopPage() {
               </Text>
               <TouchableOpacity
                 style={styles.emptyGroupBtnPrimary}
-                onPress={() => setDrawerOpen(true)}
+                onPress={() => { setDrawerInitialView("create"); setDrawerOpen(true); }}
               >
                 <Ionicons name="add" size={18} color={Colors.gray[100]} />
                 <Text style={styles.emptyGroupBtnText}>그룹 만들기</Text>
               </TouchableOpacity>
               <TouchableOpacity
                 style={styles.emptyGroupBtnOutline}
-                onPress={() => setDrawerOpen(true)}
+                onPress={() => { setDrawerInitialView("join"); setDrawerOpen(true); }}
               >
                 <Ionicons name="enter-outline" size={18} color={Colors.gray[100]} />
                 <Text style={styles.emptyGroupBtnText}>초대 코드로 참여</Text>
@@ -723,6 +732,7 @@ export default function KkinipopPage() {
       <GroupDrawer
         visible={drawerOpen}
         onClose={() => setDrawerOpen(false)}
+        initialView={drawerInitialView}
         groups={groups}
         selectedGroupId={selectedGroupId}
         onSelectGroup={setSelectedGroupId}
