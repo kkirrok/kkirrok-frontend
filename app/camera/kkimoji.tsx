@@ -4,6 +4,7 @@ import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import { Colors } from "@/constants/colors";
 import { createGroupEmoji } from "@/utils/api/kkinipopApi";
+import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { Image } from "expo-image";
 import { router, useLocalSearchParams } from "expo-router";
@@ -28,6 +29,7 @@ export default function KkimojiCamera() {
   const [capturedUri, setCapturedUri] = useState<string | null>(
     paramUri ?? null,
   );
+  const [facing, setFacing] = useState<"front" | "back">("front");
   const [cameraReady, setCameraReady] = useState(false);
   const [isTaking, setIsTaking] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
@@ -128,12 +130,18 @@ export default function KkimojiCamera() {
         <CameraView
           style={{ flex: 1 }}
           ref={cameraRef}
-          facing="front"
+          facing={facing}
           onCameraReady={() => setCameraReady(true)}
           onMountError={(error) => console.error("카메라 마운트 에러:", error)}
         />
       </View>
       <View style={[styles.shutterWrap, { top: shutterTop }]}>
+        <TouchableOpacity
+          style={styles.flipBtn}
+          onPress={() => setFacing((f) => (f === "front" ? "back" : "front"))}
+        >
+          <Ionicons name="camera-reverse-outline" size={32} color={Colors.gray[100]} />
+        </TouchableOpacity>
         <TouchableOpacity
           style={styles.shutterOuter}
           onPress={takePicture}
@@ -141,6 +149,7 @@ export default function KkimojiCamera() {
         >
           <View style={styles.shutterInner} />
         </TouchableOpacity>
+        <View style={styles.flipPlaceholder} />
       </View>
     </View>
   );
@@ -177,7 +186,20 @@ const styles = StyleSheet.create({
     position: "absolute",
     left: 0,
     right: 0,
+    flexDirection: "row",
     alignItems: "center",
+    justifyContent: "center",
+    gap: 40,
+  },
+  flipBtn: {
+    width: 48,
+    height: 48,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  flipPlaceholder: {
+    width: 48,
+    height: 48,
   },
   shutterOuter: {
     width: 72,
