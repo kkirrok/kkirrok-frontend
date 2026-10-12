@@ -7,6 +7,7 @@ import WeekCalendar from "@/components/kkinipop/WeekCalendar";
 import SkeletonMissionCard from "@/components/skeleton/SkeletonMissionCard";
 import SkeletonRecordRow from "@/components/skeleton/SkeletonRecordRow";
 import { useKkinipopSSE } from "@/hooks/useKkinipopSSE";
+import { useR2ImageUrls } from "@/hooks/useR2ImageUrl";
 import { Colors } from "@/constants/colors";
 import { SYSTEM_EMOJI_CHAR } from "@/constants/kkinipop";
 import { Typography } from "@/constants/typography";
@@ -22,7 +23,6 @@ import {
   fetchSystemEmojis,
 } from "@/utils/api/kkinipopApi";
 import { alertError } from "@/utils/alertError";
-import { getDownloadUrl } from "@/utils/api/r2Api";
 import { tokenStore } from "@/utils/store/tokenStore";
 import {
   Group,
@@ -69,7 +69,6 @@ export default function KkinipopPage() {
   const today = new Date();
   const [selectedDate, setSelectedDate] = useState(today);
   const [openPickerId, setOpenPickerId] = useState<string | null>(null);
-  const [imageCache, setImageCache] = useState<Record<number, string>>({});
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [groups, setGroups] = useState<Group[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<number | null>(null);
@@ -82,11 +81,8 @@ export default function KkinipopPage() {
   const [globalSystemEmojis, setGlobalSystemEmojis] = useState<SystemEmoji[]>(
     [],
   );
-  const [customEmojiList, setCustomEmojiList] = useState<
-    (GroupEmoji & { imageUrl: string | null })[]
-  >([]);
-  const [profileImageCache, setProfileImageCache] = useState<Record<number, string>>({});
-  const failedProfileIdsRef = useRef(new Set<number>());
+  // 이미지는 R2 key로 보관하고, 화면에 그릴 때 URL로 변환 (만료된 URL을 상태에 남기지 않기 위함)
+  const [customEmojiList, setCustomEmojiList] = useState<GroupEmoji[]>([]);
   const [drawerInitialView, setDrawerInitialView] = useState<"main" | "create" | "join">("main");
   const [groupsLoading, setGroupsLoading] = useState(true);
   const groupsVersionRef = useRef(0);
@@ -143,18 +139,7 @@ export default function KkinipopPage() {
     try {
       const data = await fetchGroupEmojis(groupId, controller.signal);
       if (controller.signal.aborted) return;
-      const withUrls = await Promise.all(
-        data.custom_emojis.map(async (e) => {
-          if (!e.image) return { ...e, imageUrl: null };
-          try {
-            const url = await getDownloadUrl(e.image);
-            return { ...e, imageUrl: url };
-          } catch {
-            return { ...e, imageUrl: null };
-          }
-        }),
-      );
-      if (!controller.signal.aborted) setCustomEmojiList(withUrls);
+      setCustomEmojiList(data.custom_emojis);
     } catch (err) {
       alertError(err, "이모지 목록을 불러오지 못했어요.");
     }
@@ -170,25 +155,8 @@ export default function KkinipopPage() {
     try {
       const data = await fetchMissions(groupId, date, controller.signal);
       if (controller.signal.aborted) return;
-      const resolvedData = await Promise.all(
-        data.map(async (mission) => ({
-          ...mission,
-          success_members: await Promise.all(
-            mission.success_members.map(async (member) => {
-              if (!member.profile_image) return member;
-              try {
-                const url = await getDownloadUrl(member.profile_image);
-                return { ...member, profile_image: url };
-              } catch {
-                return member;
-              }
-            }),
-          ),
-        })),
-      );
-      if (controller.signal.aborted) return;
-      setMissions(resolvedData);
-      const realTimeIdx = resolvedData.findIndex((m) => m.is_real_time);
+      setMissions(data);
+      const realTimeIdx = data.findIndex((m) => m.is_real_time);
       setMissionIndex(realTimeIdx >= 0 ? realTimeIdx : 0);
     } catch (err) {
       alertError(err, "미션을 불러오지 못했어요.");
@@ -340,70 +308,15 @@ export default function KkinipopPage() {
   const todayPosts =
     postDays.find((d) => d.date.startsWith(selectedDateStr))?.posts ?? [];
 
-  useEffect(() => {
-    let cancelled = false;
-    const seen = new Set<number>();
-    const needProfileFetch = todayPosts.filter((p) => {
-      if (!p.profile_image) return false;
-      if (p.member_id in profileImageCache) return false;
-      if (failedProfileIdsRef.current.has(p.member_id)) return false;
-      if (seen.has(p.member_id)) return false;
-      seen.add(p.member_id);
-      return true;
-    });
-    if (needProfileFetch.length) {
-      Promise.all(
-        needProfileFetch.map(async (p) => {
-          try {
-            const url = await getDownloadUrl(p.profile_image!);
-            return [p.member_id, url] as [number, string];
-          } catch {
-            failedProfileIdsRef.current.add(p.member_id);
-            return null;
-          }
-        }),
-      ).then((entries) => {
-        if (cancelled) return;
-        setProfileImageCache((prev) => {
-          const next = { ...prev };
-          for (const e of entries) if (e) next[e[0]] = e[1];
-          return next;
-        });
-      });
-    }
-    return () => { cancelled = true; };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [todayPosts]);
-
-  useEffect(() => {
-    let cancelled = false;
-    const needFetch = todayPosts.filter(
-      (p) => p.image && !(p.post_id in imageCache),
-    );
-    if (!needFetch.length) return;
-    Promise.all(
-      needFetch.map(async (p) => {
-        try {
-          const url = await getDownloadUrl(p.image!);
-          return [p.post_id, url] as [number, string];
-        } catch {
-          return null;
-        }
-      }),
-    ).then((entries) => {
-      if (cancelled) return;
-      setImageCache((prev) => {
-        const next = { ...prev };
-        for (const e of entries) if (e) next[e[0]] = e[1];
-        return next;
-      });
-    });
-    return () => {
-      cancelled = true;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [todayPosts]);
-
+  // 게시글 사진·작성자 프로필 URL (캐시 기간이 지나면 자동으로 새 URL을 받음)
+  const imageUrls = useR2ImageUrls(
+    todayPosts.flatMap((p) => [p.image, p.profile_image]),
+  );
+  const customEmojiUrls = useR2ImageUrls(customEmojiList.map((e) => e.image));
+  const customEmojisWithUrl = customEmojiList.map((e) => ({
+    ...e,
+    imageUrl: e.image ? (customEmojiUrls[e.image] ?? null) : null,
+  }));
 
   const visibleMissions = missions.filter((m) => {
     if (!m.start_at) return true;
@@ -420,12 +333,12 @@ export default function KkinipopPage() {
           hour12: false,
         })
       : "--:--",
-    image: imageCache[p.post_id] ?? null,
-    profileImage: profileImageCache[p.member_id] ?? null,
+    image: p.image ? (imageUrls[p.image] ?? null) : null,
+    profileImage: p.profile_image ? (imageUrls[p.profile_image] ?? null) : null,
     isOwn: p.member_id === myMemberId,
     missionId: p.mission_id,
     reactions: p.reactions.map((r) => {
-      const customEmoji = customEmojiList.find((e) => e.emoji_code === r.emoji_code);
+      const customEmoji = customEmojisWithUrl.find((e) => e.emoji_code === r.emoji_code);
       return {
         emoji:
           SYSTEM_EMOJI_CHAR[r.emoji_code] ??
@@ -599,7 +512,11 @@ export default function KkinipopPage() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.headerBtn}
-            onPress={() => setDrawerOpen(true)}
+            onPress={() => {
+              // 빈 상태에서 "그룹 만들기/참여"로 열었던 화면이 남지 않도록 목록 화면으로 열기
+              setDrawerInitialView("main");
+              setDrawerOpen(true);
+            }}
           >
             <Ionicons name="menu" size={24} color={Colors.gray[100]} />
           </TouchableOpacity>
@@ -772,7 +689,7 @@ export default function KkinipopPage() {
                         emoji_code: e.emoji_code,
                         display: SYSTEM_EMOJI_CHAR[e.emoji_code] ?? e.label,
                       }))}
-                      customGroupEmojis={customEmojiList}
+                      customGroupEmojis={customEmojisWithUrl}
                       onDeleteCustomEmoji={handleDeleteCustomEmoji}
                     />
                   ))}

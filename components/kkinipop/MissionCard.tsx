@@ -1,5 +1,6 @@
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { useR2ImageUrls } from "@/hooks/useR2ImageUrl";
 import { MissionSuccessMember } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
@@ -93,6 +94,11 @@ export default function MissionCard({
   onMoabogi,
   moabogiActive = false,
 }: Props) {
+  const visibleMembers = successMembers.slice(0, 4);
+  // profile_image는 R2 key이므로 URL로 변환해서 표시
+  const memberImageUrls = useR2ImageUrls(
+    visibleMembers.map((m) => m.profile_image),
+  );
   const isLiveByTime = useIsLive(startAt, endAt);
   const isLive = isRealTime || isLiveByTime;
   const countdown = useCountdown(endAt);
@@ -178,11 +184,11 @@ export default function MissionCard({
       {/* 하단 행 */}
       <View style={styles.missionBottomRow}>
         <View style={styles.avatarStack}>
-          {successMembers.slice(0, 4).map((m, i) =>
-            m.profile_image ? (
+          {visibleMembers.map((m, i) =>
+            m.profile_image && memberImageUrls[m.profile_image] ? (
               <Image
                 key={m.member_id}
-                source={{ uri: m.profile_image }}
+                source={{ uri: memberImageUrls[m.profile_image] }}
                 style={[styles.avatar, { marginLeft: i === 0 ? 0 : -10 }]}
               />
             ) : (

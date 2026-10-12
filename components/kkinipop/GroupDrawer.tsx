@@ -1,6 +1,7 @@
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { useR2ImageUrls } from "@/hooks/useR2ImageUrl";
 import { alertError } from "@/utils/alertError";
 import {
   createGroup,
@@ -10,7 +11,6 @@ import {
   kickMember,
   quitGroup,
 } from "@/utils/api/kkinipopApi";
-import { getDownloadUrl } from "@/utils/api/r2Api";
 import { Group, GroupMember } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
 import * as Clipboard from "expo-clipboard";
@@ -74,7 +74,6 @@ export default function GroupDrawer({
   const [showLeaveConfirm, setShowLeaveConfirm] = useState(false);
   const [leaving, setLeaving] = useState(false);
   const [members, setMembers] = useState<GroupMember[]>([]);
-  const [memberImages, setMemberImages] = useState<Record<number, string>>({});
   const [membersLoading, setMembersLoading] = useState(false);
   const [kickTarget, setKickTarget] = useState<GroupMember | null>(null);
   const [kicking, setKicking] = useState(false);
@@ -86,11 +85,12 @@ export default function GroupDrawer({
   // 멤버 목록의 본인 정보를 우선 사용하고, 로딩 전에는 그룹 정보로 판단
   const me = members.find((m) => m.is_me);
   const isManageLeader = me ? me.leader : (manageGroup?.is_leader ?? false);
+  // 멤버 프로필 URL (끼니팝 화면과 캐시를 공유해 이미 받은 URL은 다시 요청하지 않음)
+  const memberImageUrls = useR2ImageUrls(members.map((m) => m.profile_image));
 
   const openManage = (groupId: number) => {
     // 이전 그룹의 멤버 정보로 권한을 판단하지 않도록 먼저 비움
     setMembers([]);
-    setMemberImages({});
     setMembersLoading(true);
     setManageGroupId(groupId);
     setView("manage");
@@ -102,29 +102,11 @@ export default function GroupDrawer({
     let cancelled = false;
     setMembersLoading(true);
     setMembers([]);
-    setMemberImages({});
     fetchGroupMembers(manageGroupId, controller.signal)
-      .then(async (data) => {
+      .then((data) => {
         if (cancelled) return;
         setMembers(data);
         onMemberCountChange(manageGroupId, data.length);
-        const entries = await Promise.all(
-          data
-            .filter((m) => m.profile_image)
-            .map(async (m) => {
-              try {
-                const url = await getDownloadUrl(m.profile_image!);
-                return [m.member_id, url] as [number, string];
-              } catch {
-                return null;
-              }
-            }),
-        );
-        const imageMap: Record<number, string> = {};
-        for (const entry of entries) {
-          if (entry) imageMap[entry[0]] = entry[1];
-        }
-        if (!cancelled) setMemberImages(imageMap);
       })
       .catch((err) => alertError(err, "멤버 목록을 불러오지 못했어요."))
       .finally(() => {
@@ -173,7 +155,7 @@ export default function GroupDrawer({
         setJoinCode("");
       });
     }
-  }, [visible, slideAnim, fadeAnim]);
+  }, [visible, initialView, slideAnim, fadeAnim]);
 
   return (
     <Modal
@@ -521,7 +503,9 @@ export default function GroupDrawer({
               ) : (
                 <View style={styles.memberList}>
                   {members.map((member) => {
-                    const imageUri = memberImages[member.member_id];
+                    const imageUri = member.profile_image
+                      ? memberImageUrls[member.profile_image]
+                      : undefined;
                     return (
                       <View key={member.member_id} style={styles.memberRow}>
                         <View style={styles.memberAvatarRow}>
@@ -658,11 +642,6 @@ export default function GroupDrawer({
               (m) => m.member_id !== kickTarget.member_id,
             );
             setMembers(nextMembers);
-            setMemberImages((prev) => {
-              const next = { ...prev };
-              delete next[kickTarget.member_id];
-              return next;
-            });
             onMemberCountChange(manageGroup.group_id, nextMembers.length);
           } catch (err) {
             alertError(err, "멤버 삭제에 실패했어요.");

@@ -2,8 +2,8 @@ import { Typography } from "@/constants/typography";
 import KkBackground from "@/components/KkBackground";
 import KkHeader from "@/components/KkHeader";
 import ProfileForm from "@/components/KkProfileForm";
+import { useR2ImageUrl } from "@/hooks/useR2ImageUrl";
 import { getProfile } from "@/utils/api/profileApi";
-import { getDownloadUrl } from "@/utils/api/r2Api";
 import { UserProfile } from "@/utils/types/profile";
 import { useRouter } from "expo-router";
 import { useEffect, useState } from "react";
@@ -22,7 +22,6 @@ const REVERSE_PURPOSE_MAP: Record<
 export default function ProfileEdit() {
   const router = useRouter();
   const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [initialImageUrl, setInitialImageUrl] = useState<string | undefined>();
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -30,15 +29,9 @@ export default function ProfileEdit() {
     const controller = new AbortController();
 
     getProfile()
-      .then(async (data) => {
+      .then((data) => {
         if (controller.signal.aborted) return;
         setProfile(data);
-        if (data.profile_image) {
-          try {
-            const url = await getDownloadUrl(data.profile_image);
-            if (!controller.signal.aborted) setInitialImageUrl(url);
-          } catch {}
-        }
         setLoading(false);
       })
       .catch((err) => {
@@ -56,7 +49,12 @@ export default function ProfileEdit() {
     return () => controller.abort();
   }, [router]);
 
-  if (loading) {
+  // 마이페이지에서 이미 받은 프로필 URL이 있으면 캐시를 그대로 사용
+  const { data: initialImageUrl, isLoading: imageLoading } = useR2ImageUrl(
+    profile?.profile_image,
+  );
+
+  if (loading || imageLoading) {
     return (
       <KkBackground>
         <KkHeader title="프로필 변경" />
