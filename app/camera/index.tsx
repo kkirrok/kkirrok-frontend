@@ -1,5 +1,6 @@
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
+import { alertError } from "@/utils/alertError";
 import { CameraView, useCameraPermissions } from "expo-camera";
 import { router } from "expo-router";
 import { useEffect, useRef, useState } from "react";
@@ -48,7 +49,9 @@ export default function CameraScreen() {
       if (!photo) return;
       router.push({ pathname: "/camera/Preview", params: { uri: photo.uri } });
     } catch (e) {
-      console.error("사진 촬영 실패:", e);
+      alertError(e, "사진 촬영에 실패했어요. 다시 시도해 주세요.", {
+        useErrorMessage: false,
+      });
     }
   };
 
