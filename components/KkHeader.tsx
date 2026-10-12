@@ -43,26 +43,27 @@ export default function KkHeader({
 
   return (
     <View style={[styles.container, { paddingTop: insets.top }]}>
+      {/* 좌우 영역을 같은 비율로 나눠 오른쪽 버튼 너비와 관계없이 제목을 가운데 정렬 */}
       <View style={styles.inner}>
-        {variant === "back" ? (
-          <TouchableOpacity onPress={handleBackPress} style={styles.button}>
-            <Ionicons name="chevron-back" size={28} color="white" />
-          </TouchableOpacity>
-        ) : (
-          <View style={styles.button} />
-        )}
+        <View style={[styles.side, styles.sideLeft]}>
+          {variant === "back" && (
+            <TouchableOpacity onPress={handleBackPress} style={styles.button}>
+              <Ionicons name="chevron-back" size={28} color="white" />
+            </TouchableOpacity>
+          )}
+        </View>
 
         <Text style={styles.title} numberOfLines={1}>{title}</Text>
 
-        {variant === "close" ? (
-          <TouchableOpacity onPress={handleClosePress} style={styles.button}>
-            <Ionicons name="close" size={28} color="white" />
-          </TouchableOpacity>
-        ) : rightAction ? (
-          <View style={styles.rightAction}>{rightAction}</View>
-        ) : (
-          <View style={styles.button} />
-        )}
+        <View style={[styles.side, styles.sideRight]}>
+          {variant === "close" ? (
+            <TouchableOpacity onPress={handleClosePress} style={styles.button}>
+              <Ionicons name="close" size={28} color="white" />
+            </TouchableOpacity>
+          ) : (
+            rightAction
+          )}
+        </View>
       </View>
     </View>
   );
@@ -78,19 +79,26 @@ const styles = StyleSheet.create({
     alignItems: "center",
     paddingHorizontal: 16,
   },
+  side: {
+    flex: 1,
+    minWidth: 40,
+    flexDirection: "row",
+    alignItems: "center",
+  },
+  sideLeft: {
+    justifyContent: "flex-start",
+  },
+  sideRight: {
+    justifyContent: "flex-end",
+  },
   button: {
     width: 40,
     alignItems: "center",
     justifyContent: "center",
   },
-  rightAction: {
-    width: 40,
-    alignItems: "flex-end",
-    justifyContent: "center",
-  },
   title: {
     ...Typography.title.m,
-    flex: 1,
+    flexShrink: 1,
     color: "#FFFFFF",
     textAlign: "center",
   },

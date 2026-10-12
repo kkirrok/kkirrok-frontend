@@ -96,6 +96,13 @@ export type GroupEmoji = {
   emoji_type: "SYSTEM_EMOJI" | "CUSTOM_EMOJI";
 };
 
+export type CreatedGroupEmoji = {
+  custom_emoji_id: number;
+  emoji_code: string;
+  label: string;
+  image: string | null;
+};
+
 export type GroupEmojiList = {
   system_emojis: GroupEmoji[];
   custom_emojis: GroupEmoji[];

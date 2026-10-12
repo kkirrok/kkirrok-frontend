@@ -20,6 +20,8 @@ type DayOfWeek =
   | "SATURDAY"
   | "SUNDAY";
 
+// 주의: 서버 실제 응답은 camelCase. Swagger에는 snake_case로 표기되어 있지만 실제와 다름
+// (snake_case로 바꿨다가 화면이 깨져 되돌린 이력 있음, 2026-10-13 실기기 확인)
 export interface WeeklyReportResponse {
   code: string;
   status: number;

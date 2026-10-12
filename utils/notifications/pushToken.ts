@@ -14,6 +14,20 @@ export async function requestAndRegisterPushToken(): Promise<void> {
   const { status } = await Notifications.requestPermissionsAsync();
   if (status !== "granted") return;
 
+  await registerCurrentToken();
+}
+
+// 권한 요청 팝업 없이, 이미 알림 권한이 있을 때만 토큰 등록 (서버는 같은 토큰이면 갱신만 함)
+export async function registerPushTokenIfPermitted(): Promise<void> {
+  if (Platform.OS === "web") return;
+
+  const { status } = await Notifications.getPermissionsAsync();
+  if (status !== "granted") return;
+
+  await registerCurrentToken();
+}
+
+async function registerCurrentToken(): Promise<void> {
   const { data: token } = await Notifications.getDevicePushTokenAsync();
   await SecureStore.setItemAsync(PUSH_TOKEN_KEY, token);
 

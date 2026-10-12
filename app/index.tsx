@@ -1,4 +1,5 @@
 import { getUserRole } from "@/utils/api/authApi";
+import { registerPushTokenIfPermitted } from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { useRouter } from "expo-router";
 import { useEffect } from "react";
@@ -19,6 +20,8 @@ export default function Index() {
         if (role === "PENDING") {
           router.replace("/(auth)/KkirokStart");
         } else {
+          // 토큰 갱신·이전 등록 실패 등에 대비해 앱 진입 시마다 등록 상태를 맞춤
+          registerPushTokenIfPermitted().catch(() => {});
           router.replace("/(tabs)");
         }
       } catch (e) {
