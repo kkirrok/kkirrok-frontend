@@ -5,13 +5,14 @@ import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { sendEmailVerification, verifyEmailCode } from "@/utils/api/authApi";
 import { isValidEmail } from "@/utils/validation";
-import { useRouter } from "expo-router";
+import { useLocalSearchParams, useRouter } from "expo-router";
 import { useEffect, useRef, useState } from "react";
 import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
 export default function Signup() {
   const router = useRouter();
+  const { termsChecked } = useLocalSearchParams<{ termsChecked?: string }>();
   const [email, setEmail] = useState("");
   const [verificationCode, setVerificationCode] = useState("");
   const [sendingEmail, setSendingEmail] = useState(false);
@@ -27,7 +28,7 @@ export default function Signup() {
 
   const startTimer = () => {
     if (timerRef.current) clearInterval(timerRef.current);
-    setTimeLeft(180);
+    setTimeLeft(300);
     timerRef.current = setInterval(() => {
       setTimeLeft((t) => {
         if (t <= 1) {
@@ -138,7 +139,7 @@ export default function Signup() {
               onPress={() =>
                 router.push({
                   pathname: "/(auth)/SignupPassword",
-                  params: { email },
+                  params: { email, termsChecked },
                 })
               }
             />

@@ -28,8 +28,8 @@ export default function KkLogoHeader() {
 
 const styles = StyleSheet.create({
   header: {
+    height: 56,
     paddingHorizontal: 22,
-    paddingVertical: 0,
     flexDirection: "row",
     justifyContent: "space-between",
     alignItems: "center",

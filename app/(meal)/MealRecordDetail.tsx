@@ -169,7 +169,7 @@ export default function MealRecordDetail() {
       ) : (
         <ScrollView
           style={styles.scroll}
-          contentContainerStyle={styles.scrollContent}
+          contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.chartArea}>
@@ -389,7 +389,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: HORIZONTAL_PADDING,
-    paddingBottom: 40,
     gap: 16,
   },
 

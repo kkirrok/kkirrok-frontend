@@ -7,9 +7,11 @@ import { updateKcal } from "@/utils/api/profileApi";
 import { useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View, Text, TextInput } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ResetKcal() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const [kcal, setKcal] = useState("");
   const [loading, setLoading] = useState(false);
   const [modalVisible, setModalVisible] = useState(false);
@@ -60,7 +62,7 @@ export default function ResetKcal() {
           <Text style={styles.errorText}>1 ~ 10,000 사이의 칼로리를 입력해 주세요.</Text>
         )}
 
-        <View style={styles.bottom}>
+        <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <KkButton
             title="변경하기"
             disabled={!isKcalValid || loading}
@@ -122,7 +124,6 @@ const styles = StyleSheet.create({
   bottom: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingBottom: 32,
   },
   errorText: {
     color: "#F6623B",

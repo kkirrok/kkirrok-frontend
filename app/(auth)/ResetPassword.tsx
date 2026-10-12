@@ -8,9 +8,11 @@ import { isValidPassword } from "@/utils/validation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function ResetPassword() {
   const router = useRouter();
+  const insets = useSafeAreaInsets();
   const { email, name } = useLocalSearchParams<{
     email: string;
     name: string;
@@ -66,7 +68,7 @@ export default function ResetPassword() {
           error={isMismatch ? "동일하지 않습니다." : undefined}
         />
 
-        <View style={styles.bottom}>
+        <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <KkButton
             title="비밀번호 재설정"
             disabled={!isSubmitEnabled || loading}
@@ -112,6 +114,5 @@ const styles = StyleSheet.create({
   bottom: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingBottom: 32,
   },
 });

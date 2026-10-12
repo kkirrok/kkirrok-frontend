@@ -10,6 +10,7 @@ import { styles } from "@/components/weeklyreport/styles";
 import { useWeeklyReport } from "@/hooks/useWeeklyReport";
 import { router, useLocalSearchParams } from "expo-router";
 import { useEffect, useMemo } from "react";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import {
   ActivityIndicator,
   ScrollView,
@@ -43,6 +44,7 @@ function getWeekOfMonth(date: Date) {
 }
 
 export default function WeeklyReportPage() {
+  const insets = useSafeAreaInsets();
   const params = useLocalSearchParams();
 
   const selectedDate = useMemo(() => {
@@ -155,7 +157,7 @@ export default function WeeklyReportPage() {
       <KkHeader title="주간 리포트" />
 
       <ScrollView
-        contentContainerStyle={styles.content}
+        contentContainerStyle={[styles.content, { paddingBottom: insets.bottom + 28 }]}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.weekSelector}>

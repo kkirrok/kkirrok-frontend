@@ -1,9 +1,15 @@
 import { initializeKakaoSDK } from "@react-native-kakao/core";
 import NaverLogin from "@react-native-seoul/naver-login";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import {
+  MutationCache,
+  QueryCache,
+  QueryClient,
+  QueryClientProvider,
+} from "@tanstack/react-query";
 import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
-import { Stack } from "expo-router";
+import { Stack, router } from "expo-router";
+import { tokenStore } from "@/utils/store/tokenStore";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 import { Platform, Text } from "react-native";
@@ -54,7 +60,22 @@ if (!naverId || !naverSecret) {
   }
 }
 
+async function handleTermsError(error: unknown) {
+  if (
+    error instanceof Error &&
+    error.message === "TERMS_AGREEMENT_REQUIRED"
+  ) {
+    const onboardingDone = await tokenStore.getOnboarding();
+    router.replace({
+      pathname: "/(auth)/TermsAgreement",
+      params: { next: onboardingDone ? "tabs" : "onboarding" },
+    });
+  }
+}
+
 const queryClient = new QueryClient({
+  queryCache: new QueryCache({ onError: handleTermsError }),
+  mutationCache: new MutationCache({ onError: handleTermsError }),
   defaultOptions: {
     queries: {
       retry: 1,

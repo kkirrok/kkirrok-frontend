@@ -4,15 +4,18 @@ import KkHeader from "@/components/KkHeader";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { signUpLocal } from "@/utils/api/authApi";
+import { agreeTerms } from "@/utils/api/termsApi";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { isValidPassword } from "@/utils/validation";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import { useState } from "react";
 import { StyleSheet, View } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function SignupPassword() {
   const router = useRouter();
-  const { email } = useLocalSearchParams<{ email: string }>();
+  const insets = useSafeAreaInsets();
+  const { email, termsChecked } = useLocalSearchParams<{ email: string; termsChecked?: string }>();
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [modalVisible, setModalVisible] = useState(false);
@@ -30,13 +33,44 @@ export default function SignupPassword() {
       setErrorModalVisible(true);
       return;
     }
+    if (!termsChecked) {
+      setErrorMessage("약관 동의 정보가 없습니다. 처음부터 다시 시도해 주세요.");
+      setErrorModalVisible(true);
+      return;
+    }
+    let userChoices: Record<string, boolean>;
+    try {
+      userChoices = JSON.parse(termsChecked);
+    } catch {
+      setErrorMessage("약관 동의 정보가 올바르지 않습니다. 처음부터 다시 시도해 주세요.");
+      setErrorModalVisible(true);
+      return;
+    }
+
     setLoading(true);
+    let accountCreated = false;
     try {
       const res = await signUpLocal(email, password);
       await tokenStore.save(res.data.access_token);
       await tokenStore.setOnboarding(false);
+      accountCreated = true;
+      if (res.data.pending_terms_agree.length > 0) {
+        await agreeTerms(
+          res.data.pending_terms_agree.map((t) => ({
+            type: t.type,
+            is_agree: userChoices[t.type] ?? false,
+          })),
+        );
+      }
       router.replace("/(auth)/KkirokStart");
     } catch (e) {
+      if (accountCreated) {
+        router.replace({
+          pathname: "/(auth)/TermsAgreement",
+          params: { next: "onboarding" },
+        });
+        return;
+      }
       setErrorMessage(
         e instanceof Error ? e.message : "알 수 없는 오류가 발생했습니다.",
       );
@@ -71,7 +105,7 @@ export default function SignupPassword() {
           error={isMismatch ? "동일하지 않습니다." : undefined}
         />
 
-        <View style={styles.bottom}>
+        <View style={[styles.bottom, { paddingBottom: Math.max(insets.bottom, 32) }]}>
           <KkButton
             title="회원가입"
             disabled={!isSubmitEnabled || loading}
@@ -118,6 +152,5 @@ const styles = StyleSheet.create({
   bottom: {
     flex: 1,
     justifyContent: "flex-end",
-    paddingBottom: 32,
   },
 });

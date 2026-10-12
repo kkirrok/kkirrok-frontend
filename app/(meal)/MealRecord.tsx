@@ -22,6 +22,7 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import MealCards, { NutrientKey } from "./components/MealCards";
 import MealDonutChart, { DonutSegment } from "./components/MealDonutChart";
 import MealTypeTab, { MealType } from "./components/MealTypeTab";
@@ -60,6 +61,7 @@ const defaultNutrients = (): Record<NutrientKey, string> => ({
 });
 
 export default function MealRecord() {
+  const insets = useSafeAreaInsets();
   const [photo, setPhoto] = useState<string | null>(null);
   const [imageKey, setImageKey] = useState<string | null>(null);
   const [scanType, setScanType] = useState<string | null>(null);
@@ -271,7 +273,7 @@ export default function MealRecord() {
       <KkHeader title="끼니 기록" variant="back" />
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={styles.scrollContent}
+        contentContainerStyle={[styles.scrollContent, { paddingBottom: insets.bottom + 40 }]}
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
       >
@@ -349,7 +351,6 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     paddingHorizontal: 20,
-    paddingBottom: 40,
     gap: 16,
   },
   submitButton: {

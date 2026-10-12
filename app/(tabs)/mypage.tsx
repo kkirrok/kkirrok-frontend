@@ -18,9 +18,10 @@ import {
   TouchableOpacity,
   View,
 } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
+import { SafeAreaView, useSafeAreaInsets } from "react-native-safe-area-context";
 
 export default function MyPage() {
+  const insets = useSafeAreaInsets();
   const [modalVisible, setModalVisible] = useState(false);
   const [modalType, setModalType] = useState("");
   const [errorMessage, setErrorMessage] = useState("");
@@ -48,7 +49,7 @@ export default function MyPage() {
 
   return (
     <KkBackground>
-      <ScrollView contentContainerStyle={styles.container}>
+      <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 100 }]}>
         <SafeAreaView>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>마이페이지</Text>
@@ -201,7 +202,6 @@ function MenuItem({ title, onPress }: { title: string; onPress?: () => void }) {
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingBottom: 100,
   },
   header: {
     height: 56,

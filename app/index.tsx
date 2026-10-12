@@ -21,7 +21,17 @@ export default function Index() {
         } else {
           router.replace("/(tabs)");
         }
-      } catch {
+      } catch (e) {
+        if (
+          e instanceof Error &&
+          e.message === "TERMS_AGREEMENT_REQUIRED"
+        ) {
+          router.replace({
+            pathname: "/(auth)/TermsAgreement",
+            params: { next: "tabs" },
+          });
+          return;
+        }
         router.replace("/(auth)/SocialLogin");
       }
     }
