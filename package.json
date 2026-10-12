@@ -81,5 +81,8 @@
   "private": true,
   "lint-staged": {
     "*.{ts,tsx}": "expo lint --fix"
+  },
+  "overrides": {
+    "postcss": "^8.5.29"
   }
 }
