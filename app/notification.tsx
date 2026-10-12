@@ -267,15 +267,23 @@ export default function NotificationPage() {
   );
 
   const handleReadAll = useCallback(() => {
-    setReadIds(
-      (prev) =>
-        new Set([...prev, ...rawNotifications.map((n) => n.notification_id)]),
-    );
+    // 실패 시 되돌릴 수 있도록 이번 요청으로 읽음 처리한 알림만 기록
+    const newlyReadIds = rawNotifications
+      .filter((n) => !n.is_read && !readIds.has(n.notification_id))
+      .map((n) => n.notification_id);
+    setReadIds((prev) => new Set([...prev, ...newlyReadIds]));
     queryClient.setQueryData(UNREAD_NOTIFICATION_COUNT_KEY, 0);
     markAllNotificationsRead()
-      .catch(() => {})
+      .catch(() => {
+        // 실패하면 읽음 표시를 되돌려 "모두 읽음" 버튼으로 다시 시도할 수 있게 함
+        setReadIds((prev) => {
+          const next = new Set(prev);
+          newlyReadIds.forEach((id) => next.delete(id));
+          return next;
+        });
+      })
       .finally(refreshUnreadCount);
-  }, [rawNotifications, queryClient, refreshUnreadCount]);
+  }, [rawNotifications, readIds, queryClient, refreshUnreadCount]);
 
   const hasUnread = notifications.some((n) => !n.is_read);
 

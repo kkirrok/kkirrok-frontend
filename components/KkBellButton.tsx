@@ -1,6 +1,10 @@
 import BellIcon from "@/assets/icons/bell.svg";
 import { Colors } from "@/constants/colors";
-import { useUnreadNotificationCount } from "@/hooks/useUnreadNotificationCount";
+import {
+  UNREAD_NOTIFICATION_COUNT_KEY,
+  useUnreadNotificationCount,
+} from "@/hooks/useUnreadNotificationCount";
+import { useQueryClient } from "@tanstack/react-query";
 import { useFocusEffect, useRouter } from "expo-router";
 import { useCallback } from "react";
 import {
@@ -18,14 +22,18 @@ type Props = {
 // 알림 화면으로 이동하는 벨 버튼. 읽지 않은 알림이 있으면 주황색 점을 표시
 export default function KkBellButton({ style }: Props) {
   const router = useRouter();
-  const { data: unreadCount = 0, refetch } = useUnreadNotificationCount();
+  const queryClient = useQueryClient();
+  const { data: unreadCount = 0 } = useUnreadNotificationCount();
   const hasUnread = unreadCount > 0;
 
-  // 탭 이동이나 알림 화면에서 돌아올 때마다 최신 개수로 갱신
+  // 탭 이동이나 알림 화면에서 돌아올 때 갱신. 방금 조회·갱신한 값이면(stale 아님) 다시 요청하지 않음
   useFocusEffect(
     useCallback(() => {
-      refetch();
-    }, [refetch]),
+      queryClient.refetchQueries({
+        queryKey: UNREAD_NOTIFICATION_COUNT_KEY,
+        stale: true,
+      });
+    }, [queryClient]),
   );
 
   return (
