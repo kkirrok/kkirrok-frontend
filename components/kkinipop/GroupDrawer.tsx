@@ -155,7 +155,7 @@ export default function GroupDrawer({
         setJoinCode("");
       });
     }
-  }, [visible, slideAnim, fadeAnim]);
+  }, [visible, initialView, slideAnim, fadeAnim]);
 
   return (
     <Modal

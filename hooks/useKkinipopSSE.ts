@@ -18,7 +18,7 @@ type Options = {
   setMissions: React.Dispatch<React.SetStateAction<Mission[]>>;
   onMemberChange: () => void;
   systemEmojisRef: MutableRefObject<SystemEmoji[]>;
-  customEmojisRef: MutableRefObject<(GroupEmoji & { imageUrl: string | null })[]>;
+  customEmojisRef: MutableRefObject<GroupEmoji[]>;
 };
 
 const BASE_URL = process.env.EXPO_PUBLIC_API_URL!;

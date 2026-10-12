@@ -7,7 +7,7 @@ import WeekCalendar from "@/components/kkinipop/WeekCalendar";
 import SkeletonMissionCard from "@/components/skeleton/SkeletonMissionCard";
 import SkeletonRecordRow from "@/components/skeleton/SkeletonRecordRow";
 import { useKkinipopSSE } from "@/hooks/useKkinipopSSE";
-import { r2ImageQueryOptions, useR2ImageUrls } from "@/hooks/useR2ImageUrl";
+import { useR2ImageUrls } from "@/hooks/useR2ImageUrl";
 import { Colors } from "@/constants/colors";
 import { SYSTEM_EMOJI_CHAR } from "@/constants/kkinipop";
 import { Typography } from "@/constants/typography";
@@ -33,7 +33,6 @@ import {
   SystemEmoji,
 } from "@/utils/types/kkinipop";
 import { Ionicons } from "@expo/vector-icons";
-import { useQueryClient } from "@tanstack/react-query";
 import * as ImagePicker from "expo-image-picker";
 import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
@@ -82,9 +81,8 @@ export default function KkinipopPage() {
   const [globalSystemEmojis, setGlobalSystemEmojis] = useState<SystemEmoji[]>(
     [],
   );
-  const [customEmojiList, setCustomEmojiList] = useState<
-    (GroupEmoji & { imageUrl: string | null })[]
-  >([]);
+  // 이미지는 R2 key로 보관하고, 화면에 그릴 때 URL로 변환 (만료된 URL을 상태에 남기지 않기 위함)
+  const [customEmojiList, setCustomEmojiList] = useState<GroupEmoji[]>([]);
   const [drawerInitialView, setDrawerInitialView] = useState<"main" | "create" | "join">("main");
   const [groupsLoading, setGroupsLoading] = useState(true);
   const groupsVersionRef = useRef(0);
@@ -134,19 +132,6 @@ export default function KkinipopPage() {
     return () => controller.abort();
   }, []);
 
-  const queryClient = useQueryClient();
-  // R2 key → 다운로드 URL (useR2ImageUrl과 같은 캐시를 사용해 중복 요청 방지)
-  const resolveImageUrl = useCallback(
-    async (key: string) => {
-      try {
-        return await queryClient.fetchQuery(r2ImageQueryOptions(key));
-      } catch {
-        return null;
-      }
-    },
-    [queryClient],
-  );
-
   const loadGroupEmojis = useCallback(async (groupId: number) => {
     emojiControllerRef.current?.abort();
     const controller = new AbortController();
@@ -154,17 +139,11 @@ export default function KkinipopPage() {
     try {
       const data = await fetchGroupEmojis(groupId, controller.signal);
       if (controller.signal.aborted) return;
-      const withUrls = await Promise.all(
-        data.custom_emojis.map(async (e) => ({
-          ...e,
-          imageUrl: e.image ? await resolveImageUrl(e.image) : null,
-        })),
-      );
-      if (!controller.signal.aborted) setCustomEmojiList(withUrls);
+      setCustomEmojiList(data.custom_emojis);
     } catch (err) {
       alertError(err, "이모지 목록을 불러오지 못했어요.");
     }
-  }, [resolveImageUrl]);
+  }, []);
 
   const missionControllerRef = useRef<AbortController | null>(null);
 
@@ -176,28 +155,15 @@ export default function KkinipopPage() {
     try {
       const data = await fetchMissions(groupId, date, controller.signal);
       if (controller.signal.aborted) return;
-      const resolvedData = await Promise.all(
-        data.map(async (mission) => ({
-          ...mission,
-          success_members: await Promise.all(
-            mission.success_members.map(async (member) => {
-              if (!member.profile_image) return member;
-              const url = await resolveImageUrl(member.profile_image);
-              return url ? { ...member, profile_image: url } : member;
-            }),
-          ),
-        })),
-      );
-      if (controller.signal.aborted) return;
-      setMissions(resolvedData);
-      const realTimeIdx = resolvedData.findIndex((m) => m.is_real_time);
+      setMissions(data);
+      const realTimeIdx = data.findIndex((m) => m.is_real_time);
       setMissionIndex(realTimeIdx >= 0 ? realTimeIdx : 0);
     } catch (err) {
       alertError(err, "미션을 불러오지 못했어요.");
     } finally {
       if (!controller.signal.aborted) setMissionLoading(false);
     }
-  }, [resolveImageUrl]);
+  }, []);
 
   const loadPosts = useCallback(async (groupId: number) => {
     postsControllerRef.current?.abort();
@@ -346,6 +312,11 @@ export default function KkinipopPage() {
   const imageUrls = useR2ImageUrls(
     todayPosts.flatMap((p) => [p.image, p.profile_image]),
   );
+  const customEmojiUrls = useR2ImageUrls(customEmojiList.map((e) => e.image));
+  const customEmojisWithUrl = customEmojiList.map((e) => ({
+    ...e,
+    imageUrl: e.image ? (customEmojiUrls[e.image] ?? null) : null,
+  }));
 
   const visibleMissions = missions.filter((m) => {
     if (!m.start_at) return true;
@@ -367,7 +338,7 @@ export default function KkinipopPage() {
     isOwn: p.member_id === myMemberId,
     missionId: p.mission_id,
     reactions: p.reactions.map((r) => {
-      const customEmoji = customEmojiList.find((e) => e.emoji_code === r.emoji_code);
+      const customEmoji = customEmojisWithUrl.find((e) => e.emoji_code === r.emoji_code);
       return {
         emoji:
           SYSTEM_EMOJI_CHAR[r.emoji_code] ??
@@ -541,7 +512,11 @@ export default function KkinipopPage() {
         <View style={styles.header}>
           <TouchableOpacity
             style={styles.headerBtn}
-            onPress={() => setDrawerOpen(true)}
+            onPress={() => {
+              // 빈 상태에서 "그룹 만들기/참여"로 열었던 화면이 남지 않도록 목록 화면으로 열기
+              setDrawerInitialView("main");
+              setDrawerOpen(true);
+            }}
           >
             <Ionicons name="menu" size={24} color={Colors.gray[100]} />
           </TouchableOpacity>
@@ -714,7 +689,7 @@ export default function KkinipopPage() {
                         emoji_code: e.emoji_code,
                         display: SYSTEM_EMOJI_CHAR[e.emoji_code] ?? e.label,
                       }))}
-                      customGroupEmojis={customEmojiList}
+                      customGroupEmojis={customEmojisWithUrl}
                       onDeleteCustomEmoji={handleDeleteCustomEmoji}
                     />
                   ))}
