@@ -82,6 +82,8 @@ export default function KkinipopPage() {
   const failedProfileIdsRef = useRef(new Set<number>());
   const [drawerInitialView, setDrawerInitialView] = useState<"main" | "create" | "join">("main");
   const [groupsLoading, setGroupsLoading] = useState(true);
+  const groupsVersionRef = useRef(0);
+  const groupsFetchingRef = useRef(0);
   const [contentLoading, setContentLoading] = useState(false);
   const [missionLoading, setMissionLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
@@ -198,9 +200,12 @@ export default function KkinipopPage() {
   }, []);
 
   const refreshGroups = useCallback(async (signal?: AbortSignal) => {
+    const version = ++groupsVersionRef.current;
+    groupsFetchingRef.current += 1;
     try {
       const data = await fetchGroups(signal);
-      if (signal?.aborted) return;
+      // 조회 중에 더 최신 조회나 로컬 변경(삭제·탈퇴·인원 수 반영)이 있었다면 오래된 응답은 버림
+      if (signal?.aborted || version !== groupsVersionRef.current) return;
       setGroups(data);
       // 선택 중인 그룹이 사라졌으면 첫 번째 그룹으로 전환
       setSelectedGroupId((cur) =>
@@ -210,8 +215,22 @@ export default function KkinipopPage() {
       );
     } catch (err) {
       if ((err as Error).name !== "AbortError") console.error(err);
+    } finally {
+      groupsFetchingRef.current -= 1;
     }
   }, []);
+
+  // 로컬에서 그룹 목록을 바꿀 때는 진행 중인 조회 응답을 무효화하고,
+  // 무효화한 조회가 있었다면 변경이 반영된 서버 상태로 다시 조회
+  const applyGroupsChange = useCallback(
+    (update: (prev: Group[]) => Group[]) => {
+      const hadPendingFetch = groupsFetchingRef.current > 0;
+      groupsVersionRef.current += 1;
+      setGroups(update);
+      if (hadPendingFetch) refreshGroups();
+    },
+    [refreshGroups],
+  );
 
   useEffect(() => {
     if (!drawerOpen) return;
@@ -222,7 +241,7 @@ export default function KkinipopPage() {
 
   const removeGroup = (groupId: number) => {
     const next = groups.filter((g) => g.group_id !== groupId);
-    setGroups(next);
+    applyGroupsChange(() => next);
     if (selectedGroupId === groupId) {
       setSelectedGroupId(next[0]?.group_id ?? null);
     }
@@ -770,6 +789,7 @@ export default function KkinipopPage() {
           setGroups((prev) => [...prev, group]);
           setSelectedGroupId(group.group_id);
           // 생성/참여 응답의 인원 수가 최신이 아닐 수 있어 목록을 다시 조회
+          // (새 조회가 시작되면 그 전에 진행 중이던 조회 응답은 무시됨)
           refreshGroups();
         }}
         onGroupJoined={(group) => {
@@ -784,7 +804,7 @@ export default function KkinipopPage() {
         onGroupDeleted={removeGroup}
         onGroupLeft={removeGroup}
         onMemberCountChange={(groupId, count) => {
-          setGroups((prev) =>
+          applyGroupsChange((prev) =>
             prev.map((g) =>
               g.group_id === groupId ? { ...g, member_count: count } : g,
             ),
