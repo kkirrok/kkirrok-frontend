@@ -1,12 +1,15 @@
 import { Typography } from "@/constants/typography";
-import BellIcon from "@/assets/icons/bell.svg";
 import ProfileIcon from "@/assets/icons/profile.svg";
 import KkBackground from "@/components/KkBackground";
+import KkBellButton from "@/components/KkBellButton";
 import KkModal from "@/components/KkModal";
 import { useProfile } from "@/hooks/useProfile";
 import { useProfileImage } from "@/hooks/useProfileImage";
 import { deleteAccount, signOut } from "@/utils/api/authApi";
-import { unregisterPushToken } from "@/utils/notifications/pushToken";
+import {
+  requestAndRegisterPushToken,
+  unregisterPushToken,
+} from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { Image } from "expo-image";
 import { useRouter } from "expo-router";
@@ -47,21 +50,37 @@ export default function MyPage() {
     router.replace("/(auth)/SocialLogin");
   };
 
+  const handleWithdraw = async () => {
+    // 디바이스 토큰 해제는 인증이 필요하므로 탈퇴 전에 먼저 해제
+    try {
+      await unregisterPushToken();
+    } catch {}
+    try {
+      await deleteAccount();
+    } catch (e) {
+      // 탈퇴 실패 시 계속 알림을 받을 수 있도록 토큰 재등록
+      requestAndRegisterPushToken().catch(() => {});
+      setErrorMessage(
+        e instanceof Error ? e.message : "회원 탈퇴에 실패했습니다.",
+      );
+      setErrorModalVisible(true);
+      return;
+    }
+    try {
+      await tokenStore.remove();
+    } catch {
+      // 토큰 삭제 실패해도 계정은 이미 삭제됨
+    }
+    router.replace("/(auth)/SocialLogin");
+  };
+
   return (
     <KkBackground>
       <ScrollView contentContainerStyle={[styles.container, { paddingBottom: insets.bottom + 100 }]}>
         <SafeAreaView>
           <View style={styles.header}>
             <Text style={styles.headerTitle}>마이페이지</Text>
-            <TouchableOpacity
-              style={styles.bellIconContainer}
-              onPress={() => router.push("/notification")}
-              accessibilityRole="button"
-              accessibilityLabel="알림 화면으로 이동"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <BellIcon width={24} height={24} />
-            </TouchableOpacity>
+            <KkBellButton style={styles.bellIconContainer} />
           </View>
         </SafeAreaView>
 
@@ -159,23 +178,7 @@ export default function MyPage() {
             if (modalType === "logout") {
               handleLogout();
             } else if (modalType === "withdraw") {
-              deleteAccount()
-                .then(async () => {
-                  try {
-                    await tokenStore.remove();
-                  } catch {
-                    // 토큰 삭제 실패해도 계정은 이미 삭제됨
-                  }
-                  router.replace("/(auth)/SocialLogin");
-                })
-                .catch((e) => {
-                  setErrorMessage(
-                    e instanceof Error
-                      ? e.message
-                      : "회원 탈퇴에 실패했습니다.",
-                  );
-                  setErrorModalVisible(true);
-                });
+              handleWithdraw();
             }
           }}
         />

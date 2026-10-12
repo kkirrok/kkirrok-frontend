@@ -4,6 +4,7 @@ import KkButton from "@/components/KkButton";
 import KkModal from "@/components/KkModal";
 import KkTextBox from "@/components/KkTextBox";
 import { setProfile } from "@/utils/api/authApi";
+import { requestAndRegisterPushToken } from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
 import { isValidBirthdate } from "@/utils/validation";
 import * as ImagePicker from "expo-image-picker";
@@ -45,6 +46,9 @@ const PURPOSE_MAP: Record<string, string> = {
   gain: "GAIN_WEIGHT",
   habit: "HABIT",
 };
+
+// 서버 제약: 식습관 유형은 5개 이하
+const MAX_HABITS = 5;
 
 const HABITS: { label: string; value: string }[] = [
   { label: "야식 잦음", value: "LATE_NIGHT_MEAL" },
@@ -143,6 +147,8 @@ export default function KkProfileForm({
         imageUri ?? undefined,
       );
       await tokenStore.setOnboarding(true);
+      // 디바이스 토큰 등록은 USER 권한이 필요해 온보딩 완료(PENDING → USER) 후 등록
+      requestAndRegisterPushToken().catch(() => {});
       router.replace("/(tabs)");
     } catch (e) {
       setErrorMessage(
@@ -189,9 +195,11 @@ export default function KkProfileForm({
   };
 
   const toggleHabit = (value: string) => {
-    setSelectedHabits((prev) =>
-      prev.includes(value) ? prev.filter((h) => h !== value) : [...prev, value],
-    );
+    setSelectedHabits((prev) => {
+      if (prev.includes(value)) return prev.filter((h) => h !== value);
+      if (prev.length >= MAX_HABITS) return prev;
+      return [...prev, value];
+    });
   };
 
   return (
@@ -287,19 +295,25 @@ export default function KkProfileForm({
 
             <View>
               <Text style={[styles.title, { marginBottom: 8 }]}>
-                식습관 유형
+                식습관 유형 (최대 {MAX_HABITS}개)
               </Text>
               <View style={styles.section}>
-                {HABITS.map(({ label, value }) => (
-                  <KkButton
-                    key={value}
-                    title={label}
-                    size="tag"
-                    selected={selectedHabits.includes(value)}
-                    onPress={() => toggleHabit(value)}
-                    showIcon
-                  />
-                ))}
+                {HABITS.map(({ label, value }) => {
+                  const selected = selectedHabits.includes(value);
+                  return (
+                    <KkButton
+                      key={value}
+                      title={label}
+                      size="tag"
+                      selected={selected}
+                      disabled={
+                        !selected && selectedHabits.length >= MAX_HABITS
+                      }
+                      onPress={() => toggleHabit(value)}
+                      showIcon
+                    />
+                  );
+                })}
               </View>
             </View>
           </View>
