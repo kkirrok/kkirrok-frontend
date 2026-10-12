@@ -1,6 +1,7 @@
 import KkModal from "@/components/KkModal";
 import { Colors } from "@/constants/colors";
 import { Typography } from "@/constants/typography";
+import { alertError } from "@/utils/alertError";
 import {
   createGroup,
   deleteGroup,
@@ -40,7 +41,7 @@ type Props = {
   onGroupJoined: (group: Group) => void;
   onGroupDeleted: (groupId: number) => void;
   onGroupLeft: (groupId: number) => void;
-  onMemberKicked: (groupId: number) => void;
+  onMemberCountChange: (groupId: number, count: number) => void;
   initialView?: "main" | "create" | "join";
 };
 
@@ -54,7 +55,7 @@ export default function GroupDrawer({
   onGroupJoined,
   onGroupDeleted,
   onGroupLeft,
-  onMemberKicked,
+  onMemberCountChange,
   initialView = "main",
 }: Props) {
   const insets = useSafeAreaInsets();
@@ -77,21 +78,36 @@ export default function GroupDrawer({
   const [membersLoading, setMembersLoading] = useState(false);
   const [kickTarget, setKickTarget] = useState<GroupMember | null>(null);
   const [kicking, setKicking] = useState(false);
+  const [manageGroupId, setManageGroupId] = useState<number | null>(null);
 
   const activeGroup =
     groups.find((g) => g.group_id === selectedGroupId) ?? groups[0];
+  const manageGroup = groups.find((g) => g.group_id === manageGroupId);
+  // 멤버 목록의 본인 정보를 우선 사용하고, 로딩 전에는 그룹 정보로 판단
+  const me = members.find((m) => m.is_me);
+  const isManageLeader = me ? me.leader : (manageGroup?.is_leader ?? false);
+
+  const openManage = (groupId: number) => {
+    // 이전 그룹의 멤버 정보로 권한을 판단하지 않도록 먼저 비움
+    setMembers([]);
+    setMemberImages({});
+    setMembersLoading(true);
+    setManageGroupId(groupId);
+    setView("manage");
+  };
 
   useEffect(() => {
-    if (view !== "manage" || !activeGroup) return;
+    if (view !== "manage" || manageGroupId == null) return;
     const controller = new AbortController();
     let cancelled = false;
     setMembersLoading(true);
     setMembers([]);
     setMemberImages({});
-    fetchGroupMembers(activeGroup.group_id, controller.signal)
+    fetchGroupMembers(manageGroupId, controller.signal)
       .then(async (data) => {
         if (cancelled) return;
         setMembers(data);
+        onMemberCountChange(manageGroupId, data.length);
         const entries = await Promise.all(
           data
             .filter((m) => m.profile_image)
@@ -110,9 +126,7 @@ export default function GroupDrawer({
         }
         if (!cancelled) setMemberImages(imageMap);
       })
-      .catch((err) => {
-        if (err.name !== "AbortError") console.error(err);
-      })
+      .catch((err) => alertError(err, "멤버 목록을 불러오지 못했어요."))
       .finally(() => {
         if (!cancelled) setMembersLoading(false);
       });
@@ -121,7 +135,7 @@ export default function GroupDrawer({
       controller.abort();
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [view, activeGroup?.group_id]);
+  }, [view, manageGroupId]);
 
   useEffect(() => {
     if (visible) {
@@ -154,6 +168,7 @@ export default function GroupDrawer({
       ]).start(() => {
         setMounted(false);
         setView("main");
+        setManageGroupId(null);
         setCreateName("");
         setJoinCode("");
       });
@@ -202,6 +217,9 @@ export default function GroupDrawer({
                     setCreateName("");
                   }}
                   style={styles.backBtn}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="뒤로 가기"
                 >
                   <Ionicons
                     name="chevron-back"
@@ -242,7 +260,7 @@ export default function GroupDrawer({
                     setCreateName("");
                     setView("main");
                   } catch (err) {
-                    console.error(err);
+                    alertError(err, "그룹 생성에 실패했어요.");
                   } finally {
                     setCreating(false);
                   }
@@ -265,6 +283,9 @@ export default function GroupDrawer({
                     setJoinCode("");
                   }}
                   style={styles.backBtn}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="뒤로 가기"
                 >
                   <Ionicons
                     name="chevron-back"
@@ -305,7 +326,7 @@ export default function GroupDrawer({
                     setJoinCode("");
                     setView("main");
                   } catch (err) {
-                    console.error(err);
+                    alertError(err, "그룹 참여에 실패했어요.");
                   } finally {
                     setJoining(false);
                   }
@@ -323,7 +344,13 @@ export default function GroupDrawer({
               {/* 메인 뷰 헤더 */}
               <View style={styles.drawerHeader}>
                 <Text style={styles.drawerTitle}>끼니팝</Text>
-                <TouchableOpacity onPress={onClose} style={styles.closeBtn}>
+                <TouchableOpacity
+                  onPress={onClose}
+                  style={styles.closeBtn}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="닫기"
+                >
                   <Ionicons name="close" size={24} color={Colors.gray[100]} />
                 </TouchableOpacity>
               </View>
@@ -333,35 +360,40 @@ export default function GroupDrawer({
                 {groups.map((group) => {
                   const isActive = group.group_id === selectedGroupId;
                   return (
-                    <View
+                    <TouchableOpacity
                       key={group.group_id}
                       style={[
                         styles.groupItem,
                         isActive && styles.groupItemActive,
                       ]}
+                      onPress={() => onSelectGroup(group.group_id)}
+                      activeOpacity={0.7}
+                      accessibilityRole="button"
+                      accessibilityState={{ selected: isActive }}
+                      accessibilityLabel={`${group.name}, ${group.member_count}명 참여중`}
                     >
-                      <TouchableOpacity
-                        onPress={() => onSelectGroup(group.group_id)}
-                        activeOpacity={0.7}
-                      >
-                        <View style={styles.groupRow}>
-                          <Text style={styles.groupName}>{group.name}</Text>
-                        </View>
-                      </TouchableOpacity>
-                      <View style={styles.groupRow}>
+                      <View style={styles.groupInfo}>
+                        <Text style={styles.groupName} numberOfLines={1}>
+                          {group.name}
+                        </Text>
                         <Text style={styles.groupMemberCount}>
                           {group.member_count}명 참여중
                         </Text>
-                        {isActive && group.is_leader && (
-                          <TouchableOpacity
-                            style={styles.managePill}
-                            onPress={() => setView("manage")}
-                          >
-                            <Text style={styles.managePillText}>그룹 관리</Text>
-                          </TouchableOpacity>
-                        )}
                       </View>
-                    </View>
+                      <TouchableOpacity
+                        style={styles.moreBtn}
+                        onPress={() => openManage(group.group_id)}
+                        hitSlop={8}
+                        accessibilityRole="button"
+                        accessibilityLabel={`${group.name} 그룹 정보`}
+                      >
+                        <Ionicons
+                          name="ellipsis-horizontal"
+                          size={20}
+                          color={Colors.gray[200]}
+                        />
+                      </TouchableOpacity>
+                    </TouchableOpacity>
                   );
                 })}
               </View>
@@ -405,6 +437,7 @@ export default function GroupDrawer({
                   </View>
                   <TouchableOpacity
                     style={styles.copyPill}
+                    hitSlop={8}
                     onPress={() =>
                       Clipboard.setStringAsync(activeGroup.invite_code)
                     }
@@ -443,6 +476,9 @@ export default function GroupDrawer({
                 <TouchableOpacity
                   onPress={() => setView("main")}
                   style={styles.backBtn}
+                  hitSlop={8}
+                  accessibilityRole="button"
+                  accessibilityLabel="뒤로 가기"
                 >
                   <Ionicons
                     name="chevron-back"
@@ -450,23 +486,26 @@ export default function GroupDrawer({
                     color={Colors.gray[100]}
                   />
                 </TouchableOpacity>
-                <Text style={styles.manageTitle}>{activeGroup.name}</Text>
+                <Text style={styles.manageTitle} numberOfLines={1}>
+                  {manageGroup?.name ?? ""}
+                </Text>
                 <View style={styles.backBtn} />
               </View>
 
               {/* 초대코드 */}
-              {activeGroup && (
+              {manageGroup && (
                 <View style={styles.inviteRow}>
                   <View style={styles.inviteLeft}>
                     <Text style={styles.inviteLabel}>초대코드</Text>
                     <Text style={styles.inviteCode}>
-                      {activeGroup.invite_code}
+                      {manageGroup.invite_code}
                     </Text>
                   </View>
                   <TouchableOpacity
                     style={styles.copyPill}
+                    hitSlop={8}
                     onPress={() =>
-                      Clipboard.setStringAsync(activeGroup.invite_code)
+                      Clipboard.setStringAsync(manageGroup.invite_code)
                     }
                   >
                     <Text style={styles.copyPillText}>복사</Text>
@@ -501,11 +540,14 @@ export default function GroupDrawer({
                             <Text style={styles.leaderBadge}>방장</Text>
                           )}
                         </View>
-                        {!member.is_me && activeGroup?.is_leader && (
+                        {isManageLeader && !member.is_me && !member.leader && (
                           <TouchableOpacity
                             style={styles.deletePill}
                             onPress={() => setKickTarget(member)}
                             disabled={kicking}
+                            hitSlop={8}
+                            accessibilityRole="button"
+                            accessibilityLabel={`${member.nickname} 님 삭제`}
                           >
                             <Text style={styles.deletePillText}>삭제</Text>
                           </TouchableOpacity>
@@ -518,21 +560,33 @@ export default function GroupDrawer({
 
               <View style={{ flex: 1 }} />
 
-              <View style={styles.divider} />
-              <TouchableOpacity
-                style={styles.leaveBtn}
-                onPress={() => setShowDeleteConfirm(true)}
-                disabled={deleting}
-              >
-                {deleting ? (
-                  <ActivityIndicator size="small" color={Colors.gray[300]} />
-                ) : (
-                  <>
-                    <Ionicons name="trash" size={16} color={Colors.gray[300]} />
-                    <Text style={styles.leaveText}>그룹 삭제하기</Text>
-                  </>
-                )}
-              </TouchableOpacity>
+              {/* 그룹 삭제는 방장만, 멤버 목록 로딩 후 노출 */}
+              {isManageLeader && !membersLoading && (
+                <>
+                  <View style={styles.divider} />
+                  <TouchableOpacity
+                    style={styles.leaveBtn}
+                    onPress={() => setShowDeleteConfirm(true)}
+                    disabled={deleting}
+                  >
+                    {deleting ? (
+                      <ActivityIndicator
+                        size="small"
+                        color={Colors.gray[300]}
+                      />
+                    ) : (
+                      <>
+                        <Ionicons
+                          name="trash"
+                          size={16}
+                          color={Colors.gray[300]}
+                        />
+                        <Text style={styles.leaveText}>그룹 삭제하기</Text>
+                      </>
+                    )}
+                  </TouchableOpacity>
+                </>
+              )}
             </>
           ) : null}
         </Animated.View>
@@ -556,7 +610,7 @@ export default function GroupDrawer({
             await quitGroup(activeGroup.group_id);
             onGroupLeft(activeGroup.group_id);
           } catch (err) {
-            console.error(err);
+            alertError(err, "그룹 나가기에 실패했어요.");
           } finally {
             setLeaving(false);
           }
@@ -568,18 +622,19 @@ export default function GroupDrawer({
       <KkModal
         visible={showDeleteConfirm}
         onClose={() => setShowDeleteConfirm(false)}
-        message={`'${activeGroup?.name ?? ""}'\n그룹을 삭제할까요?\n삭제 후 복구할 수 없습니다.`}
+        message={`'${manageGroup?.name ?? ""}'\n그룹을 삭제할까요?\n삭제 후 복구할 수 없습니다.`}
         buttonText="삭제하기"
         onButtonPress={async () => {
-          if (!activeGroup) return;
+          if (!manageGroup) return;
           setShowDeleteConfirm(false);
           setDeleting(true);
           try {
-            await deleteGroup(activeGroup.group_id);
-            onGroupDeleted(activeGroup.group_id);
+            await deleteGroup(manageGroup.group_id);
+            onGroupDeleted(manageGroup.group_id);
             setView("main");
+            setManageGroupId(null);
           } catch (err) {
-            console.error(err);
+            alertError(err, "그룹 삭제에 실패했어요.");
           } finally {
             setDeleting(false);
           }
@@ -594,22 +649,23 @@ export default function GroupDrawer({
         message={`'${kickTarget?.nickname ?? ""}' 님을\n그룹에서 추방할까요?`}
         buttonText="추방하기"
         onButtonPress={async () => {
-          if (!activeGroup || !kickTarget) return;
+          if (!manageGroup || !kickTarget) return;
           setKickTarget(null);
           setKicking(true);
           try {
-            await kickMember(activeGroup.group_id, kickTarget.member_id);
-            setMembers((prev) =>
-              prev.filter((m) => m.member_id !== kickTarget.member_id),
+            await kickMember(manageGroup.group_id, kickTarget.member_id);
+            const nextMembers = members.filter(
+              (m) => m.member_id !== kickTarget.member_id,
             );
+            setMembers(nextMembers);
             setMemberImages((prev) => {
               const next = { ...prev };
               delete next[kickTarget.member_id];
               return next;
             });
-            onMemberKicked(activeGroup.group_id);
+            onMemberCountChange(manageGroup.group_id, nextMembers.length);
           } catch (err) {
-            console.error(err);
+            alertError(err, "멤버 삭제에 실패했어요.");
           } finally {
             setKicking(false);
           }
@@ -669,25 +725,31 @@ const styles = StyleSheet.create({
   },
   manageTitle: {
     ...Typography.title.xs,
+    flex: 1,
+    textAlign: "center",
     color: Colors.gray[100],
   },
 
-  groupList: { gap: 16 },
-  groupItemActive: {
-    backgroundColor: Colors.gray[900],
-    borderRadius: 16,
-    padding: 16,
-    gap: 10,
-  },
+  groupList: { gap: 8 },
   groupItem: {
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    gap: 6,
-  },
-  groupRow: {
     flexDirection: "row",
     alignItems: "center",
-    justifyContent: "space-between",
+    gap: 8,
+    borderRadius: 16,
+    padding: 16,
+  },
+  groupItemActive: {
+    backgroundColor: Colors.gray[900],
+  },
+  groupInfo: {
+    flex: 1,
+    gap: 6,
+  },
+  moreBtn: {
+    width: 32,
+    height: 32,
+    alignItems: "center",
+    justifyContent: "center",
   },
   groupName: {
     ...Typography.title.xs,
@@ -700,16 +762,6 @@ const styles = StyleSheet.create({
   groupMemberCount: {
     ...Typography.caption[1],
     color: Colors.gray[200],
-  },
-  managePill: {
-    backgroundColor: Colors.gray[700],
-    borderRadius: 999,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-  },
-  managePillText: {
-    ...Typography.caption[1],
-    color: Colors.gray[100],
   },
 
   divider: {
@@ -726,6 +778,7 @@ const styles = StyleSheet.create({
     flex: 1,
     alignItems: "center",
     gap: 8,
+    paddingVertical: 8,
   },
   actionLabel: {
     ...Typography.caption[1],

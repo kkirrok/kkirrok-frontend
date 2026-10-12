@@ -20,6 +20,7 @@ import {
   fetchPosts,
   fetchSystemEmojis,
 } from "@/utils/api/kkinipopApi";
+import { alertError } from "@/utils/alertError";
 import { getDownloadUrl } from "@/utils/api/r2Api";
 import { tokenStore } from "@/utils/store/tokenStore";
 import {
@@ -36,7 +37,6 @@ import { router, useFocusEffect } from "expo-router";
 import { useCallback, useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
-  Alert,
   Modal,
   Pressable,
   RefreshControl,
@@ -116,9 +116,7 @@ export default function KkinipopPage() {
           if (groups.length > 0) setSelectedGroupId(groups[0].group_id);
           setGlobalSystemEmojis(systemEmojis);
         })
-        .catch((err) => {
-          if (err.name !== "AbortError") console.error(err);
-        })
+        .catch((err) => alertError(err, "그룹 목록을 불러오지 못했어요."))
         .finally(() => setGroupsLoading(false));
     })();
     return () => controller.abort();
@@ -143,8 +141,8 @@ export default function KkinipopPage() {
         }),
       );
       if (!controller.signal.aborted) setCustomEmojiList(withUrls);
-    } catch (err: any) {
-      if (err?.name !== "AbortError") console.error(err);
+    } catch (err) {
+      alertError(err, "이모지 목록을 불러오지 못했어요.");
     }
   }, []);
 
@@ -178,8 +176,8 @@ export default function KkinipopPage() {
       setMissions(resolvedData);
       const realTimeIdx = resolvedData.findIndex((m) => m.is_real_time);
       setMissionIndex(realTimeIdx >= 0 ? realTimeIdx : 0);
-    } catch (err: any) {
-      if (err?.name !== "AbortError") console.error(err);
+    } catch (err) {
+      alertError(err, "미션을 불러오지 못했어요.");
     } finally {
       if (!controller.signal.aborted) setMissionLoading(false);
     }
@@ -192,16 +190,48 @@ export default function KkinipopPage() {
     try {
       const days = await fetchPosts(groupId, undefined, controller.signal);
       if (!controller.signal.aborted) setPostDays(days);
-    } catch (err: any) {
-      if (err?.name !== "AbortError") console.error(err);
+    } catch (err) {
+      alertError(err, "게시글을 불러오지 못했어요.");
     } finally {
       if (!controller.signal.aborted) setContentLoading(false);
     }
   }, []);
 
+  const refreshGroups = useCallback(async (signal?: AbortSignal) => {
+    try {
+      const data = await fetchGroups(signal);
+      if (signal?.aborted) return;
+      setGroups(data);
+      // 선택 중인 그룹이 사라졌으면 첫 번째 그룹으로 전환
+      setSelectedGroupId((cur) =>
+        cur != null && data.some((g) => g.group_id === cur)
+          ? cur
+          : (data[0]?.group_id ?? null),
+      );
+    } catch (err) {
+      if ((err as Error).name !== "AbortError") console.error(err);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!drawerOpen) return;
+    const controller = new AbortController();
+    refreshGroups(controller.signal);
+    return () => controller.abort();
+  }, [drawerOpen, refreshGroups]);
+
+  const removeGroup = (groupId: number) => {
+    const next = groups.filter((g) => g.group_id !== groupId);
+    setGroups(next);
+    if (selectedGroupId === groupId) {
+      setSelectedGroupId(next[0]?.group_id ?? null);
+    }
+  };
+
   const handleMemberChange = useCallback(() => {
     if (selectedGroupIdRef.current != null) loadPosts(selectedGroupIdRef.current);
-  }, [loadPosts]);
+    refreshGroups();
+  }, [loadPosts, refreshGroups]);
 
   useKkinipopSSE({
     selectedGroupIdRef,
@@ -452,8 +482,8 @@ export default function KkinipopPage() {
           }),
         })),
       );
-    } catch (err: any) {
-      Alert.alert("오류", err?.message ?? "이모지 반응에 실패했어요.");
+    } catch (err) {
+      alertError(err, "이모지 반응에 실패했어요.");
     }
   };
 
@@ -468,8 +498,8 @@ export default function KkinipopPage() {
           posts: day.posts.filter((p) => p.post_id !== postId),
         })),
       );
-    } catch (err: any) {
-      Alert.alert("오류", err?.message ?? "게시글 삭제에 실패했어요.");
+    } catch (err) {
+      alertError(err, "게시글 삭제에 실패했어요.");
     }
   };
 
@@ -492,7 +522,7 @@ export default function KkinipopPage() {
       await deleteGroupEmoji(selectedGroupId, emojiId);
       setCustomEmojiList((prev) => prev.filter((e) => e.emoji_id !== emojiId));
     } catch (err) {
-      console.error(err);
+      alertError(err, "이모지 삭제에 실패했어요.");
     }
   };
 
@@ -739,31 +769,24 @@ export default function KkinipopPage() {
         onGroupCreated={(group) => {
           setGroups((prev) => [...prev, group]);
           setSelectedGroupId(group.group_id);
+          // 생성/참여 응답의 인원 수가 최신이 아닐 수 있어 목록을 다시 조회
+          refreshGroups();
         }}
         onGroupJoined={(group) => {
-          setGroups((prev) => [...prev, group]);
+          setGroups((prev) =>
+            prev.some((g) => g.group_id === group.group_id)
+              ? prev
+              : [...prev, group],
+          );
           setSelectedGroupId(group.group_id);
+          refreshGroups();
         }}
-        onGroupDeleted={(groupId) => {
-          setGroups((prev) => {
-            const next = prev.filter((g) => g.group_id !== groupId);
-            setSelectedGroupId(next.length > 0 ? next[0].group_id : null);
-            return next;
-          });
-        }}
-        onGroupLeft={(groupId) => {
-          setGroups((prev) => {
-            const next = prev.filter((g) => g.group_id !== groupId);
-            setSelectedGroupId(next.length > 0 ? next[0].group_id : null);
-            return next;
-          });
-        }}
-        onMemberKicked={(groupId) => {
+        onGroupDeleted={removeGroup}
+        onGroupLeft={removeGroup}
+        onMemberCountChange={(groupId, count) => {
           setGroups((prev) =>
             prev.map((g) =>
-              g.group_id === groupId
-                ? { ...g, member_count: Math.max(0, g.member_count - 1) }
-                : g,
+              g.group_id === groupId ? { ...g, member_count: count } : g,
             ),
           );
         }}
