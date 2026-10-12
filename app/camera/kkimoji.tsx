@@ -3,6 +3,7 @@ import KkBackground from "@/components/KkBackground";
 import KkButton from "@/components/KkButton";
 import KkHeader from "@/components/KkHeader";
 import { Colors } from "@/constants/colors";
+import { alertError } from "@/utils/alertError";
 import { createGroupEmoji } from "@/utils/api/kkinipopApi";
 import { Ionicons } from "@expo/vector-icons";
 import { CameraView, useCameraPermissions } from "expo-camera";
@@ -48,7 +49,9 @@ export default function KkimojiCamera() {
       if (!photo?.uri) return;
       setCapturedUri(photo.uri);
     } catch (e) {
-      console.error("촬영 실패:", e);
+      alertError(e, "사진 촬영에 실패했어요. 다시 시도해 주세요.", {
+        useErrorMessage: false,
+      });
     } finally {
       setIsTaking(false);
     }
@@ -132,7 +135,11 @@ export default function KkimojiCamera() {
           ref={cameraRef}
           facing={facing}
           onCameraReady={() => setCameraReady(true)}
-          onMountError={(error) => console.error("카메라 마운트 에러:", error)}
+          onMountError={(error) =>
+            alertError(error, "카메라를 실행할 수 없어요.", {
+              useErrorMessage: false,
+            })
+          }
         />
       </View>
       <View style={[styles.shutterWrap, { top: shutterTop }]}>
