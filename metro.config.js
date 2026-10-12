@@ -1,7 +1,8 @@
-const { getDefaultConfig } = require("expo/metro-config");
+const { getSentryExpoConfig } = require("@sentry/react-native/metro");
 const path = require("path");
 
-const config = getDefaultConfig(__dirname);
+// Expo 기본 설정 + Sentry 소스맵용 Debug ID 주입
+const config = getSentryExpoConfig(__dirname);
 
 config.transformer = {
   ...config.transformer,

@@ -9,10 +9,17 @@ import {
 import { useFonts } from "expo-font";
 import * as Notifications from "expo-notifications";
 import { Stack, router } from "expo-router";
+import { initSentry, Sentry } from "@/utils/sentry";
 import { tokenStore } from "@/utils/store/tokenStore";
 import * as SystemUI from "expo-system-ui";
 import { useEffect } from "react";
 import { Platform, Text } from "react-native";
+
+// 다른 초기화보다 먼저 실행해 앱 시작 단계의 에러도 수집
+initSentry();
+
+// 화면 렌더링 중 에러가 나면 에러 화면을 보여주고 Sentry에 전송
+export { default as ErrorBoundary } from "@/components/KkErrorFallback";
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -85,7 +92,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function RootLayout() {
+function RootLayout() {
   const [fontsLoaded] = useFonts({
     "Pretendard-Regular": require("../assets/fonts/Pretendard-Regular.otf"),
     "Pretendard-SemiBold": require("../assets/fonts/Pretendard-SemiBold.otf"),
@@ -116,3 +123,6 @@ export default function RootLayout() {
     </QueryClientProvider>
   );
 }
+
+// 터치·화면 이동 기록(breadcrumb)을 에러 리포트에 함께 남김
+export default Sentry.wrap(RootLayout);

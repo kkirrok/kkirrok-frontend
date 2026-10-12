@@ -10,6 +10,8 @@ jobs:
   update:
     name: EAS Update (${{ github.ref_name }})
     runs-on: ubuntu-latest
+    env:
+      SENTRY_AUTH_TOKEN: ${{ secrets.SENTRY_AUTH_TOKEN }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -36,3 +38,8 @@ jobs:
       - name: Publish OTA update (develop → staging)
         if: github.ref_name == 'develop'
         run: eas update --channel staging --message "${{ github.event.head_commit.message }}" --non-interactive
+
+      # eas update가 만든 dist 폴더의 소스맵을 Sentry에 업로드 (토큰이 등록된 경우에만)
+      - name: Upload source maps to Sentry
+        if: env.SENTRY_AUTH_TOKEN != ''
+        run: npx sentry-expo-upload-sourcemaps dist
