@@ -113,27 +113,6 @@ export async function confirmScanMeal(
   return json.data as TodayMealRecord;
 }
 
-export async function fetchTodayNutritionSummary(): Promise<NutritionSummary> {
-  const token = await tokenStore.get();
-  if (!token) throw new Error("인증 토큰이 없습니다. 다시 로그인해 주세요.");
-
-  const res = await fetch(`${BASE_URL}/v1/meals/nutrition/summary/today`, {
-    headers: {
-      accept: "application/json;charset=UTF-8",
-      Authorization: `Bearer ${token}`,
-    },
-  });
-
-  let json: { message?: string; data?: unknown } = {};
-  try {
-    json = await res.json();
-  } catch {}
-  if (!res.ok)
-    throw new Error(json.message ?? "영양성분 요약 조회에 실패했습니다.");
-
-  return json.data as NutritionSummary;
-}
-
 export async function searchFoods(
   keyword: string,
 ): Promise<FoodSearchResult[]> {

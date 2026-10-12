@@ -1,13 +1,14 @@
 import KkBackground from "@/components/KkBackground";
+import KkBellButton from "@/components/KkBellButton";
 import GroupDrawer from "@/components/kkinipop/GroupDrawer";
 import MissionCard from "@/components/kkinipop/MissionCard";
 import RecordCard from "@/components/kkinipop/RecordCard";
 import WeekCalendar from "@/components/kkinipop/WeekCalendar";
 import SkeletonMissionCard from "@/components/skeleton/SkeletonMissionCard";
 import SkeletonRecordRow from "@/components/skeleton/SkeletonRecordRow";
-import BellIcon from "@/assets/icons/bell.svg";
 import { useKkinipopSSE } from "@/hooks/useKkinipopSSE";
 import { Colors } from "@/constants/colors";
+import { SYSTEM_EMOJI_CHAR } from "@/constants/kkinipop";
 import { Typography } from "@/constants/typography";
 import {
   addReaction,
@@ -48,14 +49,20 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-const SYSTEM_EMOJI_CHAR: Record<string, string> = {
-  SYSTEM_HEART: "❤️",
-  SYSTEM_FIRE: "🔥",
-  SYSTEM_PIG: "🐷",
-  SYSTEM_YUMMY: "😋",
-  SYSTEM_SMILE: "😊",
-  SYSTEM_DDABONG: "👍",
-};
+function formatDate(date: Date) {
+  return [
+    date.getFullYear(),
+    String(date.getMonth() + 1).padStart(2, "0"),
+    String(date.getDate()).padStart(2, "0"),
+  ].join("-");
+}
+
+// 게시글 API는 기준 날짜가 속한 주(월~일) 단위로 응답하므로 해당 주의 월요일을 키로 사용
+function getWeekStart(date: Date) {
+  const monday = new Date(date);
+  monday.setDate(date.getDate() - ((date.getDay() + 6) % 7));
+  return formatDate(monday);
+}
 
 export default function KkinipopPage() {
   const insets = useSafeAreaInsets();
@@ -96,7 +103,12 @@ export default function KkinipopPage() {
   const systemEmojisRef = useRef<SystemEmoji[]>([]);
   const customEmojisRef = useRef<typeof customEmojiList>([]);
 
+  const selectedDateStr = formatDate(selectedDate);
+  const selectedWeekStart = getWeekStart(selectedDate);
+  const selectedDateStrRef = useRef(selectedDateStr);
+
   useEffect(() => { selectedGroupIdRef.current = selectedGroupId; }, [selectedGroupId]);
+  useEffect(() => { selectedDateStrRef.current = selectedDateStr; }, [selectedDateStr]);
   useEffect(() => { systemEmojisRef.current = globalSystemEmojis; }, [globalSystemEmojis]);
   useEffect(() => { customEmojisRef.current = customEmojiList; }, [customEmojiList]);
 
@@ -190,7 +202,11 @@ export default function KkinipopPage() {
     const controller = new AbortController();
     postsControllerRef.current = controller;
     try {
-      const days = await fetchPosts(groupId, undefined, controller.signal);
+      const days = await fetchPosts(
+        groupId,
+        { date: selectedDateStrRef.current },
+        controller.signal,
+      );
       if (!controller.signal.aborted) setPostDays(days);
     } catch (err) {
       alertError(err, "게시글을 불러오지 못했어요.");
@@ -290,17 +306,23 @@ export default function KkinipopPage() {
 
   useEffect(() => {
     if (selectedGroupId == null) return;
-    const dateStr = [
-      selectedDate.getFullYear(),
-      String(selectedDate.getMonth() + 1).padStart(2, "0"),
-      String(selectedDate.getDate()).padStart(2, "0"),
-    ].join("-");
     setMissions([]);
     setMissionIndex(0);
     setMoabogiMissionId(null);
-    loadMissions(selectedGroupId, dateStr);
+    loadMissions(selectedGroupId, selectedDateStr);
     return () => missionControllerRef.current?.abort();
-  }, [selectedGroupId, selectedDate, loadMissions]);
+  }, [selectedGroupId, selectedDateStr, loadMissions]);
+
+  // 다른 주의 날짜를 선택하면 그 주의 게시글을 다시 조회 (같은 주 안에서는 이미 받은 데이터 사용)
+  const loadedWeekStartRef = useRef(selectedWeekStart);
+  useEffect(() => {
+    if (loadedWeekStartRef.current === selectedWeekStart) return;
+    loadedWeekStartRef.current = selectedWeekStart;
+    if (selectedGroupId == null) return;
+    setPostDays([]);
+    setContentLoading(true);
+    loadPosts(selectedGroupId);
+  }, [selectedWeekStart, selectedGroupId, loadPosts]);
 
   useFocusEffect(
     useCallback(() => {
@@ -315,13 +337,8 @@ export default function KkinipopPage() {
     }, [selectedGroupId, loadPosts, loadGroupEmojis]),
   );
 
-  const todayStr = [
-    selectedDate.getFullYear(),
-    String(selectedDate.getMonth() + 1).padStart(2, "0"),
-    String(selectedDate.getDate()).padStart(2, "0"),
-  ].join("-");
   const todayPosts =
-    postDays.find((d) => d.date.startsWith(todayStr))?.posts ?? [];
+    postDays.find((d) => d.date.startsWith(selectedDateStr))?.posts ?? [];
 
   useEffect(() => {
     let cancelled = false;
@@ -607,14 +624,7 @@ export default function KkinipopPage() {
             </View>
           </View>
           <View style={styles.headerRight}>
-            <TouchableOpacity
-              onPress={() => router.push("/notification")}
-              accessibilityRole="button"
-              accessibilityLabel="알림 화면으로 이동"
-              hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
-            >
-              <BellIcon width={24} height={24} />
-            </TouchableOpacity>
+            <KkBellButton />
           </View>
         </View>
       </View>

@@ -1,7 +1,7 @@
 import { tokenStore } from "@/utils/store/tokenStore";
 import {
+  CreatedGroupEmoji,
   Group,
-  GroupEmoji,
   GroupEmojiList,
   GroupMember,
   Mission,
@@ -161,15 +161,20 @@ export async function kickMember(
   if (!res.ok) throw new Error(json.message ?? "멤버 추방에 실패했습니다.");
 }
 
+// date가 속한 주(월~일)의 게시글을 날짜별로 조회. date가 없으면 이번 주 기준
 export async function fetchPosts(
   groupId: number,
-  missionId?: number,
+  params: { date?: string; missionId?: number } = {},
   signal?: AbortSignal,
 ): Promise<PostDay[]> {
   const token = await tokenStore.get();
   if (!token) throw new Error("인증 토큰이 없습니다. 다시 로그인해 주세요.");
 
-  const query = missionId != null ? `?missionId=${missionId}` : "";
+  const searchParams = new URLSearchParams();
+  if (params.date) searchParams.set("date", params.date);
+  if (params.missionId != null)
+    searchParams.set("missionId", String(params.missionId));
+  const query = searchParams.toString() ? `?${searchParams}` : "";
   const res = await fetch(
     `${BASE_URL}/v1/kkinipop/groups/${groupId}/posts${query}`,
     {
@@ -331,7 +336,7 @@ export async function fetchGroupEmojis(
 export async function createGroupEmoji(
   groupId: number,
   imageUri: string,
-): Promise<GroupEmoji> {
+): Promise<CreatedGroupEmoji> {
   const token = await tokenStore.get();
   if (!token) throw new Error("인증 토큰이 없습니다. 다시 로그인해 주세요.");
 
@@ -354,7 +359,7 @@ export async function createGroupEmoji(
   const json = await parseJson(res);
   if (!res.ok) throw new Error(json.message ?? "끼모지 생성에 실패했습니다.");
 
-  return json.data as GroupEmoji;
+  return json.data as CreatedGroupEmoji;
 }
 
 export async function deleteGroupEmoji(
