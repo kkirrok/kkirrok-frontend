@@ -7,7 +7,7 @@ import { useProfile } from "@/hooks/useProfile";
 import { useProfileImage } from "@/hooks/useProfileImage";
 import { deleteAccount, signOut } from "@/utils/api/authApi";
 import {
-  requestAndRegisterPushToken,
+  registerPushTokenIfPermitted,
   unregisterPushToken,
 } from "@/utils/notifications/pushToken";
 import { tokenStore } from "@/utils/store/tokenStore";
@@ -59,7 +59,8 @@ export default function MyPage() {
       await deleteAccount();
     } catch (e) {
       // 탈퇴 실패 시 계속 알림을 받을 수 있도록 토큰 재등록
-      requestAndRegisterPushToken().catch(() => {});
+      // (여기서도 실패하면 다음 앱 실행 시 app/index에서 다시 등록됨)
+      registerPushTokenIfPermitted().catch(() => {});
       setErrorMessage(
         e instanceof Error ? e.message : "회원 탈퇴에 실패했습니다.",
       );
