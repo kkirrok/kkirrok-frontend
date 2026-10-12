@@ -4,7 +4,7 @@ import KkBackground from "@/components/KkBackground";
 import KkBellButton from "@/components/KkBellButton";
 import KkModal from "@/components/KkModal";
 import { useProfile } from "@/hooks/useProfile";
-import { useProfileImage } from "@/hooks/useProfileImage";
+import { useR2ImageUrl } from "@/hooks/useR2ImageUrl";
 import { deleteAccount, signOut } from "@/utils/api/authApi";
 import {
   registerPushTokenIfPermitted,
@@ -31,7 +31,7 @@ export default function MyPage() {
   const [errorModalVisible, setErrorModalVisible] = useState(false);
   const router = useRouter();
   const { data: profile, isLoading } = useProfile();
-  const { data: imageUrl } = useProfileImage(profile?.profile_image);
+  const { data: imageUrl } = useR2ImageUrl(profile?.profile_image);
 
   const handleLogout = async () => {
     try {
