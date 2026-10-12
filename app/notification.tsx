@@ -1,8 +1,11 @@
 import KkBackground from "@/components/KkBackground";
 import KkHeader from "@/components/KkHeader";
 import { Colors } from "@/constants/colors";
+import { SYSTEM_EMOJI_CHAR } from "@/constants/kkinipop";
 import { Typography } from "@/constants/typography";
 import { useNotificationsInfinite } from "@/hooks/useNotificationsInfinite";
+import { useR2ImageUrl } from "@/hooks/useR2ImageUrl";
+import { UNREAD_NOTIFICATION_COUNT_KEY } from "@/hooks/useUnreadNotificationCount";
 import {
   markAllNotificationsRead,
   markNotificationRead,
@@ -12,6 +15,8 @@ import type {
   NotificationType,
 } from "@/utils/types/notification";
 import { Ionicons } from "@expo/vector-icons";
+import { useQueryClient } from "@tanstack/react-query";
+import { Image } from "expo-image";
 import { useFocusEffect } from "expo-router";
 import {
   ComponentProps,
@@ -33,34 +38,68 @@ import {
 } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 
-type IconType =
-  | "record"
-  | "kkinipop"
-  | "group-join"
-  | "group-react"
-  | "group-chat";
+type IconType = "record" | "group" | "mission" | "reaction";
 
 const TYPE_TO_ICON: Partial<Record<NotificationType, IconType>> = {
-  RECORD: "record",
-  KKINIPOP: "kkinipop",
-  KKINIPOP_REACTION: "kkinipop",
-  GROUP_JOIN: "group-join",
-  GROUP_REACT: "group-react",
-  GROUP_CHAT: "group-chat",
+  MEAL_REMINDER_OVERDUE: "record",
+  MEAL_REMINDER_NO_TODAY: "record",
+  MISSION_START: "mission",
+  KKINIPOP_REACTION: "reaction",
 };
 
-const ICON_MAP: Record<
-  IconType,
-  { name: ComponentProps<typeof Ionicons>["name"]; bg: string }
-> = {
-  record: { name: "camera-outline", bg: Colors.gray[900] },
-  kkinipop: { name: "people-outline", bg: Colors.gray[900] },
-  "group-join": { name: "fast-food-outline", bg: Colors.gray[900] },
-  "group-react": { name: "happy-outline", bg: Colors.gray[900] },
-  "group-chat": { name: "chatbubbles-outline", bg: Colors.gray[900] },
+const ICON_MAP: Record<IconType, ComponentProps<typeof Ionicons>["name"]> = {
+  record: "camera-outline",
+  group: "people-outline",
+  mission: "fast-food-outline",
+  // 리액션 이모지 정보를 알 수 없을 때의 기본 아이콘
+  reaction: "happy-outline",
 };
 
 const FALLBACK_ICON: IconType = "record";
+
+function getIconType(type: NotificationType): IconType {
+  // 그룹 참여/탈퇴/삭제 등 그룹 관련 알림은 모두 그룹 아이콘으로 고정
+  if (type.startsWith("GROUP_")) return "group";
+  return TYPE_TO_ICON[type] ?? FALLBACK_ICON;
+}
+
+// 리액션 알림 data: emojiCode, isCustom, customEmojiImageKey (data 값은 문자열로 내려옴)
+function getReactionEmoji(item: NotificationItem) {
+  if (item.type !== "KKINIPOP_REACTION" || !item.data) return null;
+  const isCustom = String(item.data.isCustom) === "true";
+  return {
+    customImageKey: isCustom ? item.data.customEmojiImageKey || null : null,
+    systemChar: isCustom ? null : (SYSTEM_EMOJI_CHAR[item.data.emojiCode] ?? null),
+  };
+}
+
+function NotificationThumbnail({ item }: { item: NotificationItem }) {
+  const reaction = getReactionEmoji(item);
+  const { data: customImageUrl } = useR2ImageUrl(reaction?.customImageKey);
+
+  let content;
+  if (customImageUrl) {
+    content = (
+      <Image
+        source={{ uri: customImageUrl }}
+        style={styles.thumbnailImage}
+        contentFit="cover"
+      />
+    );
+  } else if (reaction?.systemChar) {
+    content = <Text style={styles.thumbnailEmoji}>{reaction.systemChar}</Text>;
+  } else {
+    content = (
+      <Ionicons
+        name={ICON_MAP[getIconType(item.type)]}
+        size={28}
+        color={Colors.gray[300]}
+      />
+    );
+  }
+
+  return <View style={styles.thumbnail}>{content}</View>;
+}
 
 // getItemLayout을 위해 알림 카드 높이를 고정
 const THUMBNAIL_SIZE = 64;
@@ -107,8 +146,6 @@ type NotificationRowProps = {
 
 const NotificationRow = memo(
   function NotificationRow({ item, height, onPress }: NotificationRowProps) {
-    const iconType = TYPE_TO_ICON[item.type] ?? FALLBACK_ICON;
-    const icon = ICON_MAP[iconType];
     const isNew = !item.is_read;
 
     return (
@@ -117,9 +154,7 @@ const NotificationRow = memo(
         onPress={() => onPress(item.notification_id)}
         style={[styles.card, { height }, isNew && styles.cardNew]}
       >
-        <View style={[styles.thumbnail, { backgroundColor: icon.bg }]}>
-          <Ionicons name={icon.name} size={28} color={Colors.gray[300]} />
-        </View>
+        <NotificationThumbnail item={item} />
         <View style={styles.content}>
           <Text
             style={[styles.title, isNew && styles.titleNew]}
@@ -146,6 +181,7 @@ const NotificationRow = memo(
     prev.item.title === next.item.title &&
     prev.item.body === next.item.body &&
     prev.item.type === next.item.type &&
+    prev.item.data === next.item.data &&
     prev.item.sent_at === next.item.sent_at,
 );
 
@@ -208,24 +244,38 @@ export default function NotificationPage() {
     fetchNextPage();
   }, [hasNextPage, isFetchingNextPage, fetchNextPage]);
 
-  const handlePress = useCallback((id: number) => {
-    setReadIds((prev) => new Set([...prev, id]));
-    markNotificationRead(id).catch(() => {
-      setReadIds((prev) => {
-        const next = new Set(prev);
-        next.delete(id);
-        return next;
-      });
-    });
-  }, []);
+  const queryClient = useQueryClient();
+  // 헤더 벨 아이콘의 읽지 않은 알림 표시를 서버 값으로 다시 맞춤
+  const refreshUnreadCount = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: UNREAD_NOTIFICATION_COUNT_KEY });
+  }, [queryClient]);
+
+  const handlePress = useCallback(
+    (id: number) => {
+      setReadIds((prev) => new Set([...prev, id]));
+      markNotificationRead(id)
+        .catch(() => {
+          setReadIds((prev) => {
+            const next = new Set(prev);
+            next.delete(id);
+            return next;
+          });
+        })
+        .finally(refreshUnreadCount);
+    },
+    [refreshUnreadCount],
+  );
 
   const handleReadAll = useCallback(() => {
     setReadIds(
       (prev) =>
         new Set([...prev, ...rawNotifications.map((n) => n.notification_id)]),
     );
-    markAllNotificationsRead().catch(() => {});
-  }, [rawNotifications]);
+    queryClient.setQueryData(UNREAD_NOTIFICATION_COUNT_KEY, 0);
+    markAllNotificationsRead()
+      .catch(() => {})
+      .finally(refreshUnreadCount);
+  }, [rawNotifications, queryClient, refreshUnreadCount]);
 
   const hasUnread = notifications.some((n) => !n.is_read);
 
@@ -252,7 +302,9 @@ export default function NotificationPage() {
         rightAction={
           hasUnread ? (
             <TouchableOpacity onPress={handleReadAll} hitSlop={8}>
-              <Text style={styles.readAllBtn}>모두 읽음</Text>
+              <Text style={styles.readAllBtn} numberOfLines={1}>
+                모두 읽음
+              </Text>
             </TouchableOpacity>
           ) : undefined
         }
@@ -321,9 +373,18 @@ const styles = StyleSheet.create({
     width: THUMBNAIL_SIZE,
     height: THUMBNAIL_SIZE,
     borderRadius: 12,
+    overflow: "hidden",
+    backgroundColor: Colors.gray[900],
     alignItems: "center",
     justifyContent: "center",
     flexShrink: 0,
+  },
+  thumbnailImage: {
+    width: THUMBNAIL_SIZE,
+    height: THUMBNAIL_SIZE,
+  },
+  thumbnailEmoji: {
+    fontSize: 32,
   },
   content: {
     flex: 1,

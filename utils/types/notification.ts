@@ -14,14 +14,13 @@ export type NotificationSettings = {
   agrees: NotificationAgree[];
 };
 
+// Swagger NotificationType enum 기준 (서버에 새 타입이 추가돼도 깨지지 않도록 string 허용)
 export type NotificationType =
-  | "RECORD"
-  | "KKINIPOP"
-  | "KKINIPOP_REACTION"
+  | "MEAL_REMINDER_OVERDUE"
+  | "MEAL_REMINDER_NO_TODAY"
   | "GROUP_JOIN"
-  | "GROUP_REACT"
-  | "GROUP_CHAT"
   | "MISSION_START"
+  | "KKINIPOP_REACTION"
   | (string & {});
 
 export type NotificationData = Record<string, string>;
