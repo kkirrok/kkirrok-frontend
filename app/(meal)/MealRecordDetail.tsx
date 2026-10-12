@@ -7,11 +7,12 @@ import { MEAL_TIME_SLOT_TO_TYPE } from "@/utils/api/mealApi";
 import type { TodayMealRecord } from "@/utils/types/meal";
 import { Ionicons } from "@expo/vector-icons";
 import { router, useFocusEffect, useLocalSearchParams } from "expo-router";
-import React, { useCallback, useEffect, useRef, useState } from "react";
+import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
   Dimensions,
   FlatList,
+  ListRenderItem,
   NativeScrollEvent,
   NativeSyntheticEvent,
   ScrollView,
@@ -54,6 +55,38 @@ function makeSegments(r: TodayMealRecord): DonutSegment[] | undefined {
   ];
 }
 
+const noop = () => {};
+
+const chartKeyExtractor = (item: TodayMealRecord) => String(item.meal_id);
+
+const getChartItemLayout = (
+  _data: ArrayLike<TodayMealRecord> | null | undefined,
+  index: number,
+) => ({
+  length: CHART_AREA_WIDTH,
+  offset: CHART_AREA_WIDTH * index,
+  index,
+});
+
+const ChartPage = memo(function ChartPage({ item }: { item: TodayMealRecord }) {
+  const segments = useMemo(() => makeSegments(item), [item]);
+  return (
+    <View style={styles.chartPage}>
+      <MealDonutChart
+        photo={null}
+        mealName={item.food_name}
+        recognitionFailed={false}
+        onCameraPress={noop}
+        segments={segments}
+      />
+    </View>
+  );
+});
+
+const renderChartPage: ListRenderItem<TodayMealRecord> = ({ item }) => (
+  <ChartPage item={item} />
+);
+
 export default function MealRecordDetail() {
   const { mealId, date: dateParam } = useLocalSearchParams<{ mealId?: string; date?: string }>();
   const isDateMode = !!dateParam;
@@ -67,7 +100,9 @@ export default function MealRecordDetail() {
   const todayQuery = useTodayMealsQuery(!isDateMode);
   const dailyQuery = useDailyMealsQuery(dateParam ?? "", isDateMode);
 
-  const records = (isDateMode ? dailyQuery.data : todayQuery.data) ?? [];
+  // 데이터가 없을 때 매 렌더마다 새 빈 배열이 만들어져 FlatList가 다시 렌더되지 않도록 메모이제이션
+  const recordsData = isDateMode ? dailyQuery.data : todayQuery.data;
+  const records = useMemo(() => recordsData ?? [], [recordsData]);
   const loading = isDateMode ? dailyQuery.isLoading : todayQuery.isLoading;
   const mealsError = isDateMode ? dailyQuery.error : todayQuery.error;
   const refetchMeals = isDateMode ? dailyQuery.refetch : todayQuery.refetch;
@@ -176,16 +211,16 @@ export default function MealRecordDetail() {
             <FlatList
               ref={chartListRef}
               data={records}
-              keyExtractor={(item) => String(item.meal_id)}
+              keyExtractor={chartKeyExtractor}
               horizontal
               pagingEnabled
               showsHorizontalScrollIndicator={false}
               onMomentumScrollEnd={handleChartSwipe}
-              getItemLayout={(_data, index) => ({
-                length: CHART_AREA_WIDTH,
-                offset: CHART_AREA_WIDTH * index,
-                index,
-              })}
+              getItemLayout={getChartItemLayout}
+              // 한 화면에 차트 한 장만 보이므로 현재 페이지와 양옆 페이지만 렌더
+              initialNumToRender={2}
+              maxToRenderPerBatch={2}
+              windowSize={3}
               onScrollToIndexFailed={(info) => {
                 setTimeout(() => {
                   chartListRef.current?.scrollToIndex({
@@ -194,17 +229,7 @@ export default function MealRecordDetail() {
                   });
                 }, 100);
               }}
-              renderItem={({ item }) => (
-                <View style={styles.chartPage}>
-                  <MealDonutChart
-                    photo={null}
-                    mealName={item.food_name}
-                    recognitionFailed={false}
-                    onCameraPress={() => {}}
-                    segments={makeSegments(item)}
-                  />
-                </View>
-              )}
+              renderItem={renderChartPage}
             />
 
             <TouchableOpacity
